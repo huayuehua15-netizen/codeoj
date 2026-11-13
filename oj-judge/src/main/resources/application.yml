@@ -38,6 +38,8 @@ spring:
 # 判题沙箱配置（论文表 4-9 / 5.4 docker run 参数）
 oj:
   judge:
+    # 判题引擎模式：mock=无 Docker 联调（全判 AC）；real=真实沙箱判题（M2）
+    engine-mode: ${ENGINE_MODE:mock}
     # 实例内信号量：并行运行的容器数上限（防止 Docker 引擎过载）
     max-parallel-containers: 4
     # 沙箱宿主机工作目录根（按提交编号隔离）

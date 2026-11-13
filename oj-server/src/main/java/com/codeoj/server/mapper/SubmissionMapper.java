@@ -4,7 +4,10 @@ import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import com.codeoj.common.entity.Submission;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
+import org.apache.ibatis.annotations.Select;
 import org.apache.ibatis.annotations.Update;
+
+import java.util.List;
 
 @Mapper
 public interface SubmissionMapper extends BaseMapper<Submission> {
@@ -29,4 +32,36 @@ public interface SubmissionMapper extends BaseMapper<Submission> {
                           @Param("timeUsedMs") Integer timeUsedMs,
                           @Param("memoryUsedKb") Integer memoryUsedKb,
                           @Param("errorInfo") String errorInfo);
+
+    /**
+     * 个人通过率统计（论文 5.6）：按难度分组聚合提交记录。
+     * submission 无难度列，JOIN problem 取值。
+     */
+    @Select("SELECT p.difficulty AS difficulty, COUNT(*) AS submitCount, " +
+            "       SUM(s.status = 2) AS acceptedCount " +
+            "  FROM submission s JOIN problem p ON s.problem_id = p.id " +
+            " WHERE s.user_id = #{userId} " +
+            " GROUP BY p.difficulty")
+    List<DifficultyStatRow> statisticsByUser(@Param("userId") Long userId);
+
+    /**
+     * 难度维度聚合行。
+     */
+    class DifficultyStatRow {
+        private Integer difficulty;
+        private Long submitCount;
+        private Long acceptedCount;
+
+        public Integer getDifficulty() {
+            return difficulty;
+        }
+
+        public Long getSubmitCount() {
+            return submitCount;
+        }
+
+        public Long getAcceptedCount() {
+            return acceptedCount;
+        }
+    }
 }

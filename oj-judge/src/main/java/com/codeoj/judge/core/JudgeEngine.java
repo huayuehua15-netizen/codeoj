@@ -10,6 +10,7 @@ import com.codeoj.judge.core.strategy.LanguageStrategy;
 import com.codeoj.judge.core.strategy.Python3Strategy;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;
@@ -20,6 +21,10 @@ import java.util.Map;
 /**
  * 判题引擎（论文 5.4）：按语言选择编译与运行方案，逐用例创建沙箱容器执行，
  * 比对输出（Fail-Fast：首个不匹配即停），汇总结果。
+ * <p>
+ * engine-mode 双模式（M1 联调基线设计）：
+ * mock —— 无需 Docker，全部用例直接判 AC，用于打通"提交→入队→回写→推送"全链路；
+ * real —— 真实沙箱判题（M2 实现），生产环境使用。
  */
 @Component
 public class JudgeEngine {
@@ -28,13 +33,16 @@ public class JudgeEngine {
 
     private final DockerSandbox sandbox;
     private final OutputComparator comparator;
+    private final String engineMode;
     private final Map<String, LanguageStrategy> strategies = new HashMap<>();
 
     public JudgeEngine(DockerSandbox sandbox,
                        OutputComparator comparator,
+                       @Value("${oj.judge.engine-mode:mock}") String engineMode,
                        CStrategy c, CppStrategy cpp, JavaStrategy java, Python3Strategy python3) {
         this.sandbox = sandbox;
         this.comparator = comparator;
+        this.engineMode = engineMode;
         strategies.put("c", c);
         strategies.put("cpp", cpp);
         strategies.put("java", java);
@@ -49,27 +57,60 @@ public class JudgeEngine {
         if (strategy == null) {
             throw new IllegalArgumentException("不支持的语言: " + task.getLanguage());
         }
-        log.info("judging submission {} ({}), {} cases", task.getSubmissionId(),
-                task.getLanguage(), task.getCases().size());
+        log.info("judging submission {} ({}), mode={}, {} cases", task.getSubmissionId(),
+                task.getLanguage(), engineMode, task.getCases().size());
 
+        if ("mock".equals(engineMode)) {
+            return mockResult(task);
+        }
+        return realRun(task, strategy);
+    }
+
+    /**
+     * mock 模式（M1）：全部用例判 AC，固定小耗时与内存，仅打通链路，不做真实评测。
+     */
+    private JudgeResult mockResult(JudgeTask task) {
+        List<CaseResult> cases = new ArrayList<>();
+        for (JudgeTask.CaseInput ci : task.getCases()) {
+            cases.add(CaseResult.builder()
+                    .index(ci.getIndex())
+                    .status(SubmissionStatus.ACCEPTED)
+                    .timeUsedMs(1)
+                    .memoryUsedKb(1024)
+                    .build());
+        }
+        return JudgeResult.builder()
+                .status(SubmissionStatus.ACCEPTED)
+                .timeUsedMs(1)
+                .memoryUsedKb(1024)
+                .passedCases(cases.size())
+                .totalCases(task.getCases().size())
+                .cases(cases)
+                .build();
+    }
+
+    /**
+     * real 模式（M2 实现，论文 5.4 流水线）：编译 → 逐用例沙箱执行 → 比对 → 汇总。
+     */
+    private JudgeResult realRun(JudgeTask task, LanguageStrategy strategy) throws Exception {
         // 1. 编译（解释型语言跳过，论文表 5-2 python3 无编译）
         if (strategy.compileCommand().isPresent()) {
-            // TODO 第二阶段：写源文件 + 编译容器执行 + CE 判定（编译失败判 CE，展示编译器报错）
+            // TODO M2：写源文件 + 编译容器执行 + CE 判定（编译失败判 CE，展示编译器报错）
         }
 
         // 2. 逐用例执行（Fail-Fast：首个用例输出不匹配即停，论文表 4-8）
         List<CaseResult> caseResults = new ArrayList<>();
         for (JudgeTask.CaseInput caseInput : task.getCases()) {
-            // TODO 第二阶段：input.txt 写入工作目录 → 沙箱运行 → 记录耗时/内存 → 比对
+            // TODO M2：input.txt 写入工作目录 → 沙箱运行 → 记录耗时/内存 → 比对
         }
 
         // 3. 汇总（论文表 4-8 判定依据）
-        // TODO 第二阶段：全部通过 AC / 首个失败用例 / TLE/MLE/RE 优先级汇总
+        // TODO M2：全部通过 AC / 首个失败用例 / TLE/MLE/RE 优先级汇总
         return JudgeResult.builder()
                 .status(SubmissionStatus.SYSTEM_ERROR)
                 .passedCases(0)
                 .totalCases(task.getCases().size())
-                .errorInfo("判题引擎将在第二阶段实现")
+                .errorInfo("real 判题引擎将在 M2 实现（当前请使用 mock 模式联调）")
                 .build();
     }
 }

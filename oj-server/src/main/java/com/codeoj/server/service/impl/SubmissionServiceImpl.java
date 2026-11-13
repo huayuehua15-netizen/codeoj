@@ -2,12 +2,15 @@ package com.codeoj.server.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.codeoj.common.entity.JudgeCase;
 import com.codeoj.common.entity.Problem;
 import com.codeoj.common.entity.Submission;
+import com.codeoj.common.enums.Difficulty;
 import com.codeoj.common.enums.SubmissionStatus;
 import com.codeoj.common.exception.BizException;
 import com.codeoj.common.result.ResultCode;
 import com.codeoj.server.dto.SubmitDTO;
+import com.codeoj.server.mapper.JudgeCaseMapper;
 import com.codeoj.server.mapper.ProblemMapper;
 import com.codeoj.server.mapper.SubmissionMapper;
 import com.codeoj.server.mq.JudgeDispatcher;
@@ -15,6 +18,7 @@ import com.codeoj.server.security.LoginUser;
 import com.codeoj.server.service.IdempotentLockService;
 import com.codeoj.server.service.RateLimiter;
 import com.codeoj.server.service.SubmissionService;
+import com.codeoj.server.vo.JudgeCaseVO;
 import com.codeoj.server.vo.StatisticsVO;
 import com.codeoj.server.vo.SubmissionDetailVO;
 import com.codeoj.server.vo.SubmissionListItemVO;
@@ -27,7 +31,10 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
+import java.util.Comparator;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 /**
  * 提交服务实现（论文 5.3）：提交接口是判题链路的入口，依次完成
@@ -41,6 +48,7 @@ public class SubmissionServiceImpl implements SubmissionService {
 
     private final SubmissionMapper submissionMapper;
     private final ProblemMapper problemMapper;
+    private final JudgeCaseMapper judgeCaseMapper;
     private final RateLimiter rateLimiter;
     private final IdempotentLockService lockService;
     private final JudgeDispatcher judgeDispatcher;
@@ -53,11 +61,13 @@ public class SubmissionServiceImpl implements SubmissionService {
 
     public SubmissionServiceImpl(SubmissionMapper submissionMapper,
                                  ProblemMapper problemMapper,
+                                 JudgeCaseMapper judgeCaseMapper,
                                  RateLimiter rateLimiter,
                                  IdempotentLockService lockService,
                                  JudgeDispatcher judgeDispatcher) {
         this.submissionMapper = submissionMapper;
         this.problemMapper = problemMapper;
+        this.judgeCaseMapper = judgeCaseMapper;
         this.rateLimiter = rateLimiter;
         this.lockService = lockService;
         this.judgeDispatcher = judgeDispatcher;
@@ -106,24 +116,83 @@ public class SubmissionServiceImpl implements SubmissionService {
         }
     }
 
-    // ---------- 骨架阶段 TODO：以下方法在第二阶段补全 ----------
+    // ---------- M1 实现：详情 / 记录 / 统计 ----------
 
     @Override
     public SubmissionDetailVO detail(Long id, LoginUser user) {
-        // TODO 第二阶段：查提交 + 题目标题 + judge_case 明细；权限：本人/管理员
-        throw new BizException(ResultCode.SYSTEM_ERROR.getCode(), "接口尚未实现（骨架阶段）");
+        Submission s = submissionMapper.selectById(id);
+        if (s == null) {
+            throw new BizException(ResultCode.NOT_FOUND);
+        }
+        // 他人代码不可见：仅本人与管理员（论文 4.7 / 测试 F-13）
+        if (!s.getUserId().equals(user.userId()) && !user.isAdmin()) {
+            throw new BizException(ResultCode.FORBIDDEN);
+        }
+        SubmissionDetailVO vo = new SubmissionDetailVO();
+        vo.setId(s.getId());
+        vo.setUserId(s.getUserId());
+        vo.setProblemId(s.getProblemId());
+        Problem p = problemMapper.selectById(s.getProblemId());
+        vo.setProblemTitle(p != null ? p.getTitle() : null);
+        vo.setLanguage(s.getLanguage());
+        vo.setCode(s.getCode());
+        vo.setStatus(s.getStatus());
+        vo.setStatusDesc(SubmissionStatus.of(s.getStatus()).getDesc());
+        vo.setTimeUsedMs(s.getTimeUsedMs());
+        vo.setMemoryUsedKb(s.getMemoryUsedKb());
+        vo.setErrorInfo(s.getErrorInfo());
+        vo.setJudgedAt(s.getJudgedAt());
+        vo.setCreatedAt(s.getCreatedAt());
+        // 用例级判题明细（论文表 4-5）
+        List<JudgeCase> judgeCases = judgeCaseMapper.selectList(new LambdaQueryWrapper<JudgeCase>()
+                .eq(JudgeCase::getSubmissionId, id)
+                .orderByAsc(JudgeCase::getCaseIndex));
+        vo.setCases(judgeCases.stream().map(JudgeCaseVO::of).toList());
+        return vo;
     }
 
     @Override
     public Page<SubmissionListItemVO> pageMy(LoginUser user, Long problemId, Integer status,
                                              long page, long size) {
-        // TODO 第二阶段：按题目/状态/时间筛选 + 关联题目标题
-        return new Page<>(page, size);
+        LambdaQueryWrapper<Submission> wrapper = new LambdaQueryWrapper<>();
+        wrapper.eq(Submission::getUserId, user.userId());
+        if (problemId != null) {
+            wrapper.eq(Submission::getProblemId, problemId);
+        }
+        if (status != null) {
+            wrapper.eq(Submission::getStatus, status);
+        }
+        wrapper.orderByDesc(Submission::getId);
+        Page<Submission> result = submissionMapper.selectPage(new Page<>(page, size), wrapper);
+
+        // 批量补齐题目标题，避免 N+1 查询
+        Map<Long, String> titles = result.getRecords().isEmpty() ? Map.of()
+                : problemMapper.selectBatchIds(result.getRecords().stream()
+                        .map(Submission::getProblemId).distinct().toList())
+                        .stream()
+                        .collect(Collectors.toMap(Problem::getId, Problem::getTitle));
+
+        Page<SubmissionListItemVO> voPage = new Page<>(result.getCurrent(), result.getSize(), result.getTotal());
+        voPage.setRecords(result.getRecords().stream()
+                .map(s -> SubmissionListItemVO.of(s, titles.get(s.getProblemId())))
+                .toList());
+        return voPage;
     }
 
     @Override
     public StatisticsVO statistics(Long userId) {
-        // TODO 第二阶段：按难度分组聚合（论文 5.6 SQL）
-        return new StatisticsVO(List.of(), 0, 0);
+        // 按难度分组聚合（论文 5.6 SQL）
+        List<SubmissionMapper.DifficultyStatRow> rows = submissionMapper.statisticsByUser(userId);
+        List<StatisticsVO.Item> items = rows.stream()
+                .sorted(Comparator.comparing(SubmissionMapper.DifficultyStatRow::getDifficulty))
+                .map(row -> new StatisticsVO.Item(
+                        row.getDifficulty(),
+                        Difficulty.of(row.getDifficulty()).getLabel(),
+                        row.getSubmitCount() == null ? 0 : row.getSubmitCount(),
+                        row.getAcceptedCount() == null ? 0 : row.getAcceptedCount()))
+                .toList();
+        long totalSubmit = items.stream().mapToLong(StatisticsVO.Item::getSubmit).sum();
+        long totalAccepted = items.stream().mapToLong(StatisticsVO.Item::getAccepted).sum();
+        return new StatisticsVO(items, totalSubmit, totalAccepted);
     }
 }

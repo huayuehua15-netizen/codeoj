@@ -15,6 +15,8 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
+import java.util.LinkedHashMap;
+import java.util.Map;
 
 /**
  * 判题结果事件消费者（论文 4.2/5.5）：判题服务完成判题后发送完成事件，
@@ -50,7 +52,8 @@ public class JudgeEventConsumer {
                     && event.getStatus() == com.codeoj.common.enums.SubmissionStatus.JUDGING) {
                 pushEventPublisher.publishJudging(event.getUserId(), event.getSubmissionId());
             } else {
-                pushEventPublisher.publishFinished(event.getUserId(), event);
+                // 推送数据 status 用数字码（与 docs/API.md §7.3 前端协议一致）
+                pushEventPublisher.publishFinished(event.getUserId(), toPushData(event));
             }
             channel.basicAck(msg.getMessageProperties().getDeliveryTag(), false);
         } catch (Exception e) {
@@ -58,5 +61,20 @@ public class JudgeEventConsumer {
             channel.basicNack(msg.getMessageProperties().getDeliveryTag(), false,
                     !msg.getMessageProperties().isRedelivered());
         }
+    }
+
+    /** JudgePushEvent → 前端推送负载：枚举转数字状态码 */
+    private Map<String, Object> toPushData(JudgePushEvent e) {
+        Map<String, Object> m = new LinkedHashMap<>();
+        m.put("submissionId", e.getSubmissionId());
+        m.put("userId", e.getUserId());
+        m.put("problemId", e.getProblemId());
+        m.put("status", e.getStatus() == null ? null : e.getStatus().getCode());
+        m.put("timeUsedMs", e.getTimeUsedMs());
+        m.put("memoryUsedKb", e.getMemoryUsedKb());
+        m.put("passedCases", e.getPassedCases());
+        m.put("totalCases", e.getTotalCases());
+        m.put("errorInfo", e.getErrorInfo());
+        return m;
     }
 }
