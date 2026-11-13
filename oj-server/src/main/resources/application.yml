@@ -1,0 +1,72 @@
+# oj-server 业务服务配置（论文 4.2/5.1）
+server:
+  port: 8080
+
+spring:
+  application:
+    name: oj-server
+
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: jdbc:mysql://${MYSQL_HOST:localhost}:${MYSQL_PORT:3306}/${MYSQL_DB:codeoj}?useUnicode=true&characterEncoding=utf8mb4&serverTimezone=UTC&useSSL=false&allowPublicKeyRetrieval=true
+    username: ${MYSQL_USER:root}
+    password: ${MYSQL_PASSWORD:123456}
+    hikari:
+      maximum-pool-size: 20
+      minimum-idle: 5
+
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+      password: ${REDIS_PASSWORD:}
+      database: 0
+
+  rabbitmq:
+    host: ${RABBITMQ_HOST:localhost}
+    port: ${RABBITMQ_PORT:5672}
+    username: ${RABBITMQ_USER:guest}
+    password: ${RABBITMQ_PASSWORD:guest}
+    virtual-host: /
+    # 可靠投递：publisher-confirm 与 publisher-return（论文 4.6）
+    publisher-confirm-type: correlated
+    publisher-returns: true
+    template:
+      mandatory: true
+    listener:
+      simple:
+        acknowledge-mode: manual
+
+  jackson:
+    date-format: yyyy-MM-dd HH:mm:ss
+    time-zone: UTC   # 所有时间字段统一 UTC 存储、展示层转换（论文 4.4）
+
+mybatis-plus:
+  mapper-locations: classpath*:mapper/*.xml
+  type-aliases-package: com.codeoj.common.entity
+  configuration:
+    map-underscore-to-camel-case: true
+    log-impl: org.apache.ibatis.logging.slf4j.Slf4jImpl
+  global-config:
+    db-config:
+      id-type: auto
+      logic-delete-field: false
+
+# JWT 认证配置（论文 4.7：24 小时过期，登出进入 Redis 黑名单）
+jwt:
+  secret: ${JWT_SECRET:codeoj-dev-secret-key-please-change-in-production-0123456789}
+  expire-hours: 24
+
+# 限流配置（论文 4.7：登录失败 5 次锁定 15 分钟；提交 6 次/分/用户）
+oj:
+  rate-limit:
+    login-max-attempts: 5
+    login-lock-minutes: 15
+    submit-per-minute: 6
+  # 提交代码大小上限（论文 4.4：≤64KB）
+  submit:
+    max-code-bytes: 65536
+
+logging:
+  level:
+    com.codeoj: debug

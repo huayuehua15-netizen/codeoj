@@ -1,0 +1,112 @@
+# =====================================================================
+# 一键编排（论文 4.1 简单可运维 / 5.8 部署实现）
+# 判题节点扩容：docker compose up -d --scale oj-judge=4
+# =====================================================================
+services:
+  mysql:
+    image: mysql:8.0
+    container_name: oj-mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-123456}
+      MYSQL_DATABASE: codeoj
+      TZ: UTC
+    volumes:
+      - mysql-data:/var/lib/mysql
+      - ../sql/schema.sql:/docker-entrypoint-initdb.d/schema.sql:ro
+    command: --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-p${MYSQL_ROOT_PASSWORD:-123456}"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+    networks: [oj-net]
+
+  redis:
+    image: redis:7
+    container_name: oj-redis
+    command: redis-server --appendonly yes
+    volumes:
+      - redis-data:/data
+    networks: [oj-net]
+
+  rabbitmq:
+    image: rabbitmq:3.13-management
+    container_name: oj-rabbitmq
+    environment:
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER:-guest}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD:-guest}
+    volumes:
+      - rabbitmq-data:/var/lib/rabbitmq
+    ports:
+      - "15672:15672"   # 管理控制台（运维监控判题队列）
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 5s
+      timeout: 10s
+      retries: 20
+    networks: [oj-net]
+
+  oj-server:
+    build:
+      context: ..
+      dockerfile: deploy/oj-server/Dockerfile
+    container_name: oj-server
+    environment:
+      MYSQL_HOST: mysql
+      MYSQL_PORT: 3306
+      MYSQL_DB: codeoj
+      MYSQL_USER: root
+      MYSQL_PASSWORD: ${MYSQL_ROOT_PASSWORD:-123456}
+      REDIS_HOST: redis
+      RABBITMQ_HOST: rabbitmq
+      JWT_SECRET: ${JWT_SECRET:-change-me-in-production}
+    depends_on:
+      mysql:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    networks: [oj-net]
+
+  oj-judge:
+    build:
+      context: ..
+      dockerfile: deploy/oj-judge/Dockerfile
+    environment:
+      MYSQL_HOST: mysql
+      MYSQL_DB: codeoj
+      MYSQL_USER: root
+      MYSQL_PASSWORD: ${MYSQL_ROOT_PASSWORD:-123456}
+      REDIS_HOST: redis
+      RABBITMQ_HOST: rabbitmq
+    depends_on:
+      mysql:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    # 判题服务需要访问宿主 Docker 引擎调度沙箱容器（论文 4.7：docker.sock 仅判题服务持有）
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - /judge/work:/judge/work
+    deploy:
+      replicas: 1   # 扩容：docker compose up -d --scale oj-judge=4
+    networks: [oj-net]
+
+  oj-web:
+    build:
+      context: ..
+      dockerfile: deploy/oj-web/Dockerfile
+    container_name: oj-web
+    ports:
+      - "80:80"
+    depends_on:
+      - oj-server
+    networks: [oj-net]
+
+volumes:
+  mysql-data:
+  redis-data:
+  rabbitmq-data:
+
+networks:
+  oj-net:
+    driver: bridge

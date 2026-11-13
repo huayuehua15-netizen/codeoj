@@ -1,0 +1,58 @@
+# oj-judge 判题服务配置（论文 4.6/5.4）
+server:
+  port: 8081
+
+spring:
+  application:
+    name: oj-judge
+
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: jdbc:mysql://${MYSQL_HOST:localhost}:${MYSQL_PORT:3306}/${MYSQL_DB:codeoj}?useUnicode=true&characterEncoding=utf8mb4&serverTimezone=UTC&useSSL=false&allowPublicKeyRetrieval=true
+    username: ${MYSQL_USER:root}
+    password: ${MYSQL_PASSWORD:123456}
+
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+      password: ${REDIS_PASSWORD:}
+      database: 0
+
+  rabbitmq:
+    host: ${RABBITMQ_HOST:localhost}
+    port: ${RABBITMQ_PORT:5672}
+    username: ${RABBITMQ_USER:guest}
+    password: ${RABBITMQ_PASSWORD:guest}
+    virtual-host: /
+    listener:
+      simple:
+        # 公平分发 + 手动 ACK（论文 4.6：prefetch=1 保证任务按实际处理能力分配并形成背压）
+        acknowledge-mode: manual
+        prefetch: 1
+        concurrency: 4   # 实例内第一层并发控制（论文 5.4）
+
+  jackson:
+    time-zone: UTC
+
+# 判题沙箱配置（论文表 4-9 / 5.4 docker run 参数）
+oj:
+  judge:
+    # 实例内信号量：并行运行的容器数上限（防止 Docker 引擎过载）
+    max-parallel-containers: 4
+    # 沙箱宿主机工作目录根（按提交编号隔离）
+    work-dir-root: /judge/work
+    # runner 脚本容器内路径
+    runner-path: /judge/runner.sh
+    # 容器运行用户
+    container-user: "1000:1000"
+    # 单用例容器硬上限（宿主看护，容器总时长超过上限直接 docker kill）
+    container-hard-timeout-ms: 15000
+    # 输出上限：超过 16MB 判运行错误（论文 5.4）
+    output-limit-bytes: 16777216
+    # tmpfs /tmp 大小
+    tmpfs-size: 64m
+
+logging:
+  level:
+    com.codeoj: debug
