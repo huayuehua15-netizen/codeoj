@@ -32,8 +32,8 @@
         @current-change="load"
       />
 
-      <!-- TODO 第二阶段：题目表单完整实现（含 Markdown 实时预览，论文 5.7） -->
-      <el-dialog v-model="dialogVisible" :title="editingId ? '编辑题目' : '新建题目'" width="600px">
+      <!-- 题目表单（含 Markdown 实时预览，论文 5.7） -->
+      <el-dialog v-model="dialogVisible" :title="editingId ? '编辑题目' : '新建题目'" width="860px">
         <el-form :model="form" label-width="90px">
           <el-form-item label="标题"><el-input v-model="form.title" /></el-form-item>
           <el-form-item label="难度">
@@ -45,7 +45,18 @@
           </el-form-item>
           <el-form-item label="时间限制"><el-input-number v-model="form.timeLimitMs" :min="100" :step="100" /></el-form-item>
           <el-form-item label="内存限制"><el-input-number v-model="form.memoryLimitMb" :min="16" :step="16" /></el-form-item>
-          <el-form-item label="描述"><el-input v-model="form.description" type="textarea" :rows="6" /></el-form-item>
+          <el-form-item label="描述">
+            <div class="md-editor">
+              <div class="md-pane">
+                <div class="md-pane-title">Markdown 源码</div>
+                <el-input v-model="form.description" type="textarea" :rows="10" placeholder="支持 Markdown：## 标题、**加粗**、`代码`" />
+              </div>
+              <div class="md-pane preview">
+                <div class="md-pane-title">实时预览</div>
+                <MarkdownPreview :content="form.description" />
+              </div>
+            </div>
+          </el-form-item>
           <el-form-item label="语言">
             <el-checkbox-group v-model="form.languages">
               <el-checkbox value="c">C</el-checkbox>
@@ -69,6 +80,7 @@
 import { onMounted, reactive, ref } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { pageProblems, createProblem, updateProblem, deleteProblem, type Problem } from '@/api/problem'
+import MarkdownPreview from '@/components/MarkdownPreview.vue'
 
 const problems = ref<Problem[]>([])
 const page = ref(1)
@@ -144,5 +156,27 @@ onMounted(load)
 <style scoped>
 .toolbar {
   margin-bottom: 16px;
+}
+.md-editor {
+  width: 100%;
+  display: flex;
+  gap: 12px;
+}
+.md-pane {
+  flex: 1;
+  min-width: 0;
+}
+.md-pane-title {
+  font-size: 12px;
+  color: #909399;
+  margin-bottom: 6px;
+}
+.md-pane.preview {
+  background: #f5f7fa;
+  border: 1px solid #e4e7ed;
+  border-radius: 6px;
+  padding: 10px;
+  max-height: 260px;
+  overflow: auto;
 }
 </style>

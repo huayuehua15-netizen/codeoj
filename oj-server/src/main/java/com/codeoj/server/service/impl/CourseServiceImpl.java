@@ -99,7 +99,12 @@ public class CourseServiceImpl implements CourseService {
 
     @Override
     public List<CompletionItem> completion(Long courseId) {
-        // TODO 第二阶段：按课程题目聚合提交/通过人数（论文 3.3 班级完成情况）
-        return List.of();
+        // 班级完成情况：每题提交人数/通过人数（去重用户，论文 3.3 / 测试 F-15）
+        List<CourseMapper.CompletionRow> rows = courseMapper.completionStats(courseId);
+        return rows.stream()
+                .map(row -> new CompletionItem(row.getProblemId(), row.getTitle(),
+                        row.getSubmittedUsers() == null ? 0 : row.getSubmittedUsers(),
+                        row.getAcceptedUsers() == null ? 0 : row.getAcceptedUsers()))
+                .toList();
     }
 }
