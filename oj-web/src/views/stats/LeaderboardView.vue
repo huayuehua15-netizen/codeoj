@@ -45,7 +45,7 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, ref } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { getLeaderboard } from '@/api/leaderboard'
 
 const items = ref<{ userId: number; username?: string; acCount: number; rank: number }[]>([])
