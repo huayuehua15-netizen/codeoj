@@ -37,6 +37,7 @@ CREATE TABLE IF NOT EXISTS `problem` (
   `id`              BIGINT       NOT NULL AUTO_INCREMENT COMMENT '题目 ID',
   `title`           VARCHAR(200) NOT NULL COMMENT '题目标题',
   `description`     LONGTEXT     COMMENT '题目描述（Markdown）',
+  `tags`            JSON         COMMENT '标签数组（动态规划/贪心/模拟…）',
   `samples`         JSON         COMMENT '样例输入输出数组',
   `difficulty`      TINYINT      NOT NULL DEFAULT 1 COMMENT '1=简单，2=中等，3=困难',
   `time_limit_ms`   INT          NOT NULL DEFAULT 1000 COMMENT '时间限制（毫秒）',
@@ -156,6 +157,16 @@ CREATE TABLE IF NOT EXISTS `announcement` (
   `created_at` DATETIME     DEFAULT CURRENT_TIMESTAMP COMMENT '发布时间',
   PRIMARY KEY (`id`)
 ) ENGINE = InnoDB COMMENT = '公告表';
+
+CREATE TABLE IF NOT EXISTS `favorite` (
+  `id`         BIGINT   NOT NULL AUTO_INCREMENT COMMENT '主键',
+  `user_id`    BIGINT   NOT NULL COMMENT '用户',
+  `problem_id` BIGINT   NOT NULL COMMENT '题目',
+  `created_at` DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '收藏时间',
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_user_problem` (`user_id`, `problem_id`),
+  KEY `idx_favorite_user` (`user_id`)
+) ENGINE = InnoDB COMMENT = '题目收藏表';
 
 -- ---------------------------------------------------------------------
 -- 种子数据：一道示例题目（A+B Problem）与两组样例用例

@@ -79,6 +79,12 @@
               </el-button>
             </div>
           </el-form-item>
+          <el-form-item label="标签">
+            <el-select v-model="form.tags" multiple filterable allow-create default-first-option
+              style="width: 100%" placeholder="选择或输入标签（回车创建）：动态规划/贪心/模拟…">
+              <el-option v-for="t in ['动态规划', '贪心', '模拟', '字符串', '数学', '二分', '图论']" :key="t" :label="t" :value="t" />
+            </el-select>
+          </el-form-item>
           <el-form-item label="语言">
             <el-checkbox-group v-model="form.languages">
               <el-checkbox value="c">C</el-checkbox>
@@ -142,6 +148,7 @@ const form = reactive({
   timeLimitMs: 1000,
   memoryLimitMb: 256,
   description: '',
+  tags: [] as string[],
   samples: [] as { input: string; output: string }[],
   languages: ['c', 'cpp', 'java', 'python3'] as string[],
   enabled: true,
@@ -166,6 +173,7 @@ function openCreate() {
     timeLimitMs: 1000,
     memoryLimitMb: 256,
     description: '',
+    tags: [],
     samples: [],
     languages: ['c', 'cpp', 'java', 'python3'],
     enabled: true,
@@ -181,6 +189,7 @@ function edit(row: Problem) {
     timeLimitMs: row.timeLimitMs,
     memoryLimitMb: row.memoryLimitMb,
     description: row.description || '',
+    tags: row.tags || [],
     samples: (row.samples || []).map((s) => ({ input: s.input, output: s.output })),
     languages: row.languages || [],
     enabled: row.enabled,

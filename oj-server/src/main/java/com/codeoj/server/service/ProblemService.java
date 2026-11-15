@@ -9,8 +9,8 @@ import com.codeoj.server.dto.ProblemFormDTO;
  */
 public interface ProblemService {
 
-    /** 分页列表（关键词/难度筛选，仅上架题目对普通用户可见） */
-    Page<Problem> page(String keyword, Integer difficulty, long page, long size, boolean isAdmin);
+    /** 分页列表（关键词/难度/标签筛选，仅上架题目对普通用户可见） */
+    Page<Problem> page(String keyword, Integer difficulty, String tag, long page, long size, boolean isAdmin);
 
     /** 题面、样例与限制 */
     Problem getById(Long id);

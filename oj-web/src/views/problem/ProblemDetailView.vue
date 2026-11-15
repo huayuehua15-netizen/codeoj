@@ -10,6 +10,14 @@
           <span class="limit-tag">⏱ {{ problem.timeLimitMs }}ms</span>
           <span class="limit-tag">💾 {{ problem.memoryLimitMb }}MB</span>
           <span v-for="l in allowedLanguages" :key="l.value" class="limit-tag lang">{{ l.label }}</span>
+          <span v-for="t in problem.tags || []" :key="t" class="limit-tag lang">{{ t }}</span>
+          <el-button
+            v-if="userStore.isLoggedIn"
+            link :type="favorited ? 'warning' : 'primary'" size="small"
+            style="margin-left: auto" @click="toggleFav"
+          >
+            {{ favorited ? '★ 已收藏' : '☆ 收藏' }}
+          </el-button>
         </div>
         <MarkdownPreview :content="problem.description" />
 
@@ -77,6 +85,7 @@
 import { computed, onUnmounted, ref } from 'vue'
 import { useRoute } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
+import { isFavorited, toggleFavorite } from '@/api/favorite'
 import { getProblem, type Problem } from '@/api/problem'
 import { submitCode, getSubmission, type SubmissionDetail } from '@/api/submission'
 import { useUserStore } from '@/stores/user'
@@ -136,6 +145,21 @@ function resetJudge() {
   currentSubmissionId.value = undefined
 }
 
+const favorited = ref(false)
+
+async function loadFav() {
+  if (!userStore.isLoggedIn || !problem.value) return
+  try {
+    favorited.value = await isFavorited(problem.value.id)
+  } catch { /* 未登录等场景静默 */ }
+}
+
+async function toggleFav() {
+  if (!problem.value) return
+  favorited.value = await toggleFavorite(problem.value.id)
+  ElMessage.success(favorited.value ? '已加入收藏' : '已取消收藏')
+}
+
 function onLanguageChange(lang: string) {
   // 论文 5.7：切换语言载入对应模板代码。
   // 当前内容为空或仍是任一模板（未编辑）→ 直接替换；已编辑 → 确认后替换，取消则回退。
@@ -168,6 +192,7 @@ async function load() {
   }
   prevLanguage.value = language.value
   code.value = CODE_TEMPLATES[language.value] ?? ''
+  loadFav()
 }
 
 async function handleSubmit() {

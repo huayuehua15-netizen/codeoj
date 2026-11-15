@@ -25,7 +25,7 @@ public class ProblemServiceImpl implements ProblemService {
     }
 
     @Override
-    public Page<Problem> page(String keyword, Integer difficulty, long page, long size, boolean isAdmin) {
+    public Page<Problem> page(String keyword, Integer difficulty, String tag, long page, long size, boolean isAdmin) {
         LambdaQueryWrapper<Problem> wrapper = new LambdaQueryWrapper<>();
         if (!isAdmin) {
             wrapper.eq(Problem::getEnabled, true);
@@ -35,6 +35,10 @@ public class ProblemServiceImpl implements ProblemService {
         }
         if (difficulty != null && difficulty > 0) {
             wrapper.eq(Problem::getDifficulty, difficulty);
+        }
+        // 标签筛选：tags 为 JSON 列，JSON_CONTAINS 参数化传值（无拼接，防注入）
+        if (tag != null && !tag.isBlank()) {
+            wrapper.apply("JSON_CONTAINS(tags, JSON_QUOTE({0}))", tag);
         }
         wrapper.orderByAsc(Problem::getId);
         return problemMapper.selectPage(new Page<>(page, size), wrapper);
@@ -70,6 +74,7 @@ public class ProblemServiceImpl implements ProblemService {
         p.setTimeLimitMs(form.getTimeLimitMs());
         p.setMemoryLimitMb(form.getMemoryLimitMb());
         p.setLanguages(form.getLanguages());
+        p.setTags(form.getTags());
         p.setEnabled(form.getEnabled());
         p.setSubmitCount(0);
         p.setAcceptedCount(0);
@@ -90,6 +95,7 @@ public class ProblemServiceImpl implements ProblemService {
         p.setTimeLimitMs(form.getTimeLimitMs());
         p.setMemoryLimitMb(form.getMemoryLimitMb());
         p.setLanguages(form.getLanguages());
+        p.setTags(form.getTags());
         p.setEnabled(form.getEnabled());
         p.setUpdatedAt(LocalDateTime.now());
         problemMapper.updateById(p);

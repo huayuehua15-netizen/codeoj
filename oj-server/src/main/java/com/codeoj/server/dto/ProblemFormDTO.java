@@ -21,6 +21,9 @@ public class ProblemFormDTO {
     /** 题目描述（Markdown） */
     private String description;
 
+    /** 标签（动态规划/贪心/模拟…，可自定义） */
+    private List<String> tags;
+
     /** 样例输入输出数组 */
     private List<Problem.Sample> samples;
 

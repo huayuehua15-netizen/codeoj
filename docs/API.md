@@ -466,6 +466,42 @@ Query 参数：`page`（默认 1）、`size`（默认 20）。
 
 ---
 
+## 8.1 竞赛模块 `/api/contests`（论文 7.2 展望落地）
+
+| 方法 | 路径 | 权限 | 说明 |
+|---|---|---|---|
+| GET | `/api/contests` | 公开 | 竞赛列表（附状态与题数） |
+| GET | `/api/contests/{id}` | 公开 | 详情（字母题号题目集 A/B/C…） |
+| GET | `/api/contests/{id}/ranking` | 公开 | ACM 简化排名（解题数降序→罚时升序；罚时=首次AC分钟+错误×20） |
+| POST/PUT/DELETE | `/api/admin/contests[/{id}]` | 管理员 | 创建/编辑/删除（时间窗 + 题目集） |
+
+排名明细字段 `detail`：每题 `A ✅10min`（✅=AC，分钟=距开赛；`-2`=该题错误 2 次计罚时）。
+
+## 8.2 用户管理 `/api/admin/users`（管理员）
+
+| 方法 | 路径 | 说明 |
+|---|---|---|
+| GET | `/api/admin/users?keyword=&page=&size=` | 分页列表（不含密码哈希） |
+| PUT | `/api/admin/users/{id}/role?role=0|1` | 提权/降权 |
+| PUT | `/api/admin/users/{id}/status?status=0|1` | 封禁/解封——**封禁后既有 token 立即失效（40100），登录返回 40300** |
+| PUT | `/api/admin/users/{id}/password` | 重置密码，返回临时密码 |
+
+## 8.3 公告模块
+
+| 方法 | 路径 | 权限 | 说明 |
+|---|---|---|---|
+| GET | `/api/announcements` | 公开 | 公告列表（倒序），题目列表页轮播展示 |
+| POST | `/api/admin/announcements` | 管理员 | 发布 `{title, content}` |
+| DELETE | `/api/admin/announcements/{id}` | 管理员 | 删除 |
+
+## 8.4 题目标签与收藏
+
+- **标签**：`problem.tags` JSON 数组；创建/编辑题目时可多选或自建；列表筛选 `GET /api/problems?tag=模拟`（`JSON_CONTAINS` 参数化，防注入）。
+- **收藏**：
+  - `POST /api/problems/{id}/favorite`：toggle，返回当前是否收藏；
+  - `GET /api/problems/{id}/favorite`：当前状态（详情页按钮初始态）；
+  - `GET /api/favorites`：我的收藏列表（个人中心）。
+
 ## 9. 变更管理
 
 - 接口契约以本文档为准；**任何字段/路径变更必须先改本文档再改代码**（双方评审）；
@@ -475,3 +511,4 @@ Query 参数：`page`（默认 1）、`size`（默认 20）。
 |---|---|---|---|
 | 2026-11-13 | v1.0 | 骨架阶段定稿 | — |
 | 2026-11-15 | v1.1 | 个人信息维护接口（1.5/1.6）、提交记录时间筛选（4.3）、注册/登录 IP 限流、昵称字段移除、样例编辑器与 XSS 净化 | 成员 B |
+| 2026-11-15 | v1.2 | 竞赛模式（8.1）、用户管理（8.2）、公告（8.3）、题目标签与收藏（8.4） | 成员 B |

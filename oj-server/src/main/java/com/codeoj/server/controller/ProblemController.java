@@ -38,11 +38,12 @@ public class ProblemController {
     @GetMapping
     public R<Page<Problem>> page(@RequestParam(name = "keyword", required = false) String keyword,
                                  @RequestParam(name = "difficulty", required = false) Integer difficulty,
+                                 @RequestParam(name = "tag", required = false) String tag,
                                  @RequestParam(name = "page", defaultValue = "1") long page,
                                  @RequestParam(name = "size", defaultValue = "10") long size,
                                  @AuthenticationPrincipal LoginUser user) {
         boolean admin = user != null && user.isAdmin();
-        return R.ok(problemService.page(keyword, difficulty, page, size, admin));
+        return R.ok(problemService.page(keyword, difficulty, tag, page, size, admin));
     }
 
     /** 题面、样例与限制；已下架题目仅管理员可见（与列表过滤行为一致） */

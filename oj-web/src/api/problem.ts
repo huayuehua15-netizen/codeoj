@@ -4,6 +4,7 @@ import { http } from './http'
 export interface Problem {
   id: number
   title: string
+  tags?: string[]
   description?: string
   samples?: { input: string; output: string }[]
   difficulty: number
@@ -15,7 +16,7 @@ export interface Problem {
   enabled: boolean
 }
 
-export function pageProblems(params: { keyword?: string; difficulty?: number; page: number; size: number }) {
+export function pageProblems(params: { keyword?: string; difficulty?: number; tag?: string; page: number; size: number }) {
   return http.get<never, { records: Problem[]; total: number }>('/api/problems', { params })
 }
 

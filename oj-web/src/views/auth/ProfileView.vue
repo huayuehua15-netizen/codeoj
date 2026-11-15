@@ -17,6 +17,26 @@
         <el-descriptions-item label="注册时间">{{ info?.createdAt || '-' }}</el-descriptions-item>
       </el-descriptions>
 
+      <!-- 我的收藏 -->
+      <h3>我的收藏</h3>
+      <el-table :data="favorites" v-loading="favLoading" size="small">
+        <el-table-column label="题目" min-width="240">
+          <template #default="{ row }">
+            <router-link :to="`/problems/${row.problemId}`">{{ row.title }}</router-link>
+          </template>
+        </el-table-column>
+        <el-table-column label="难度" width="90">
+          <template #default="{ row }">
+            <el-tag :color="({1:'#67c23a',2:'#e6a23c',3:'#f56c6c'} as Record<number,string>)[row.difficulty]" size="small">
+              {{ ({1:'简单',2:'中等',3:'困难'} as Record<number,string>)[row.difficulty] || '?' }}
+            </el-tag>
+          </template>
+        </el-table-column>
+        <el-table-column prop="favoritedAt" label="收藏时间" width="180" />
+      </el-table>
+
+      <el-divider />
+
       <!-- 邮箱修改 -->
       <h3>修改邮箱</h3>
       <el-form :model="emailForm" label-width="80px" style="max-width: 420px">
@@ -57,6 +77,7 @@ import { onMounted, reactive, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { changePassword, getUserInfo, updateEmail, type LoginVO } from '@/api/auth'
+import { myFavorites } from '@/api/favorite'
 import { useUserStore } from '@/stores/user'
 import { disconnectWs } from '@/api/ws'
 
@@ -64,6 +85,8 @@ const router = useRouter()
 const userStore = useUserStore()
 
 const info = ref<LoginVO>()
+const favorites = ref<{ problemId: number; title: string; difficulty: number; favoritedAt: string }[]>([])
+const favLoading = ref(false)
 const emailForm = reactive({ email: '' })
 const pwdForm = reactive({ oldPassword: '', newPassword: '', confirm: '' })
 const savingEmail = ref(false)
@@ -72,6 +95,12 @@ const savingPwd = ref(false)
 onMounted(async () => {
   info.value = await getUserInfo()
   emailForm.email = info.value.email || ''
+  favLoading.value = true
+  try {
+    favorites.value = await myFavorites()
+  } finally {
+    favLoading.value = false
+  }
 })
 
 async function saveEmail() {

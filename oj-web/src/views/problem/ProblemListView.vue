@@ -36,6 +36,9 @@
           <el-option label="中等" :value="2" />
           <el-option label="困难" :value="3" />
         </el-select>
+        <el-select v-model="tag" placeholder="标签" style="width: 140px" clearable filterable allow-create @change="load">
+          <el-option v-for="t in tagOptions" :key="t" :label="t" :value="t" />
+        </el-select>
         <el-button type="primary" @click="load">搜索</el-button>
       </div>
 
@@ -48,6 +51,11 @@
         <el-table-column label="题目" min-width="300">
           <template #default="{ row }">
             <router-link :to="`/problems/${row.id}`" class="title-link">{{ row.title }}</router-link>
+          </template>
+        </el-table-column>
+        <el-table-column label="标签" min-width="140">
+          <template #default="{ row }">
+            <el-tag v-for="t in row.tags || []" :key="t" size="small" type="info" style="margin-right: 4px">{{ t }}</el-tag>
           </template>
         </el-table-column>
         <el-table-column label="难度" width="100">
@@ -92,6 +100,8 @@ import { DIFFICULTY_MAP } from '@/utils/status'
 
 const problems = ref<Problem[]>([])
 const keyword = ref('')
+const tag = ref('')
+const tagOptions = ref<string[]>([])
 const difficulty = ref<number | undefined>()
 const page = ref(1)
 const size = ref(10)
@@ -124,11 +134,16 @@ async function load() {
     const data = await pageProblems({
       keyword: keyword.value || undefined,
       difficulty: difficulty.value,
+      tag: tag.value || undefined,
       page: page.value,
       size: size.value,
     })
     problems.value = data.records || []
     total.value = data.total
+    // 标签选项：从现有题目聚合（去重）
+    const tags = new Set<string>()
+    for (const p of problems.value) for (const t of p.tags || []) tags.add(t)
+    tagOptions.value = [...tags].sort()
     // 横幅统计：榜上人数 + 本页题目累计提交数（现成接口聚合，呈现层）
     totalSubmits.value = (data.records || []).reduce((sum, p) => sum + (p.submitCount || 0), 0)
   } finally {

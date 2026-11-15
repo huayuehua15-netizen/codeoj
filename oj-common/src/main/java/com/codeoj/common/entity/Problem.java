@@ -26,6 +26,10 @@ public class Problem {
     /** 题目描述（Markdown） */
     private String description;
 
+    /** 标签数组（动态规划/贪心/模拟…，JSON） */
+    @TableField(typeHandler = JacksonTypeHandler.class)
+    private List<String> tags;
+
     /** 样例输入输出数组 [{"input": "...", "output": "..."}] */
     @TableField(typeHandler = JacksonTypeHandler.class)
     private List<Sample> samples;
