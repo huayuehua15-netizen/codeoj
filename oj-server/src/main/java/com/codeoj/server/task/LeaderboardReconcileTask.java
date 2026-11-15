@@ -4,7 +4,7 @@ import com.codeoj.common.constant.RedisKeys;
 import com.codeoj.server.mapper.SubmissionMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
@@ -22,10 +22,10 @@ public class LeaderboardReconcileTask {
 
     private static final Logger log = LoggerFactory.getLogger(LeaderboardReconcileTask.class);
 
-    private final RedisTemplate<String, Object> redis;
+    private final StringRedisTemplate redis;
     private final SubmissionMapper submissionMapper;
 
-    public LeaderboardReconcileTask(RedisTemplate<String, Object> redis,
+    public LeaderboardReconcileTask(StringRedisTemplate redis,
                                     SubmissionMapper submissionMapper) {
         this.redis = redis;
         this.submissionMapper = submissionMapper;
@@ -39,7 +39,7 @@ public class LeaderboardReconcileTask {
             expected.put(String.valueOf(row.getUserId()), row.getAcCount());
         }
 
-        Set<Object> members = redis.opsForZSet().range(RedisKeys.LEADERBOARD_AC, 0, -1);
+        Set<String> members = redis.opsForZSet().range(RedisKeys.LEADERBOARD_AC, 0, -1);
         int removed = 0;
         int corrected = 0;
 

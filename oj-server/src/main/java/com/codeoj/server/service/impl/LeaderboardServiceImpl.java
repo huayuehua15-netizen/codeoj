@@ -7,7 +7,7 @@ import com.codeoj.server.service.LeaderboardService;
 import com.codeoj.server.vo.LeaderboardVO;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.data.redis.core.ZSetOperations;
 import org.springframework.stereotype.Service;
 
@@ -28,10 +28,10 @@ public class LeaderboardServiceImpl implements LeaderboardService {
 
     private static final Logger log = LoggerFactory.getLogger(LeaderboardServiceImpl.class);
 
-    private final RedisTemplate<String, Object> redis;
+    private final StringRedisTemplate redis;
     private final UserMapper userMapper;
 
-    public LeaderboardServiceImpl(RedisTemplate<String, Object> redis, UserMapper userMapper) {
+    public LeaderboardServiceImpl(StringRedisTemplate redis, UserMapper userMapper) {
         this.redis = redis;
         this.userMapper = userMapper;
     }
@@ -42,7 +42,7 @@ public class LeaderboardServiceImpl implements LeaderboardService {
         long total = zsetSize == null ? 0 : zsetSize;
         long offset = (page - 1) * size;
         // 分页倒序取前 N 名（论文 5.6）
-        Set<ZSetOperations.TypedTuple<Object>> top =
+        Set<ZSetOperations.TypedTuple<String>> top =
                 redis.opsForZSet().reverseRangeWithScores(RedisKeys.LEADERBOARD_AC, offset, offset + size - 1);
 
         List<LeaderboardVO.Item> items = new ArrayList<>();
