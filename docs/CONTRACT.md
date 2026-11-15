@@ -110,7 +110,11 @@ UPDATE submission SET status = #{status}, time_used_ms = #{time}, memory_used_kb
 | `oj:lock:submit:{userId}:{problemId}` | STRING NX | 2 s | oj-server | — | 重复提交幂等锁 |
 | `oj:queue:backlog` | STRING | 30 s | oj-server | oj-server | 队列积压量缓存 |
 
-> 对账：`oj:leaderboard:ac` 与数据库汇总存在异步对账任务（第二阶段，论文 5.6），以 ZSet 为准、对账纠偏。
+> 对账：`oj:leaderboard:ac` 与数据库汇总由异步对账任务纠偏（每 5 分钟，`LeaderboardReconcileTask`），以 ZSet 为准。
+>
+> **⚠️ 序列化约定（已踩坑）**：排行榜 ZSet 的 **member 一律为裸字符串 userId**（StringRedisTemplate）。
+> 两端序列化不一致会产生同一用户的双 member（`40` 与 `"40"`），页面出现重复行——
+> oj-server（读侧/对账）与 oj-judge（ZINCRBY）均已统一为 StringRedisTemplate，勿改回 JSON 序列化。
 
 ## 6. 判题执行约定（oj-judge 内部，论文表 5-2 / 5.4）
 
