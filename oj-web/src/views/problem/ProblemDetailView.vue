@@ -58,7 +58,7 @@
             v-model="consoleInput"
             type="textarea"
             :rows="3"
-            placeholder="自定义测试输入（预填样例 1）"
+            placeholder="自定义测试输入（留空则使用样例 1 输入）"
             class="console-input"
           />
           <div v-if="consoleResult" class="console-out" :class="{ err: !!consoleResult.error }">
@@ -172,13 +172,16 @@ const running = ref(false)
 const consoleInput = ref('')
 const consoleResult = ref<RunResult>()
 
-/** 控制台运行：浏览器沙箱执行当前代码（仅 JS 题），自定义输入预填样例 1 */
+/** 控制台运行：浏览器沙箱执行当前代码（仅 JS 题）。
+ *  输入框为空时显式填入样例 1 输入（所见即所得——用户能看到运行用了什么输入）。 */
 async function runConsole() {
   if (!problem.value) return
+  if (!consoleInput.value.trim() && problem.value.samples?.[0]?.input) {
+    consoleInput.value = problem.value.samples[0].input
+  }
   running.value = true
   try {
-    const stdin = consoleInput.value || (problem.value.samples?.[0]?.input ?? '')
-    consoleResult.value = await runInSandbox(code.value, stdin, 5000)
+    consoleResult.value = await runInSandbox(code.value, consoleInput.value, 5000)
   } finally {
     running.value = false
   }
@@ -230,6 +233,8 @@ async function load() {
   }
   prevLanguage.value = language.value
   code.value = CODE_TEMPLATES[language.value] ?? ''
+  // 控制台输入预填样例 1（进页面即可见，运行时所见即所得）
+  consoleInput.value = problem.value.samples?.[0]?.input ?? ''
   loadFav()
 }
 
