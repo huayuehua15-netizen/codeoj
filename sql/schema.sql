@@ -6,6 +6,9 @@
 --   2. 高频统计字段（提交数、通过数）在题目表中冗余，避免实时聚合查询；
 --   3. 所有时间字段统一 UTC 存储、展示层转换。
 -- =====================================================================
+-- 强制本会话连接字符集为 utf8mb4：docker-entrypoint 导入时客户端默认
+-- 字符集可能为 latin1，缺此句会导致中文被双重编码（mojibake）
+SET NAMES utf8mb4;
 
 CREATE DATABASE IF NOT EXISTS codeoj
   DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
