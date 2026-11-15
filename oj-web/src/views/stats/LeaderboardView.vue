@@ -9,7 +9,7 @@
           </template>
         </el-table-column>
         <el-table-column label="用户" min-width="200">
-          <template #default="{ row }">{{ row.nickname || row.username || `用户 ${row.userId}` }}</template>
+          <template #default="{ row }">{{ row.username || `用户 ${row.userId}` }}</template>
         </el-table-column>
         <el-table-column prop="acCount" label="通过题数" width="140" />
       </el-table>
@@ -29,7 +29,7 @@
 import { onMounted, ref } from 'vue'
 import { getLeaderboard } from '@/api/leaderboard'
 
-const items = ref<{ userId: number; username?: string; nickname?: string; acCount: number; rank: number }[]>([])
+const items = ref<{ userId: number; username?: string; acCount: number; rank: number }[]>([])
 const page = ref(1)
 const size = ref(20)
 const total = ref(0)

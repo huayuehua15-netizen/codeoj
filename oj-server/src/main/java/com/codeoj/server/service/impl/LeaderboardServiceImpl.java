@@ -60,7 +60,6 @@ public class LeaderboardServiceImpl implements LeaderboardService {
                 items.add(new LeaderboardVO.Item(
                         userId,
                         u != null ? u.getUsername() : null,
-                        u != null ? u.getNickname() : null,
                         tuple.getScore() == null ? 0 : tuple.getScore().longValue(),
                         offset + items.size() + 1));
             }

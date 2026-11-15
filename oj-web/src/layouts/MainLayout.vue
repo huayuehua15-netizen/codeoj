@@ -16,7 +16,7 @@
         </el-menu>
         <div class="user-area">
           <template v-if="userStore.isLoggedIn">
-            <span class="nickname">{{ userStore.nickname || userStore.username }}</span>
+            <span class="nickname">{{ userStore.username }}</span>
             <el-button link type="danger" @click="handleLogout">退出</el-button>
           </template>
           <template v-else>

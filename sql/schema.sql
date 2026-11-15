@@ -16,9 +16,8 @@ USE codeoj;
 -- ---------------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS `user` (
   `id`         BIGINT       NOT NULL AUTO_INCREMENT COMMENT '用户 ID',
-  `username`   VARCHAR(50)  NOT NULL COMMENT '登录名',
+  `username`   VARCHAR(50)  NOT NULL COMMENT '用户名（支持中文，全局唯一）',
   `password`   VARCHAR(100) NOT NULL COMMENT 'BCrypt 哈希',
-  `nickname`   VARCHAR(50)  DEFAULT NULL COMMENT '昵称',
   `email`      VARCHAR(100) DEFAULT NULL COMMENT '邮箱',
   `role`       TINYINT      NOT NULL DEFAULT 0 COMMENT '0=用户，1=管理员',
   `created_at` DATETIME     DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',

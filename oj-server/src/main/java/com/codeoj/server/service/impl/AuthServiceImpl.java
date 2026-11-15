@@ -60,8 +60,6 @@ public class AuthServiceImpl implements AuthService {
         User user = new User();
         user.setUsername(dto.getUsername());
         user.setPassword(passwordEncoder.encode(dto.getPassword()));
-        // 昵称业务已去除：默认与用户名一致（数据库 nickname 列保留，与论文表 4-1 一致）
-        user.setNickname(dto.getUsername());
         user.setEmail(dto.getEmail());
         user.setRole(0);
         user.setCreatedAt(java.time.LocalDateTime.now());
@@ -111,7 +109,6 @@ public class AuthServiceImpl implements AuthService {
         return LoginVO.builder()
                 .userId(u.getId())
                 .username(u.getUsername())
-                .nickname(u.getNickname())
                 .role(u.getRole())
                 .build();
     }

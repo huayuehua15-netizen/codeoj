@@ -14,7 +14,6 @@ public class LoginVO {
     private String token;
     private Long userId;
     private String username;
-    private String nickname;
     /** 0=用户，1=管理员 */
     private Integer role;
 
@@ -23,7 +22,6 @@ public class LoginVO {
                 .token(token)
                 .userId(user.getId())
                 .username(user.getUsername())
-                .nickname(user.getNickname())
                 .role(user.getRole())
                 .build();
     }

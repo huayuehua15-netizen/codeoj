@@ -23,7 +23,6 @@ public class LeaderboardVO {
     public static class Item {
         private Long userId;
         private String username;
-        private String nickname;
         /** AC 题数（ZSet score） */
         private long acCount;
         private long rank;

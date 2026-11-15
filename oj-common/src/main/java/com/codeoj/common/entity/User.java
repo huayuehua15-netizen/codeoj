@@ -9,7 +9,7 @@ import lombok.Data;
 import java.time.LocalDateTime;
 
 /**
- * 用户表（论文表 4-1）。密码为 BCrypt 哈希。
+ * 用户表（论文表 4-1）。密码为 BCrypt 哈希，用户名支持中文。
  */
 @Data
 @TableName("user")
@@ -18,15 +18,13 @@ public class User {
     @TableId(type = IdType.AUTO)
     private Long id;
 
-    /** 登录名 */
+    /** 用户名（支持中文，全局唯一） */
     @TableField("username")
     private String username;
 
     /** BCrypt 哈希 */
     @TableField("password")
     private String password;
-
-    private String nickname;
 
     private String email;
 
