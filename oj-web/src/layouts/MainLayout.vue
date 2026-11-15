@@ -99,9 +99,12 @@ async function handleLogout() {
   height: 100%;
 }
 .header {
-  background: #fff;
+  background: rgba(255, 255, 255, 0.82);
+  backdrop-filter: blur(14px) saturate(1.4);
+  -webkit-backdrop-filter: blur(14px) saturate(1.4);
   padding: 0;
-  box-shadow: 0 1px 3px rgba(16, 24, 40, 0.08), 0 1px 2px rgba(16, 24, 40, 0.04);
+  border-bottom: 1px solid rgba(17, 24, 39, 0.06);
+  box-shadow: 0 1px 2px rgba(17, 24, 39, 0.04);
   position: sticky;
   top: 0;
   z-index: 20;

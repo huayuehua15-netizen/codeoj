@@ -117,8 +117,40 @@ onUnmounted(() => window.clearInterval(timer))
 
 <style scoped>
 .head-card {
-  background: linear-gradient(135deg, #1e3a8a 0%, #2563eb 100%);
+  position: relative;
+  overflow: hidden;
+  background: linear-gradient(130deg, #0f2757 0%, #1e40af 55%, #3b82f6 100%);
   color: #fff;
+  border: none;
+  padding: 30px 34px;
+}
+.head-card::before {
+  /* 装饰光斑 */
+  content: '';
+  position: absolute;
+  right: -60px;
+  top: -80px;
+  width: 260px;
+  height: 260px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(255, 255, 255, 0.14), transparent 65%);
+}
+.head-card::after {
+  /* 网格纹理 */
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(255, 255, 255, 0.05) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.05) 1px, transparent 1px);
+  background-size: 28px 28px;
+  pointer-events: none;
+}
+.head-card :deep(h2),
+.head-card :deep(.meta),
+.head-card :deep(.desc) {
+  position: relative;
+  z-index: 1;
 }
 .head-row h2 {
   display: flex;
@@ -143,18 +175,24 @@ onUnmounted(() => window.clearInterval(timer))
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 28px;
-  height: 28px;
-  border-radius: 6px;
-  background: #1e3a8a;
+  width: 32px;
+  height: 32px;
+  border-radius: 10px;
+  background: linear-gradient(135deg, #1e40af, #3b82f6);
   color: #fff;
-  font-weight: 700;
+  font-weight: 800;
+  font-family: 'JetBrains Mono', Consolas, monospace;
+  box-shadow: 0 2px 6px rgba(37, 99, 235, 0.35);
 }
 .p-link {
-  color: #303133;
-  font-weight: 500;
+  color: var(--oj-text);
+  font-weight: 600;
+  transition: color 0.15s var(--oj-ease);
 }
 .p-link:hover {
-  color: #2563eb;
+  color: var(--oj-primary);
+}
+.head-card + .card {
+  margin-top: 16px;
 }
 </style>
