@@ -18,9 +18,17 @@
             </div>
           </template>
         </el-table-column>
-        <el-table-column prop="acCount" label="通过题数" width="140">
+        <el-table-column label="通过题数" width="200">
           <template #default="{ row }">
-            <b>{{ row.acCount }}</b>
+            <div class="ac-cell">
+              <b>{{ row.acCount }}</b>
+              <el-progress
+                :percentage="topAc ? Math.round((row.acCount / topAc) * 100) : 0"
+                :stroke-width="8"
+                :show-text="false"
+                class="ac-bar"
+              />
+            </div>
           </template>
         </el-table-column>
       </el-table>
@@ -57,6 +65,9 @@ async function load() {
   }
 }
 
+/** 第一名的通过题数（相对进度条基准） */
+const topAc = computed(() => items.value[0]?.acCount || 0)
+
 const MEDALS: Record<number, string> = { 1: '🥇', 2: '🥈', 3: '🥉' }
 
 function medal(rank: number) {
@@ -78,6 +89,14 @@ onMounted(load)
 </script>
 
 <style scoped>
+.ac-cell {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.ac-bar {
+  width: 110px;
+}
 .medal {
   font-size: 16px;
 }
