@@ -61,8 +61,8 @@ async function handleRegister() {
   justify-content: center;
   background:
     radial-gradient(1000px 500px at 10% -10%, rgba(59, 130, 246, 0.35), transparent),
-    radial-gradient(900px 500px at 100% 100%, rgba(14, 165, 233, 0.28), transparent),
-    linear-gradient(135deg, #0f2757 0%, #1e3a8a 45%, #2563eb 100%);
+    radial-gradient(900px 500px at 100% 100%, rgba(139, 92, 246, 0.25), transparent),
+    linear-gradient(135deg, #1e1b4b 0%, #4338ca 45%, #6366f1 100%);
 }
 .auth-card {
   width: 400px;
@@ -73,10 +73,10 @@ async function handleRegister() {
   font-size: 30px;
   font-weight: 800;
   letter-spacing: 1px;
-  color: #1e3a8a;
+  color: #3730a3;
 }
 .auth-logo span {
-  color: #2563eb;
+  color: #4f46e5;
 }
 .auth-sub {
   color: #909399;
@@ -98,7 +98,7 @@ async function handleRegister() {
   text-align: center;
 }
 .links a {
-  color: #2563eb;
+  color: #4f46e5;
   font-size: 13px;
 }
 .links a:hover {

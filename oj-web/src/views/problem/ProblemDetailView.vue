@@ -321,9 +321,9 @@ load()
   margin-bottom: 14px;
 }
 .limit-tag {
-  background: #f0f7ff;
-  color: #2563eb;
-  border: 1px solid #dbeafe;
+  background: #eef2ff;
+  color: #4f46e5;
+  border: 1px solid #e0e7ff;
   border-radius: 999px;
   padding: 2px 12px;
   font-size: 12px;

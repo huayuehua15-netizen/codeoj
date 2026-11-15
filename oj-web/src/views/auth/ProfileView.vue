@@ -156,7 +156,7 @@ async function savePassword() {
   width: 52px;
   height: 52px;
   border-radius: 50%;
-  background: linear-gradient(135deg, #1e3a8a, #2563eb);
+  background: linear-gradient(135deg, #3730a3, #4f46e5);
   color: #fff;
   font-size: 22px;
   font-weight: 700;

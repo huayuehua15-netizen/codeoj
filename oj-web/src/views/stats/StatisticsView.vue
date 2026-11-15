@@ -80,7 +80,7 @@ function renderCharts(trend: { date: string; total: number; accepted: number }[]
       yAxis: { type: 'value', minInterval: 1 },
       series: [
         { name: '提交', type: 'bar', data: trend.map((t) => t.total), barWidth: '40%',
-          itemStyle: { color: '#3b82f6', borderRadius: [4, 4, 0, 0] } },
+          itemStyle: { color: '#6366f1', borderRadius: [4, 4, 0, 0] } },
         { name: '通过', type: 'line', data: trend.map((t) => t.accepted), smooth: true,
           itemStyle: { color: '#16a34a' }, lineStyle: { width: 3 } },
       ],

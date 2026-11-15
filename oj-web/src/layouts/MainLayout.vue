@@ -123,16 +123,16 @@ async function handleLogout() {
   gap: 8px;
   font-size: 20px;
   font-weight: 800;
-  color: #1e3a8a;
+  color: #3730a3;
   cursor: pointer;
   letter-spacing: 0.5px;
 }
 .logo em {
   font-style: normal;
-  color: #2563eb;
+  color: #4f46e5;
 }
 .logo-icon {
-  color: #2563eb;
+  color: #4f46e5;
 }
 .menu {
   flex: 1;

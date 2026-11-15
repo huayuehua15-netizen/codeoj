@@ -170,7 +170,7 @@ onMounted(async () => {
   gap: 28px;
   padding: 20px 28px;
   margin-bottom: 16px;
-  background: linear-gradient(135deg, #1e3a8a 0%, #2563eb 60%, #3b82f6 100%);
+  background: linear-gradient(135deg, #3730a3 0%, #4f46e5 60%, #6366f1 100%);
   color: #fff;
 }
 .stat-item {
@@ -208,7 +208,7 @@ onMounted(async () => {
   font-weight: 500;
 }
 .title-link:hover {
-  color: #2563eb;
+  color: #4f46e5;
 }
 .rate-cell {
   display: flex;
@@ -260,8 +260,8 @@ onMounted(async () => {
   height: 24px;
   padding: 0 6px;
   border-radius: 6px;
-  background: #f0f7ff;
-  color: #2563eb;
+  background: #eef2ff;
+  color: #4f46e5;
   font-weight: 700;
   font-size: 13px;
 }

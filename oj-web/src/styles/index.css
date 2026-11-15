@@ -3,14 +3,26 @@
    精致浅色风：柔和层次 + 代码感 + 统一过渡
    ===================================================== */
 :root {
+  /* Element Plus 主题覆盖：全局组件跟随靛蓝主色 */
+  --el-color-primary: #4f46e5;
+  --el-color-primary-light-3: #7679f0;
+  --el-color-primary-light-5: #a5b0f7;
+  --el-color-primary-light-7: #cdd2fa;
+  --el-color-primary-light-8: #dfe2fb;
+  --el-color-primary-light-9: #eef2ff;
+  --el-color-primary-dark-2: #3730a3;
+  --el-border-radius-base: 8px;
+  --el-font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC',
+    'Microsoft YaHei', sans-serif;
+
   /* 色彩 */
-  --oj-primary: #2563eb;
-  --oj-primary-deep: #1e3a8a;
-  --oj-primary-soft: #eff6ff;
-  --oj-accent: #6366f1;
-  --oj-bg: #f6f8fb;
+  --oj-primary: #4f46e5;
+  --oj-primary-deep: #3730a3;
+  --oj-primary-soft: #eef2ff;
+  --oj-accent: #8b5cf6;
+  --oj-bg: #f5f6fa;
   --oj-card: #ffffff;
-  --oj-border: #e8edf3;
+  --oj-border: #e8eaf2;
   --oj-text: #1f2937;
   --oj-text-sub: #6b7280;
   --oj-text-weak: #9ca3af;
@@ -40,7 +52,9 @@ body,
   margin: 0;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC',
     'Microsoft YaHei', sans-serif;
-  background: var(--oj-bg);
+  background:
+    radial-gradient(1200px 400px at 85% -100px, rgba(99, 102, 241, 0.08), transparent),
+    var(--oj-bg);
   color: var(--oj-text);
 }
 

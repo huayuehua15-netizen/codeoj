@@ -107,7 +107,7 @@ onUnmounted(() => window.clearInterval(timer))
   cursor: pointer;
 }
 .contest-title:hover {
-  color: #2563eb;
+  color: #4f46e5;
 }
 .contest-desc {
   color: #606266;

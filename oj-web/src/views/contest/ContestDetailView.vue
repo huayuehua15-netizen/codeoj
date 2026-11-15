@@ -119,7 +119,7 @@ onUnmounted(() => window.clearInterval(timer))
 .head-card {
   position: relative;
   overflow: hidden;
-  background: linear-gradient(130deg, #0f2757 0%, #1e40af 55%, #3b82f6 100%);
+  background: linear-gradient(130deg, #1e1b4b 0%, #4338ca 55%, #6366f1 100%);
   color: #fff;
   border: none;
   padding: 30px 34px;
@@ -178,7 +178,7 @@ onUnmounted(() => window.clearInterval(timer))
   width: 32px;
   height: 32px;
   border-radius: 10px;
-  background: linear-gradient(135deg, #1e40af, #3b82f6);
+  background: linear-gradient(135deg, #4338ca, #6366f1);
   color: #fff;
   font-weight: 800;
   font-family: 'JetBrains Mono', Consolas, monospace;

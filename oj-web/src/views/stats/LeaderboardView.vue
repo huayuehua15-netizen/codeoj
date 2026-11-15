@@ -75,7 +75,7 @@ function medal(rank: number) {
 }
 
 /** 按 userId 稳定取色的头像底色 */
-const AVATAR_COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', '#ec4899', '#06b6d4', '#ef4444']
+const AVATAR_COLORS = ['#6366f1', '#10b981', '#f59e0b', '#8b5cf6', '#ec4899', '#06b6d4', '#ef4444']
 
 function avatarColor(userId: number) {
   return AVATAR_COLORS[Math.abs(userId) % AVATAR_COLORS.length]
