@@ -67,7 +67,7 @@
 <script setup lang="ts">
 import { computed, onUnmounted, ref } from 'vue'
 import { useRoute } from 'vue-router'
-import { ElMessage } from 'element-plus'
+import { ElMessage, ElMessageBox } from 'element-plus'
 import { getProblem, type Problem } from '@/api/problem'
 import { submitCode, getSubmission, type SubmissionDetail } from '@/api/submission'
 import { useUserStore } from '@/stores/user'
@@ -81,6 +81,7 @@ const userStore = useUserStore()
 
 const problem = ref<Problem>()
 const language = ref('cpp')
+const prevLanguage = ref('cpp')
 const code = ref('')
 const submitting = ref(false)
 
@@ -110,9 +111,28 @@ const resultSubTitle = computed(() => {
 })
 
 function onLanguageChange(lang: string) {
-  if (!code.value.trim()) {
+  // 论文 5.7：切换语言载入对应模板代码。
+  // 当前内容为空或仍是任一模板（未编辑）→ 直接替换；已编辑 → 确认后替换，取消则回退。
+  const label = LANGUAGE_OPTIONS.find((l) => l.value === lang)?.label ?? lang
+  const untouched = !code.value.trim()
+      || Object.values(CODE_TEMPLATES).includes(code.value)
+  if (untouched) {
     code.value = CODE_TEMPLATES[lang] ?? ''
+    prevLanguage.value = lang
+    return
   }
+  ElMessageBox.confirm(
+    `切换到 ${label} 将载入对应模板，当前已编辑的代码会被替换。是否继续？`,
+    '切换语言',
+    { type: 'warning', confirmButtonText: '替换', cancelButtonText: '保留当前代码' },
+  )
+    .then(() => {
+      code.value = CODE_TEMPLATES[lang] ?? ''
+      prevLanguage.value = lang
+    })
+    .catch(() => {
+      language.value = prevLanguage.value
+    })
 }
 
 async function load() {
@@ -120,6 +140,7 @@ async function load() {
   if (!allowedLanguages.value.some((l) => l.value === language.value)) {
     language.value = allowedLanguages.value[0]?.value || 'cpp'
   }
+  prevLanguage.value = language.value
   code.value = CODE_TEMPLATES[language.value] ?? ''
 }
 
