@@ -1,7 +1,6 @@
 package com.codeoj.server.dto;
 
 import jakarta.validation.Valid;
-import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import lombok.Data;
@@ -19,12 +18,12 @@ public class TestCaseImportDTO {
     private List<Item> cases;
 
     /**
-     * 单组用例。期望输出允许空串（如"不存在公共前缀返回空行"类题目）。
+     * 单组用例。input/expectedOutput 均允许空串（无输入题目、空输出题目是合法场景）。
      */
     @Data
     public static class Item {
 
-        @NotBlank
+        @NotNull
         private String input;
 
         @NotNull
