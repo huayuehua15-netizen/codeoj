@@ -67,6 +67,10 @@ main            # 可运行版本，只进经过验证的合并
 - **Commit 格式**：`<type>(<scope>): <一句话>`，如 `feat(judge): 沙箱帧流解析与16MB截断`
 - **合并纪律**：不直接 push main/dev；跨契约改动（API.md/CONTRACT.md 涉及的代码）合并前必须让对方过一眼 diff
 - **o-common 是公共区**：改实体/枚举/常量 = 改契约，**必须双人都同意**并更新 CONTRACT.md
+- **dev 合并规则**：谁的功能谁合并（A 合 feat/judge-engine → dev，B 合 feat/web-biz → dev），合并到 dev 后由**合并方**跑一轮联调验证
+- **main 推送权**：单点把关——**dev → main 由成员 B（仓库 owner）执行**，且仅在里程碑验收通过后；
+  A 的交付方式：推送 feat/judge-engine 到远程 → 通知 B → B review diff → 合并 dev → 联调 → 验收 → 推 main
+- **main 保护**：main 上任何时刻可检出稳定版本用于演示；若发现 main 回归，以 dev 最新验收点回滚
 
 ## 4. 本地联调环境
 
