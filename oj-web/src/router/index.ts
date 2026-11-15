@@ -55,6 +55,18 @@ const router = createRouter({
           meta: { title: '个人统计', requiresAuth: true },
         },
         {
+          path: 'contests',
+          name: 'contests',
+          component: () => import('@/views/contest/ContestListView.vue'),
+          meta: { title: '竞赛' },
+        },
+        {
+          path: 'contests/:id',
+          name: 'contest-detail',
+          component: () => import('@/views/contest/ContestDetailView.vue'),
+          meta: { title: '竞赛详情' },
+        },
+        {
           path: 'leaderboard',
           name: 'leaderboard',
           component: () => import('@/views/stats/LeaderboardView.vue'),
@@ -83,6 +95,18 @@ const router = createRouter({
           name: 'admin-courses',
           component: () => import('@/views/admin/CourseAdminView.vue'),
           meta: { title: '课程实验', requiresAuth: true, requiresAdmin: true },
+        },
+        {
+          path: 'admin/contests',
+          name: 'admin-contests',
+          component: () => import('@/views/admin/ContestAdminView.vue'),
+          meta: { title: '竞赛管理', requiresAuth: true, requiresAdmin: true },
+        },
+        {
+          path: 'admin/users',
+          name: 'admin-users',
+          component: () => import('@/views/admin/UserAdminView.vue'),
+          meta: { title: '用户管理', requiresAuth: true, requiresAdmin: true },
         },
         {
           path: 'admin/queue',

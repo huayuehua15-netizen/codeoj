@@ -41,6 +41,8 @@ public class SecurityConfig {
                 .requestMatchers("/api/auth/login", "/api/auth/register").permitAll()
                 .requestMatchers("/api/problems/**").permitAll()
                 .requestMatchers("/api/leaderboard/**").permitAll()
+                .requestMatchers("/api/contests/**").permitAll()
+                .requestMatchers("/api/announcements/**").permitAll()
                 .requestMatchers("/ws/**").permitAll()
                 .requestMatchers("/api/admin/**").hasRole("ADMIN")
                 .anyRequest().authenticated())

@@ -23,6 +23,7 @@ CREATE TABLE IF NOT EXISTS `user` (
   `password`   VARCHAR(100) NOT NULL COMMENT 'BCrypt 哈希',
   `email`      VARCHAR(100) DEFAULT NULL COMMENT '邮箱',
   `role`       TINYINT      NOT NULL DEFAULT 0 COMMENT '0=用户，1=管理员',
+  `status`     TINYINT      NOT NULL DEFAULT 0 COMMENT '0=正常，1=封禁',
   `created_at` DATETIME     DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
   `updated_at` DATETIME     DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
   PRIMARY KEY (`id`),
@@ -122,6 +123,39 @@ CREATE TABLE IF NOT EXISTS `course_problem` (
   PRIMARY KEY (`id`),
   KEY `idx_course_problem_course` (`course_id`)
 ) ENGINE = InnoDB COMMENT = '课程题目关联表';
+
+-- ---------------------------------------------------------------------
+-- 竞赛模式（论文 7.2 展望落地）：比赛 + 比赛题目集
+-- ---------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS `contest` (
+  `id`          BIGINT       NOT NULL AUTO_INCREMENT COMMENT '比赛 ID',
+  `title`       VARCHAR(200) NOT NULL COMMENT '比赛名称',
+  `description` VARCHAR(500) DEFAULT NULL COMMENT '比赛说明',
+  `start_time`  DATETIME     NOT NULL COMMENT '开始时间',
+  `end_time`    DATETIME     NOT NULL COMMENT '结束时间',
+  `created_by`  BIGINT       DEFAULT NULL COMMENT '创建教师',
+  `created_at`  DATETIME     DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  PRIMARY KEY (`id`),
+  KEY `idx_contest_time` (`start_time`, `end_time`)
+) ENGINE = InnoDB COMMENT = '竞赛表';
+
+CREATE TABLE IF NOT EXISTS `contest_problem` (
+  `id`         BIGINT NOT NULL AUTO_INCREMENT COMMENT '主键',
+  `contest_id` BIGINT NOT NULL COMMENT '比赛 ID',
+  `problem_id` BIGINT NOT NULL COMMENT '题目 ID',
+  `sort_order` INT    NOT NULL DEFAULT 0 COMMENT '题目顺序（字母题号 A/B/C...）',
+  PRIMARY KEY (`id`),
+  KEY `idx_contest_problem` (`contest_id`)
+) ENGINE = InnoDB COMMENT = '竞赛题目关联表';
+
+CREATE TABLE IF NOT EXISTS `announcement` (
+  `id`         BIGINT       NOT NULL AUTO_INCREMENT COMMENT '公告 ID',
+  `title`      VARCHAR(200) NOT NULL COMMENT '公告标题',
+  `content`    VARCHAR(2000) NOT NULL COMMENT '公告正文',
+  `created_by` BIGINT       DEFAULT NULL COMMENT '发布教师',
+  `created_at` DATETIME     DEFAULT CURRENT_TIMESTAMP COMMENT '发布时间',
+  PRIMARY KEY (`id`)
+) ENGINE = InnoDB COMMENT = '公告表';
 
 -- ---------------------------------------------------------------------
 -- 种子数据：一道示例题目（A+B Problem）与两组样例用例

@@ -12,6 +12,7 @@
         />
         <el-button @click="load">搜索</el-button>
         <el-button type="primary" @click="openCreate">新建题目</el-button>
+        <el-button @click="noticeVisible = true; loadNotices()">公告管理</el-button>
       </div>
       <el-table :data="problems" v-loading="loading">
         <el-table-column prop="id" label="#" width="70" />
@@ -93,6 +94,24 @@
           <el-button type="primary" :loading="saving" @click="save">保存</el-button>
         </template>
       </el-dialog>
+
+      <!-- 公告管理（教学场景：实验截止提醒） -->
+      <el-dialog v-model="noticeVisible" title="公告管理" width="560px">
+        <div style="display: flex; gap: 8px; margin-bottom: 12px">
+          <el-input v-model="noticeForm.title" placeholder="公告标题" style="width: 200px" />
+          <el-input v-model="noticeForm.content" placeholder="公告内容（实验截止时间等）" />
+          <el-button type="primary" @click="publishNotice">发布</el-button>
+        </div>
+        <el-table :data="notices" size="small">
+          <el-table-column prop="title" label="标题" min-width="140" />
+          <el-table-column prop="content" label="内容" min-width="220" show-overflow-tooltip />
+          <el-table-column label="操作" width="70">
+            <template #default="{ row }">
+              <el-button link type="danger" @click="removeNotice(row)">删除</el-button>
+            </template>
+          </el-table-column>
+        </el-table>
+      </el-dialog>
     </div>
   </div>
 </template>
@@ -102,6 +121,7 @@ import { onMounted, reactive, ref } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { pageProblems, createProblem, updateProblem, deleteProblem, type Problem } from '@/api/problem'
 import MarkdownPreview from '@/components/MarkdownPreview.vue'
+import { publishAnnouncement, deleteAnnouncement, listAnnouncements, type AnnouncementItem } from '@/api/announcement'
 
 const problems = ref<Problem[]>([])
 const keyword = ref('')
@@ -112,6 +132,9 @@ const loading = ref(false)
 const saving = ref(false)
 const dialogVisible = ref(false)
 const editingId = ref<number>()
+const noticeVisible = ref(false)
+const notices = ref<AnnouncementItem[]>([])
+const noticeForm = reactive({ title: '', content: '' })
 
 const form = reactive({
   title: '',
@@ -187,6 +210,28 @@ async function remove(row: Problem) {
   await deleteProblem(row.id)
   ElMessage.success('已删除')
   load()
+}
+
+async function loadNotices() {
+  notices.value = await listAnnouncements()
+}
+
+async function publishNotice() {
+  if (!noticeForm.title.trim() || !noticeForm.content.trim()) {
+    ElMessage.warning('标题与内容不能为空')
+    return
+  }
+  await publishAnnouncement(noticeForm)
+  ElMessage.success('公告已发布')
+  noticeForm.title = ''
+  noticeForm.content = ''
+  loadNotices()
+}
+
+async function removeNotice(row: AnnouncementItem) {
+  await deleteAnnouncement(row.id)
+  ElMessage.success('已删除')
+  loadNotices()
 }
 
 onMounted(load)

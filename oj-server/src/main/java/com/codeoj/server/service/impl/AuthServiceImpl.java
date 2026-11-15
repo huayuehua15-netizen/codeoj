@@ -88,6 +88,10 @@ public class AuthServiceImpl implements AuthService {
             redis.expire(lockKey, Duration.ofMinutes(15));
             throw new BizException(ResultCode.UNAUTHORIZED.getCode(), "用户名或密码错误");
         }
+        // 封禁账号拒绝登录（论文 4.7 安全设计延伸，管理员在用户管理中操作）
+        if (user.getStatus() != null && user.getStatus() == 1) {
+            throw new BizException(ResultCode.FORBIDDEN.getCode(), "账号已被封禁，请联系教师");
+        }
         redis.delete(lockKey);
         String token = jwtUtil.issue(user.getId(), user.getRole());
         return LoginVO.of(token, user);

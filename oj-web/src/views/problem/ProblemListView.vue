@@ -18,6 +18,16 @@
       <div class="stat-slogan">写出你的第一行代码，看看能过几个测试用例</div>
     </div>
 
+    <div v-if="announcements.length" class="card notice-bar">
+      <span class="notice-icon">📢</span>
+      <el-carousel height="28px" direction="vertical" :autoplay="true" interval="4500" indicator-position="none" arrow="never">
+        <el-carousel-item v-for="a in announcements" :key="a.id">
+          <span class="notice-title">【{{ a.title }}】</span>
+          <span class="notice-content">{{ a.content }}</span>
+        </el-carousel-item>
+      </el-carousel>
+    </div>
+
     <div class="card">
       <div class="toolbar">
         <el-input v-model="keyword" placeholder="按关键词搜索题目" style="width: 240px" clearable @keyup.enter="load" />
@@ -77,6 +87,7 @@
 import { onMounted, ref } from 'vue'
 import { pageProblems, type Problem } from '@/api/problem'
 import { getLeaderboard } from '@/api/leaderboard'
+import { listAnnouncements, type AnnouncementItem } from '@/api/announcement'
 import { DIFFICULTY_MAP } from '@/utils/status'
 
 const problems = ref<Problem[]>([])
@@ -104,6 +115,7 @@ function rateColor(rate: number) {
 }
 
 const lbTotal = ref(0)
+const announcements = ref<AnnouncementItem[]>([])
 const totalSubmits = ref(0)
 
 async function load() {
@@ -130,6 +142,9 @@ onMounted(async () => {
     const lb = await getLeaderboard({ page: 1, size: 1 })
     lbTotal.value = lb.total
   } catch { /* 横幅统计失败不影响列表 */ }
+  try {
+    announcements.value = (await listAnnouncements()).slice(0, 5)
+  } catch { /* 公告栏失败不影响列表 */ }
 })
 </script>
 
@@ -195,6 +210,32 @@ onMounted(async () => {
   font-size: 12px;
   color: #606266;
   white-space: nowrap;
+}
+.notice-bar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 24px;
+  margin-bottom: 16px;
+}
+.notice-icon {
+  font-size: 18px;
+}
+.notice-bar :deep(.el-carousel) {
+  flex: 1;
+}
+.notice-bar :deep(.el-carousel__container) {
+  height: 28px;
+}
+.notice-title {
+  color: #e6a23c;
+  font-weight: 700;
+  font-size: 13px;
+  margin-right: 8px;
+}
+.notice-content {
+  color: #606266;
+  font-size: 13px;
 }
 .pid-badge {
   display: inline-flex;

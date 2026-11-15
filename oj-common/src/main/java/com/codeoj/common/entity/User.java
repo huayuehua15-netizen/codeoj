@@ -32,6 +32,10 @@ public class User {
     @TableField("role")
     private Integer role;
 
+    /** 0=正常，1=封禁（封禁后登录与既有令牌均失效） */
+    @TableField("status")
+    private Integer status;
+
     @TableField("created_at")
     private LocalDateTime createdAt;
 

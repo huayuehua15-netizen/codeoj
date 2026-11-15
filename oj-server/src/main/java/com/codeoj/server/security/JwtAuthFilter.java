@@ -76,12 +76,13 @@ public class JwtAuthFilter extends OncePerRequestFilter {
     }
 
     /**
-     * 用户存在性校验：每请求主键查库（主键查询代价极小），保证删号后 token **立即**全面失效、
-     * 各接口行为一致。此前用 Redis 缓存 5 分钟的方案存在删号前已建立的缓存窗口，
-     * 窗口内行为不一致，故弃用。
+     * 用户有效性校验：每请求主键查库（主键查询代价极小）——
+     * 删号/封禁后 token 立即全面失效、各接口行为一致。
+     * 此前用 Redis 缓存 5 分钟的方案存在删号前已建立的缓存窗口，窗口内行为不一致，故弃用。
      */
     private boolean userExists(Long userId) {
-        return userMapper.selectById(userId) != null;
+        User u = userMapper.selectById(userId);
+        return u != null && (u.getStatus() == null || u.getStatus() != 1);
     }
 
     private LoginUser buildLoginUser(Claims claims) {

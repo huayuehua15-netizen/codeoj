@@ -14,9 +14,12 @@
           <el-menu-item index="/problems">题目</el-menu-item>
           <el-menu-item v-if="userStore.isLoggedIn" index="/submissions">提交记录</el-menu-item>
           <el-menu-item v-if="userStore.isLoggedIn" index="/statistics">统计</el-menu-item>
+          <el-menu-item index="/contests">竞赛</el-menu-item>
           <el-menu-item index="/leaderboard">排行榜</el-menu-item>
           <template v-if="userStore.isAdmin">
             <el-menu-item index="/admin/problems">题目管理</el-menu-item>
+            <el-menu-item index="/admin/contests">竞赛管理</el-menu-item>
+            <el-menu-item index="/admin/users">用户管理</el-menu-item>
             <el-menu-item index="/admin/courses">课程实验</el-menu-item>
             <el-menu-item index="/admin/queue">队列监控</el-menu-item>
           </template>
