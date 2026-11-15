@@ -13,7 +13,8 @@ public enum Language {
     C("c", "C", "codeoj/c:gcc13"),
     CPP("cpp", "C++", "codeoj/cpp:gcc13"),
     JAVA("java", "Java", "codeoj/java:openjdk17"),
-    PYTHON3("python3", "Python3", "codeoj/python:3.12");
+    PYTHON3("python3", "Python3", "codeoj/python:3.12"),
+    JS("js", "JavaScript", "codeoj/node:20");
 
     /** 提交记录与题目 languages 字段中的存储值 */
     private final String code;

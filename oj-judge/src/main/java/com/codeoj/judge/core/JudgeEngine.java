@@ -6,6 +6,7 @@ import com.codeoj.judge.core.sandbox.DockerSandbox;
 import com.codeoj.judge.core.strategy.CStrategy;
 import com.codeoj.judge.core.strategy.CppStrategy;
 import com.codeoj.judge.core.strategy.JavaStrategy;
+import com.codeoj.judge.core.strategy.JsStrategy;
 import com.codeoj.judge.core.strategy.LanguageStrategy;
 import com.codeoj.judge.core.strategy.Python3Strategy;
 import org.slf4j.Logger;
@@ -42,7 +43,8 @@ public class JudgeEngine {
                        OutputComparator comparator,
                        com.codeoj.judge.core.LocalJudgeService localJudgeService,
                        @Value("${oj.judge.engine-mode:local}") String engineMode,
-                       CStrategy c, CppStrategy cpp, JavaStrategy java, Python3Strategy python3) {
+                       CStrategy c, CppStrategy cpp, JavaStrategy java, Python3Strategy python3,
+                       JsStrategy js) {
         this.sandbox = sandbox;
         this.comparator = comparator;
         this.localJudgeService = localJudgeService;
@@ -51,6 +53,7 @@ public class JudgeEngine {
         strategies.put("cpp", cpp);
         strategies.put("java", java);
         strategies.put("python3", python3);
+        strategies.put("js", js);
     }
 
     /**

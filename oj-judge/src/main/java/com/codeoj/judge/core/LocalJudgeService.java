@@ -97,13 +97,15 @@ public class LocalJudgeService {
                 .build();
     }
 
-    /** 程序入口静态检查：Java 需 Main 类与 main 方法；Python 需非空有效代码 */
+    /** 程序入口静态检查：Java 需 Main 类与 main 方法；JS/Vue3 逻辑题需非空有效代码 */
     private boolean hasEntry(String lang, String code) {
         String c = code == null ? "" : code;
         return switch (lang) {
             case "java" -> c.contains("class Main") && c.contains("static void main");
             case "python3" -> c.lines().anyMatch(l -> !l.isBlank()
                     && !l.strip().startsWith("#"));
+            case "js" -> c.lines().anyMatch(l -> !l.isBlank()
+                    && !l.strip().startsWith("//"));
             case "c", "cpp" -> c.contains("main") && c.contains("(");
             default -> false;
         };
@@ -113,6 +115,7 @@ public class LocalJudgeService {
         return switch (lang) {
             case "java" -> "未找到 public class Main 与 main 方法（判题入口要求）";
             case "python3" -> "未检测到有效代码（程序为空或仅有注释）";
+            case "js" -> "未检测到有效代码（程序为空或仅有注释）";
             case "c", "cpp" -> "未找到 main 函数";
             default -> "未知语言";
         };
@@ -124,6 +127,8 @@ public class LocalJudgeService {
             case "java" -> code.contains("System.out.print")
                     || code.contains("System.out.write") || code.contains("Console");
             case "python3" -> code.contains("print") || code.contains("sys.stdout");
+            case "js" -> code.contains("console.log") || code.contains("process.stdout")
+                    || code.contains("console.error");
             case "c" -> code.contains("printf") || code.contains("puts") || code.contains("putchar");
             case "cpp" -> code.contains("cout") || code.contains("printf")
                     || code.contains("puts") || code.contains("cerr");

@@ -34,6 +34,9 @@ export const DIFFICULTY_MAP: Record<number, { label: string; color: string }> = 
  * 四语言模板代码（论文 5.7：按题目允许的语言切换语法模式并载入对应模板代码）。
  */
 export const CODE_TEMPLATES: Record<string, string> = {
+  js: `// 在此编写你的代码
+`,
+
   c: `#include <stdio.h>
 
 int main(void) {
@@ -65,6 +68,7 @@ export const LANGUAGE_OPTIONS = [
   { value: 'cpp', label: 'C++' },
   { value: 'java', label: 'Java' },
   { value: 'python3', label: 'Python3' },
+  { value: 'js', label: 'JavaScript' },
 ]
 
 /** monaco 语法模式映射（论文 5.7：c → cpp → java → python） */
@@ -73,4 +77,5 @@ export const MONACO_LANGUAGE: Record<string, string> = {
   cpp: 'cpp',
   java: 'java',
   python3: 'python',
+  js: 'javascript',
 }
