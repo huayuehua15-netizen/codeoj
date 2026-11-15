@@ -20,9 +20,9 @@
         </el-table-column>
         <el-table-column label="难度" width="100">
           <template #default="{ row }">
-            <span :style="{ color: difficultyInfo(row.difficulty).color }">
+            <el-tag :color="difficultyInfo(row.difficulty).color" effect="light" size="small">
               {{ difficultyInfo(row.difficulty).label }}
-            </span>
+            </el-tag>
           </template>
         </el-table-column>
         <el-table-column label="通过率" width="220">

@@ -37,6 +37,11 @@
             <el-button link type="primary" @click="$router.push(`/submissions/${row.id}`)">详情</el-button>
           </template>
         </el-table-column>
+        <template #empty>
+          <el-empty description="还没有提交记录 —— 去题目页写下你的第一份代码吧">
+            <el-button type="primary" @click="$router.push('/problems')">去刷题</el-button>
+          </el-empty>
+        </template>
       </el-table>
       <el-pagination
         v-model:current-page="page"

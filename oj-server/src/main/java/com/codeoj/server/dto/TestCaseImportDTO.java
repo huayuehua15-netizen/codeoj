@@ -19,7 +19,7 @@ public class TestCaseImportDTO {
     private List<Item> cases;
 
     /**
-     * 单组用例。
+     * 单组用例。期望输出允许空串（如"不存在公共前缀返回空行"类题目）。
      */
     @Data
     public static class Item {
@@ -27,7 +27,7 @@ public class TestCaseImportDTO {
         @NotBlank
         private String input;
 
-        @NotBlank
+        @NotNull
         private String expectedOutput;
 
         /** 分值（计分制），默认 0 */
