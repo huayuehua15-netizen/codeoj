@@ -41,11 +41,32 @@
           <el-select v-model="language" style="width: 140px" @change="onLanguageChange">
             <el-option v-for="lang in allowedLanguages" :key="lang.value" :label="lang.label" :value="lang.value" />
           </el-select>
+          <el-button v-if="language === 'js'" :disabled="running" @click="runConsole">▶ 运行</el-button>
           <el-button type="primary" :loading="submitting" :disabled="!userStore.isLoggedIn" @click="handleSubmit">
             {{ userStore.isLoggedIn ? '提交' : '登录后提交' }}
           </el-button>
         </div>
         <CodeEditor v-model="code" :language="language" />
+
+        <!-- 控制台（JS 题目：浏览器沙箱自测运行） -->
+        <div v-if="language === 'js'" class="console-panel">
+          <div class="console-head">
+            <span class="console-title">🖥 控制台（自测运行）</span>
+            <el-button size="small" type="success" :loading="running" @click="runConsole">▶ 运行</el-button>
+          </div>
+          <el-input
+            v-model="consoleInput"
+            type="textarea"
+            :rows="3"
+            placeholder="自定义测试输入（预填样例 1）"
+            class="console-input"
+          />
+          <div v-if="consoleResult" class="console-out" :class="{ err: !!consoleResult.error }">
+            <div v-if="consoleResult.error" class="console-err">✖ {{ consoleResult.error }}</div>
+            <pre class="console-stdout">{{ consoleResult.stdout || '(无输出)' }}</pre>
+            <div class="console-meta">耗时 {{ consoleResult.elapsedMs }}ms ｜ 浏览器沙箱运行（仅 JS）</div>
+          </div>
+        </div>
 
         <!-- 判题状态机（论文 5.7：IDLE→SUBMITTING→QUEUED→JUDGING→FINISHED）步骤条呈现 -->
         <div v-if="judgeState !== 'IDLE'" class="judge-status">
@@ -86,6 +107,7 @@ import { computed, onUnmounted, ref } from 'vue'
 import { useRoute } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { isFavorited, toggleFavorite } from '@/api/favorite'
+import { runInSandbox, type RunResult } from '@/utils/jsRunner'
 import { getProblem, type Problem } from '@/api/problem'
 import { submitCode, getSubmission, type SubmissionDetail } from '@/api/submission'
 import { useUserStore } from '@/stores/user'
@@ -146,6 +168,21 @@ function resetJudge() {
 }
 
 const favorited = ref(false)
+const running = ref(false)
+const consoleInput = ref('')
+const consoleResult = ref<RunResult>()
+
+/** 控制台运行：浏览器沙箱执行当前代码（仅 JS 题），自定义输入预填样例 1 */
+async function runConsole() {
+  if (!problem.value) return
+  running.value = true
+  try {
+    const stdin = consoleInput.value || (problem.value.samples?.[0]?.input ?? '')
+    consoleResult.value = await runInSandbox(code.value, stdin, 5000)
+  } finally {
+    running.value = false
+  }
+}
 
 async function loadFav() {
   if (!userStore.isLoggedIn || !problem.value) return
@@ -168,9 +205,10 @@ function onLanguageChange(lang: string) {
       || Object.values(CODE_TEMPLATES).includes(code.value)
   if (untouched) {
     code.value = CODE_TEMPLATES[lang] ?? ''
-    prevLanguage.value = lang
-    return
-  }
+  prevLanguage.value = lang
+  consoleInput.value = problem.value?.samples?.[0]?.input ?? ''
+  return
+}
   ElMessageBox.confirm(
     `切换到 ${label} 将载入对应模板，当前已编辑的代码会被替换。是否继续？`,
     '切换语言',
@@ -319,6 +357,52 @@ load()
 }
 .judge-status {
   margin-top: 12px;
+}
+.console-panel {
+  margin-top: 14px;
+  border: 1px solid var(--oj-border);
+  border-radius: 10px;
+  overflow: hidden;
+}
+.console-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: #0f172a;
+  color: #e2e8f0;
+  padding: 8px 14px;
+}
+.console-title {
+  font-size: 13px;
+  font-weight: 600;
+  font-family: 'JetBrains Mono', Consolas, monospace;
+}
+.console-input :deep(textarea) {
+  font-family: 'JetBrains Mono', Consolas, monospace;
+  font-size: 13px;
+}
+.console-out {
+  background: #0f172a;
+  color: #e2e8f0;
+  padding: 10px 14px;
+  min-height: 60px;
+}
+.console-err {
+  color: #f87171;
+  font-size: 13px;
+  margin-bottom: 6px;
+}
+.console-stdout {
+  margin: 0;
+  font-family: 'JetBrains Mono', Consolas, monospace;
+  font-size: 13px;
+  white-space: pre-wrap;
+  word-break: break-all;
+}
+.console-meta {
+  color: #64748b;
+  font-size: 11px;
+  margin-top: 8px;
 }
 .judge-steps {
   padding: 8px 4px 0;
