@@ -15,7 +15,7 @@
         <span class="stat-num">{{ totalSubmits }}</span>
         <span class="stat-label">累计提交</span>
       </div>
-      <div class="stat-slogan">✅ GitHub Desktop 联动测试成功 —— 2026-11-16</div>
+      <div class="stat-slogan">写下你的第一行代码，看看能过几个测试用例</div>
     </div>
 
     <div v-if="announcements.length" class="card notice-bar">
