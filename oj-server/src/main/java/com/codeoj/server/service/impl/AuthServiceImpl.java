@@ -49,7 +49,9 @@ public class AuthServiceImpl implements AuthService {
     }
 
     @Override
-    public LoginVO register(RegisterDTO dto) {
+    public LoginVO register(RegisterDTO dto, String clientIp) {
+        // 注册按 IP 限流：每小时最多 5 次，防脚本批量刷号（论文 4.7 滑动窗口限流机制）
+        rateLimiter.check("register", clientIp, 5, 3600);
         Long count = userMapper.selectCount(
                 new LambdaQueryWrapper<User>().eq(User::getUsername, dto.getUsername()));
         if (count != null && count > 0) {
@@ -69,7 +71,9 @@ public class AuthServiceImpl implements AuthService {
     }
 
     @Override
-    public LoginVO login(LoginDTO dto) {
+    public LoginVO login(LoginDTO dto, String clientIp) {
+        // 登录按 IP 限流：每小时最多 30 次，防密码喷洒（论文 4.7 滑动窗口限流机制）
+        rateLimiter.check("login", clientIp, 30, 3600);
         // 登录限流：失败 5 次锁定 15 分钟（论文 4.7 / 测试 F-02）
         String lockKey = "oj:rate:login:fail:" + dto.getUsername();
         String failsRaw = redis.opsForValue().get(lockKey);

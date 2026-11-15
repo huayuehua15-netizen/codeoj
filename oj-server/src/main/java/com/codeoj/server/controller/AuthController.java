@@ -8,6 +8,7 @@ import com.codeoj.server.security.LoginUser;
 import com.codeoj.server.security.TokenBlacklistService;
 import com.codeoj.server.service.AuthService;
 import com.codeoj.server.vo.LoginVO;
+import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -35,13 +36,22 @@ public class AuthController {
     }
 
     @PostMapping("/register")
-    public R<LoginVO> register(@RequestBody RegisterDTO dto) {
-        return R.ok(authService.register(dto));
+    public R<LoginVO> register(@RequestBody RegisterDTO dto, HttpServletRequest request) {
+        return R.ok(authService.register(dto, clientIp(request)));
     }
 
     @PostMapping("/login")
-    public R<LoginVO> login(@RequestBody LoginDTO dto) {
-        return R.ok(authService.login(dto));
+    public R<LoginVO> login(@RequestBody LoginDTO dto, HttpServletRequest request) {
+        return R.ok(authService.login(dto, clientIp(request)));
+    }
+
+    /** 客户端 IP：优先代理头，回退直连地址（Nginx 反代场景，论文 4.2） */
+    private static String clientIp(HttpServletRequest request) {
+        String xff = request.getHeader("X-Forwarded-For");
+        if (xff != null && !xff.isBlank()) {
+            return xff.split(",")[0].trim();
+        }
+        return request.getRemoteAddr();
     }
 
     @PostMapping("/logout")
