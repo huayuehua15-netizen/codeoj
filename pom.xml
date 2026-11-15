@@ -110,6 +110,8 @@
                     <configuration>
                         <release>${java.version}</release>
                         <encoding>UTF-8</encoding>
+                        <!-- Spring Boot 3.2 起反射式参数名解析需要 -parameters（@RequestParam/@PathVariable） -->
+                        <parameters>true</parameters>
                     </configuration>
                 </plugin>
             </plugins>

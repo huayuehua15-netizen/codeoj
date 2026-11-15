@@ -22,8 +22,8 @@ public class LeaderboardController {
     }
 
     @GetMapping
-    public R<LeaderboardVO> page(@RequestParam(defaultValue = "1") long page,
-                                 @RequestParam(defaultValue = "20") long size) {
+    public R<LeaderboardVO> page(@RequestParam(name = "page", defaultValue = "1") long page,
+                                 @RequestParam(name = "size", defaultValue = "20") long size) {
         return R.ok(leaderboardService.page(page, size));
     }
 }

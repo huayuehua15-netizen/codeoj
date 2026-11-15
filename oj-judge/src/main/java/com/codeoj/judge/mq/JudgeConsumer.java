@@ -56,7 +56,8 @@ public class JudgeConsumer {
 
     @RabbitListener(queues = MqConstants.JUDGE_QUEUE, ackMode = "MANUAL", concurrency = "4")
     public void onMessage(Message msg, Channel channel) throws IOException {
-        long sid = Long.parseLong(new String(msg.getBody()));
+        // 消息体为纯文本 submissionId；防御性剥离 JSON 引号（兼容历史消息格式）
+        long sid = Long.parseLong(new String(msg.getBody()).replace("\"", "").trim());
         try {
             // 幂等：WHERE status=0，影响行数为零说明重复投递，直接确认跳过（论文 5.4）
             if (submissionMapper.markJudging(sid) == 0) {

@@ -6,6 +6,9 @@ import org.springframework.amqp.core.BindingBuilder;
 import org.springframework.amqp.core.DirectExchange;
 import org.springframework.amqp.core.Queue;
 import org.springframework.amqp.core.QueueBuilder;
+import org.springframework.amqp.rabbit.connection.ConnectionFactory;
+import org.springframework.amqp.rabbit.core.RabbitTemplate;
+import org.springframework.amqp.support.converter.SimpleMessageConverter;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -17,6 +20,17 @@ import org.springframework.context.annotation.Configuration;
  */
 @Configuration
 public class RabbitMqConfig {
+
+    /**
+     * 判题任务发送模板：消息体为纯文本 submissionId（CONTRACT.md §1.1）。
+     * 显式指定 SimpleMessageConverter，避免容器内的事件 JSON 转换器被自动应用到发送端。
+     */
+    @Bean
+    public RabbitTemplate rabbitTemplate(ConnectionFactory connectionFactory) {
+        RabbitTemplate template = new RabbitTemplate(connectionFactory);
+        template.setMessageConverter(new SimpleMessageConverter());
+        return template;
+    }
 
     /** 判题任务交换机（direct） */
     @Bean

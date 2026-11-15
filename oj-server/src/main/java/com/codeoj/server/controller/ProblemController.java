@@ -35,10 +35,10 @@ public class ProblemController {
 
     /** 分页列表（关键词/难度筛选） */
     @GetMapping
-    public R<Page<Problem>> page(@RequestParam(required = false) String keyword,
-                                 @RequestParam(required = false) Integer difficulty,
-                                 @RequestParam(defaultValue = "1") long page,
-                                 @RequestParam(defaultValue = "10") long size,
+    public R<Page<Problem>> page(@RequestParam(name = "keyword", required = false) String keyword,
+                                 @RequestParam(name = "difficulty", required = false) Integer difficulty,
+                                 @RequestParam(name = "page", defaultValue = "1") long page,
+                                 @RequestParam(name = "size", defaultValue = "10") long size,
                                  @AuthenticationPrincipal LoginUser user) {
         boolean admin = user != null && user.isAdmin();
         return R.ok(problemService.page(keyword, difficulty, page, size, admin));
@@ -46,7 +46,7 @@ public class ProblemController {
 
     /** 题面、样例与限制 */
     @GetMapping("/{id}")
-    public R<Problem> detail(@PathVariable Long id) {
+    public R<Problem> detail(@PathVariable("id") Long id) {
         return R.ok(problemService.getById(id));
     }
 
@@ -58,14 +58,14 @@ public class ProblemController {
 
     @PutMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN')")
-    public R<Void> update(@PathVariable Long id, @RequestBody ProblemFormDTO form) {
+    public R<Void> update(@PathVariable("id") Long id, @RequestBody ProblemFormDTO form) {
         problemService.update(id, form);
         return R.ok();
     }
 
     @DeleteMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN')")
-    public R<Void> delete(@PathVariable Long id) {
+    public R<Void> delete(@PathVariable("id") Long id) {
         problemService.delete(id);
         return R.ok();
     }

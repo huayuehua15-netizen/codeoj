@@ -1,8 +1,12 @@
 package com.codeoj.server.config;
 
+import com.codeoj.common.result.R;
+import com.codeoj.common.result.ResultCode;
 import com.codeoj.server.security.JwtAuthFilter;
+import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.MediaType;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
@@ -40,8 +44,20 @@ public class SecurityConfig {
                 .requestMatchers("/ws/**").permitAll()
                 .requestMatchers("/api/admin/**").hasRole("ADMIN")
                 .anyRequest().authenticated())
+            // 未认证/无权限统一返回契约 JSON（docs/API.md §0.3：40100/40300）
+            .exceptionHandling(e -> e
+                .authenticationEntryPoint((req, resp, ex) -> writeJson(resp, ResultCode.UNAUTHORIZED))
+                .accessDeniedHandler((req, resp, ex) -> writeJson(resp, ResultCode.FORBIDDEN)))
             .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
         return http.build();
+    }
+
+    private static void writeJson(HttpServletResponse resp, ResultCode code) throws java.io.IOException {
+        resp.setStatus(HttpServletResponse.SC_OK);
+        resp.setContentType(MediaType.APPLICATION_JSON_VALUE);
+        resp.setCharacterEncoding("UTF-8");
+        resp.getWriter().write(
+                "{\"code\":" + code.getCode() + ",\"message\":\"" + code.getMessage() + "\",\"data\":null}");
     }
 
     @Bean

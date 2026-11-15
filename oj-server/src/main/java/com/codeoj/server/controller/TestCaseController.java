@@ -31,20 +31,20 @@ public class TestCaseController {
     /** 批量导入用例（论文表 4-7 POST /api/problems/{id}/testcases） */
     @PostMapping
     @PreAuthorize("hasRole('ADMIN')")
-    public R<Integer> batchImport(@PathVariable Long problemId,
+    public R<Integer> batchImport(@PathVariable("problemId") Long problemId,
                                   @RequestBody TestCaseImportDTO dto) {
         return R.ok(testCaseService.batchImport(problemId, dto));
     }
 
     @GetMapping
     @PreAuthorize("hasRole('ADMIN')")
-    public R<List<TestCase>> list(@PathVariable Long problemId) {
+    public R<List<TestCase>> list(@PathVariable("problemId") Long problemId) {
         return R.ok(testCaseService.listByProblem(problemId));
     }
 
     @DeleteMapping("/{caseId}")
     @PreAuthorize("hasRole('ADMIN')")
-    public R<Void> delete(@PathVariable Long problemId, @PathVariable Long caseId) {
+    public R<Void> delete(@PathVariable("problemId") Long problemId, @PathVariable("caseId") Long caseId) {
         testCaseService.delete(caseId);
         return R.ok();
     }

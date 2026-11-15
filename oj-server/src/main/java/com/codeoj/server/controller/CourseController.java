@@ -37,14 +37,14 @@ public class CourseController {
 
     @PutMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN')")
-    public R<Void> update(@PathVariable Long id, @RequestBody CourseFormDTO dto) {
+    public R<Void> update(@PathVariable("id") Long id, @RequestBody CourseFormDTO dto) {
         courseService.update(id, dto);
         return R.ok();
     }
 
     @DeleteMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN')")
-    public R<Void> delete(@PathVariable Long id) {
+    public R<Void> delete(@PathVariable("id") Long id) {
         courseService.delete(id);
         return R.ok();
     }
@@ -58,14 +58,14 @@ public class CourseController {
     /** 课程内题目分组 */
     @GetMapping("/{id}/problems")
     @PreAuthorize("hasRole('ADMIN')")
-    public R<?> problems(@PathVariable Long id) {
+    public R<?> problems(@PathVariable("id") Long id) {
         return R.ok(courseService.problems(id));
     }
 
     /** 班级完成情况统计 */
     @GetMapping("/{id}/completion")
     @PreAuthorize("hasRole('ADMIN')")
-    public R<?> completion(@PathVariable Long id) {
+    public R<?> completion(@PathVariable("id") Long id) {
         return R.ok(courseService.completion(id));
     }
 }

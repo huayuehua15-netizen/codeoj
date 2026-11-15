@@ -40,17 +40,17 @@ public class SubmissionController {
 
     /** 判题详情（用例级） */
     @GetMapping("/{id}")
-    public R<SubmissionDetailVO> detail(@PathVariable Long id,
+    public R<SubmissionDetailVO> detail(@PathVariable("id") Long id,
                                         @AuthenticationPrincipal LoginUser user) {
         return R.ok(submissionService.detail(id, user));
     }
 
     /** 提交记录：按题目/状态/时间筛选 */
     @GetMapping
-    public R<Page<SubmissionListItemVO>> page(@RequestParam(required = false) Long problemId,
-                                              @RequestParam(required = false) Integer status,
-                                              @RequestParam(defaultValue = "1") long page,
-                                              @RequestParam(defaultValue = "10") long size,
+    public R<Page<SubmissionListItemVO>> page(@RequestParam(name = "problemId", required = false) Long problemId,
+                                              @RequestParam(name = "status", required = false) Integer status,
+                                              @RequestParam(name = "page", defaultValue = "1") long page,
+                                              @RequestParam(name = "size", defaultValue = "10") long size,
                                               @AuthenticationPrincipal LoginUser user) {
         return R.ok(submissionService.pageMy(user, problemId, status, page, size));
     }
