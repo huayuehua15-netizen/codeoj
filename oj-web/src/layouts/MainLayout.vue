@@ -144,6 +144,29 @@ async function handleLogout() {
   outline: none;
   font-weight: 600;
   color: #303133;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 12px;
+  border-radius: 8px;
+  transition: background 0.15s var(--oj-ease), color 0.15s var(--oj-ease);
+}
+/* 下拉箭头：明确提示可点击展开菜单 */
+.username::after {
+  content: '';
+  display: inline-block;
+  border-left: 4px solid transparent;
+  border-right: 4px solid transparent;
+  border-top: 5px solid #909399;
+  transition: transform 0.2s var(--oj-ease), border-top-color 0.15s var(--oj-ease);
+}
+.username:hover {
+  background: var(--oj-primary-soft);
+  color: var(--oj-primary);
+}
+.username:hover::after {
+  border-top-color: var(--oj-primary);
+  transform: translateY(1px);
 }
 .main {
   padding: 0;

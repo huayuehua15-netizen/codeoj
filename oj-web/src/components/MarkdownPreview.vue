@@ -119,4 +119,63 @@ const rendered = computed(() => {
 .markdown-body :deep(strong) {
   font-weight: 700;
 }
+
+/* 嵌入式交互控件：让下拉框/输入框/按钮/折叠块在题面里一眼可识别 */
+.markdown-body :deep(select) {
+  appearance: auto;
+  padding: 6px 30px 6px 10px;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  background: #fff
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%232563eb' stroke-width='2.5'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E")
+    no-repeat right 10px center;
+  font-size: 14px;
+  color: var(--oj-text);
+  cursor: pointer;
+}
+.markdown-body :deep(select:hover) {
+  border-color: var(--oj-primary);
+}
+.markdown-body :deep(select:focus) {
+  outline: none;
+  border-color: var(--oj-primary);
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
+}
+.markdown-body :deep(input[type='text']),
+.markdown-body :deep(input:not([type])) {
+  padding: 6px 10px;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  font-size: 14px;
+}
+.markdown-body :deep(input:focus) {
+  outline: none;
+  border-color: var(--oj-primary);
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
+}
+.markdown-body :deep(button) {
+  padding: 6px 16px;
+  border: none;
+  border-radius: 8px;
+  background: var(--oj-primary);
+  color: #fff;
+  font-size: 14px;
+  cursor: pointer;
+}
+.markdown-body :deep(button:hover) {
+  filter: brightness(1.1);
+}
+.markdown-body :deep(details) {
+  margin: 10px 0;
+  border: 1px solid var(--oj-border);
+  border-radius: 8px;
+  padding: 8px 14px;
+  background: #f8fafc;
+}
+.markdown-body :deep(summary) {
+  color: var(--oj-primary);
+  font-weight: 600;
+  cursor: pointer;
+  user-select: none;
+}
 </style>
