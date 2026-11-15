@@ -22,9 +22,10 @@ import java.util.Map;
  * 判题引擎（论文 5.4）：按语言选择编译与运行方案，逐用例创建沙箱容器执行，
  * 比对输出（Fail-Fast：首个不匹配即停），汇总结果。
  * <p>
- * engine-mode 双模式（M1 联调基线设计）：
- * mock —— 无需 Docker，全部用例直接判 AC，用于打通"提交→入队→回写→推送"全链路；
- * real —— 真实沙箱判题（M2 实现），生产环境使用。
+ * engine-mode 三模式：
+ * mock  —— 全部判 AC，仅打通链路（无执行）；
+ * local —— 本机真实判题：宿主机真实编译运行（Java/Python），无 Docker 环境的演示选择；
+ * real  —— Docker 沙箱判题（M2，A 侧实现），生产环境使用。
  */
 @Component
 public class JudgeEngine {
@@ -33,15 +34,18 @@ public class JudgeEngine {
 
     private final DockerSandbox sandbox;
     private final OutputComparator comparator;
+    private final com.codeoj.judge.core.LocalJudgeService localJudgeService;
     private final String engineMode;
     private final Map<String, LanguageStrategy> strategies = new HashMap<>();
 
     public JudgeEngine(DockerSandbox sandbox,
                        OutputComparator comparator,
-                       @Value("${oj.judge.engine-mode:mock}") String engineMode,
+                       com.codeoj.judge.core.LocalJudgeService localJudgeService,
+                       @Value("${oj.judge.engine-mode:local}") String engineMode,
                        CStrategy c, CppStrategy cpp, JavaStrategy java, Python3Strategy python3) {
         this.sandbox = sandbox;
         this.comparator = comparator;
+        this.localJudgeService = localJudgeService;
         this.engineMode = engineMode;
         strategies.put("c", c);
         strategies.put("cpp", cpp);
@@ -60,10 +64,11 @@ public class JudgeEngine {
         log.info("judging submission {} ({}), mode={}, {} cases", task.getSubmissionId(),
                 task.getLanguage(), engineMode, task.getCases().size());
 
-        if ("mock".equals(engineMode)) {
-            return mockResult(task);
-        }
-        return realRun(task, strategy);
+        return switch (engineMode) {
+            case "mock" -> mockResult(task);
+            case "local" -> localJudgeService.localJudge(task);
+            default -> realRun(task, strategy);
+        };
     }
 
     /**
