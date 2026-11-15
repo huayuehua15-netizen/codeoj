@@ -9,9 +9,9 @@ export interface LoginVO {
   createdAt?: string
 }
 
-/** 认证接口（论文表 4-7） */
+/** 认证接口（论文表 4-7）。注册不自动登录，返回空 data */
 export function register(data: { username: string; password: string; email?: string }) {
-  return http.post<never, LoginVO>('/api/auth/register', data)
+  return http.post<never, void>('/api/auth/register', data)
 }
 
 export function login(data: { username: string; password: string }) {

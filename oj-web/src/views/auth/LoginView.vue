@@ -34,7 +34,8 @@ const router = useRouter()
 const route = useRoute()
 const userStore = useUserStore()
 
-const form = reactive({ username: '', password: '' })
+// 注册成功跳转而来时预填用户名（只差密码即可登录）
+const form = reactive({ username: (route.query.username as string) || '', password: '' })
 const loading = ref(false)
 
 async function handleLogin() {

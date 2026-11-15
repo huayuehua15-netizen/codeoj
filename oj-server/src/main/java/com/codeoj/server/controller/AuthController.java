@@ -39,9 +39,11 @@ public class AuthController {
         this.blacklistService = blacklistService;
     }
 
+    /** 注册：成功返回 200（不签发令牌——注册后应引导用户走登录流程） */
     @PostMapping("/register")
-    public R<LoginVO> register(@Valid @RequestBody RegisterDTO dto, HttpServletRequest request) {
-        return R.ok(authService.register(dto, clientIp(request)));
+    public R<Void> register(@Valid @RequestBody RegisterDTO dto, HttpServletRequest request) {
+        authService.register(dto, clientIp(request));
+        return R.ok();
     }
 
     @PostMapping("/login")

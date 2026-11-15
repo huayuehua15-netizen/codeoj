@@ -62,9 +62,7 @@
 
 ## 1. 认证模块 `/api/auth`
 
-### 1.1 注册 `POST /api/auth/register`（公开）
-
-请求体：
+### 1.1 注册 `POST /api/auth/register`（公开）——成功返回 `data: null`
 
 ```json
 {
@@ -84,17 +82,9 @@
 
 限流：按客户端 IP 滑动窗口 **10 次/小时**，防脚本批量刷号（正常人工注册远用不完；超限返回 42900。计数与过期由 Redis Lua 原子执行，机制同论文 4.7）。
 
-响应 `data`（LoginVO，注册即登录）：
+响应 `data`：`null`（**注册不自动登录**——成功后前端跳转登录页，携带用户名预填）。
 
-```json
-{
-  "token": "eyJhbGciOi...",
-  "userId": 1,
-  "username": "zhangsan",
-  "nickname": "张三",
-  "role": 0
-}
-```
+> 设计说明：注册与登录分离，注册接口不签发 JWT。
 
 ### 1.2 登录 `POST /api/auth/login`（公开）
 

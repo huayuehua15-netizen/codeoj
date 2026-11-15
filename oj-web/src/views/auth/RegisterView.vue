@@ -30,11 +30,8 @@ import { reactive, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { register } from '@/api/auth'
-import { useUserStore } from '@/stores/user'
-import { connectWs } from '@/api/ws'
 
 const router = useRouter()
-const userStore = useUserStore()
 
 const form = reactive({ username: '', email: '', password: '' })
 const loading = ref(false)
@@ -46,11 +43,10 @@ async function handleRegister() {
   }
   loading.value = true
   try {
-    const data = await register(form)
-    userStore.setLogin(data)
-    connectWs()
-    ElMessage.success('注册成功，欢迎加入 CodeOJ')
-    router.push('/problems')
+    await register(form)
+    ElMessage.success('注册成功，请登录')
+    // 注册不自动登录：携带用户名跳转登录页，用户输入密码完成登录
+    router.push({ name: 'login', query: { username: form.username } })
   } finally {
     loading.value = false
   }
