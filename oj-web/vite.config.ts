@@ -5,6 +5,10 @@ import { fileURLToPath, URL } from 'node:url'
 // 前端构建配置（论文 5.1：Vite 5）
 export default defineConfig({
   plugins: [vue()],
+  // sockjs-client 引用 Node 的 global 全局量，浏览器端需映射到 globalThis
+  define: {
+    global: 'globalThis',
+  },
   resolve: {
     alias: {
       '@': fileURLToPath(new URL('./src', import.meta.url)),
