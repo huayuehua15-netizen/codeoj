@@ -1,5 +1,23 @@
 <template>
   <div class="page-container">
+    <div class="stat-banner card">
+      <div class="stat-item">
+        <span class="stat-num">{{ total }}</span>
+        <span class="stat-label">题目总数</span>
+      </div>
+      <div class="stat-divider"></div>
+      <div class="stat-item">
+        <span class="stat-num">{{ lbTotal }}</span>
+        <span class="stat-label">榜上解题者</span>
+      </div>
+      <div class="stat-divider"></div>
+      <div class="stat-item">
+        <span class="stat-num">{{ totalSubmits }}</span>
+        <span class="stat-label">累计提交</span>
+      </div>
+      <div class="stat-slogan">写出你的第一行代码，看看能过几个测试用例</div>
+    </div>
+
     <div class="card">
       <div class="toolbar">
         <el-input v-model="keyword" placeholder="按关键词搜索题目" style="width: 240px" clearable @keyup.enter="load" />
@@ -12,7 +30,11 @@
       </div>
 
       <el-table :data="problems" v-loading="loading">
-        <el-table-column prop="id" label="#" width="70" />
+        <el-table-column prop="id" label="#" width="70">
+          <template #default="{ row }">
+            <span class="pid-badge">{{ row.id }}</span>
+          </template>
+        </el-table-column>
         <el-table-column label="题目" min-width="300">
           <template #default="{ row }">
             <router-link :to="`/problems/${row.id}`" class="title-link">{{ row.title }}</router-link>
@@ -54,6 +76,7 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue'
 import { pageProblems, type Problem } from '@/api/problem'
+import { getLeaderboard } from '@/api/leaderboard'
 import { DIFFICULTY_MAP } from '@/utils/status'
 
 const problems = ref<Problem[]>([])
@@ -80,6 +103,9 @@ function rateColor(rate: number) {
   return '#f56c6c'
 }
 
+const lbTotal = ref(0)
+const totalSubmits = ref(0)
+
 async function load() {
   loading.value = true
   try {
@@ -91,15 +117,57 @@ async function load() {
     })
     problems.value = data.records || []
     total.value = data.total
+    // 横幅统计：榜上人数 + 本页题目累计提交数（现成接口聚合，呈现层）
+    totalSubmits.value = (data.records || []).reduce((sum, p) => sum + (p.submitCount || 0), 0)
   } finally {
     loading.value = false
   }
 }
 
-onMounted(load)
+onMounted(async () => {
+  load()
+  try {
+    const lb = await getLeaderboard({ page: 1, size: 1 })
+    lbTotal.value = lb.total
+  } catch { /* 横幅统计失败不影响列表 */ }
+})
 </script>
 
 <style scoped>
+.stat-banner {
+  display: flex;
+  align-items: center;
+  gap: 28px;
+  padding: 20px 28px;
+  margin-bottom: 16px;
+  background: linear-gradient(135deg, #1e3a8a 0%, #2563eb 60%, #3b82f6 100%);
+  color: #fff;
+}
+.stat-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.stat-num {
+  font-size: 26px;
+  font-weight: 800;
+}
+.stat-label {
+  font-size: 12px;
+  opacity: 0.85;
+  margin-top: 2px;
+}
+.stat-divider {
+  width: 1px;
+  height: 36px;
+  background: rgba(255, 255, 255, 0.3);
+}
+.stat-slogan {
+  margin-left: auto;
+  font-size: 13px;
+  opacity: 0.9;
+  letter-spacing: 1px;
+}
 .toolbar {
   display: flex;
   gap: 12px;
@@ -127,5 +195,18 @@ onMounted(load)
   font-size: 12px;
   color: #606266;
   white-space: nowrap;
+}
+.pid-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 30px;
+  height: 24px;
+  padding: 0 6px;
+  border-radius: 6px;
+  background: #f0f7ff;
+  color: #2563eb;
+  font-weight: 700;
+  font-size: 13px;
 }
 </style>

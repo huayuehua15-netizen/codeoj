@@ -39,17 +39,23 @@
         </div>
         <CodeEditor v-model="code" :language="language" />
 
-        <!-- 判题状态机（论文 5.7：IDLE→SUBMITTING→QUEUED→JUDGING→FINISHED） -->
+        <!-- 判题状态机（论文 5.7：IDLE→SUBMITTING→QUEUED→JUDGING→FINISHED）步骤条呈现 -->
         <div v-if="judgeState !== 'IDLE'" class="judge-status">
-          <el-alert
-            v-if="judgeState === 'QUEUED' || judgeState === 'JUDGING'"
-            :title="judgeState === 'QUEUED' ? '排队中…' : '判题中…'"
-            type="info"
-            :closable="false"
-            show-icon
-          />
+          <el-steps
+            v-if="judgeState !== 'FINISHED'"
+            :active="stepIndex"
+            align-center
+            class="judge-steps"
+            finish-status="success"
+            :process-status="judgeState === 'JUDGING' ? 'process' : 'wait'"
+          >
+            <el-step title="提交代码" />
+            <el-step title="排队中" />
+            <el-step title="判题中" />
+            <el-step title="出结果" />
+          </el-steps>
           <el-result
-            v-else-if="judgeState === 'FINISHED' && result"
+            v-else-if="result"
             :icon="resultIcon"
             :title="statusLabel(result.status)"
             :sub-title="resultSubTitle"
@@ -58,6 +64,7 @@
               <el-button type="primary" @click="$router.push(`/submissions/${result.submissionId}`)">
                 查看判题详情
               </el-button>
+              <el-button @click="resetJudge">再提交一次</el-button>
             </template>
           </el-result>
         </div>
@@ -111,6 +118,23 @@ const resultSubTitle = computed(() => {
   if (s.memoryUsedKb != null) parts.push(`内存 ${s.memoryUsedKb}KB`)
   return parts.join(' ｜ ')
 })
+
+/** 步骤条进度：SUBMITTING=1(提交完成) QUEUED=2 JUDGING=3 FINISHED=4 */
+const stepIndex = computed(() => {
+  switch (judgeState.value) {
+    case 'SUBMITTING': return 1
+    case 'QUEUED': return 2
+    case 'JUDGING': return 3
+    default: return 4
+  }
+})
+
+/** 再提交一次：重置状态机与代码（保留用户编辑） */
+function resetJudge() {
+  judgeState.value = 'IDLE'
+  result.value = undefined
+  currentSubmissionId.value = undefined
+}
 
 function onLanguageChange(lang: string) {
   // 论文 5.7：切换语言载入对应模板代码。
@@ -270,5 +294,8 @@ load()
 }
 .judge-status {
   margin-top: 12px;
+}
+.judge-steps {
+  padding: 8px 4px 0;
 }
 </style>
