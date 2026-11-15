@@ -99,6 +99,8 @@ public class CourseServiceImpl implements CourseService {
 
     @Override
     public List<CompletionItem> completion(Long courseId) {
+        // 课程存在性校验（不存在的课程返回 40400 而非空列表）
+        getById(courseId);
         // 班级完成情况：每题提交人数/通过人数（去重用户，论文 3.3 / 测试 F-15）
         List<CourseMapper.CompletionRow> rows = courseMapper.completionStats(courseId);
         return rows.stream()

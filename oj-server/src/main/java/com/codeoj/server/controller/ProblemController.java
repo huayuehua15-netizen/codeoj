@@ -45,10 +45,16 @@ public class ProblemController {
         return R.ok(problemService.page(keyword, difficulty, page, size, admin));
     }
 
-    /** 题面、样例与限制 */
+    /** 题面、样例与限制；已下架题目仅管理员可见（与列表过滤行为一致） */
     @GetMapping("/{id}")
-    public R<Problem> detail(@PathVariable("id") Long id) {
-        return R.ok(problemService.getById(id));
+    public R<Problem> detail(@PathVariable(name = "id") Long id,
+                             @AuthenticationPrincipal LoginUser user) {
+        Problem problem = problemService.getById(id);
+        if (!Boolean.TRUE.equals(problem.getEnabled())
+                && (user == null || !user.isAdmin())) {
+            throw new BizException(ResultCode.PROBLEM_UNAVAILABLE);
+        }
+        return R.ok(problem);
     }
 
     @PostMapping
