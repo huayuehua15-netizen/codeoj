@@ -16,8 +16,15 @@
         </el-menu>
         <div class="user-area">
           <template v-if="userStore.isLoggedIn">
-            <span class="nickname">{{ userStore.username }}</span>
-            <el-button link type="danger" @click="handleLogout">退出</el-button>
+            <el-dropdown trigger="click" @command="handleCommand">
+              <span class="username">{{ userStore.username }}</span>
+              <template #dropdown>
+                <el-dropdown-menu>
+                  <el-dropdown-item command="profile">个人中心</el-dropdown-item>
+                  <el-dropdown-item command="logout" divided>退出登录</el-dropdown-item>
+                </el-dropdown-menu>
+              </template>
+            </el-dropdown>
           </template>
           <template v-else>
             <el-button link type="primary" @click="$router.push('/login')">登录</el-button>
@@ -56,6 +63,14 @@ onMounted(() => {
 onUnmounted(() => {
   disconnectWs()
 })
+
+function handleCommand(command: string) {
+  if (command === 'profile') {
+    router.push('/profile')
+  } else if (command === 'logout') {
+    handleLogout()
+  }
+}
 
 async function handleLogout() {
   try {
@@ -96,7 +111,7 @@ async function handleLogout() {
   flex: 1;
   border-bottom: none;
 }
-.nickname {
+.username {
   margin-right: 8px;
 }
 .main {

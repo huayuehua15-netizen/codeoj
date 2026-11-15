@@ -64,7 +64,10 @@ public class JudgeConsumer {
                 channel.basicAck(msg.getMessageProperties().getDeliveryTag(), false);
                 return;
             }
-            JudgeTask task = taskLoader.load(sid);                   // 代码 + 用例 + 限制
+            JudgeTask loaded = taskLoader.load(sid);
+            // 推送阶段二：JUDGING（论文 4.5 三阶段推送，经事件队列由 oj-server 转推）
+            pushEventPublisher.publishJudging(sid, loaded.getUserId(), loaded.getProblemId());
+            JudgeTask task = loaded;
             JudgeResult result = semaphoreGuard.run(() -> {
                 try {
                     return engine.run(task);                          // 信号量内执行

@@ -4,7 +4,9 @@ export interface LoginVO {
   token: string
   userId: number
   username: string
+  email?: string
   role: number
+  createdAt?: string
 }
 
 /** 认证接口（论文表 4-7） */
@@ -21,5 +23,14 @@ export function logout() {
 }
 
 export function getUserInfo() {
-  return http.get<never, { userId: number; username: string; role: number }>('/api/auth/info')
+  return http.get<never, LoginVO>('/api/auth/info')
+}
+
+/** 个人信息维护（论文表 3-1）：邮箱修改与密码修改 */
+export function updateEmail(email: string) {
+  return http.put('/api/auth/info', { email })
+}
+
+export function changePassword(oldPassword: string, newPassword: string) {
+  return http.put('/api/auth/password', { oldPassword, newPassword })
 }

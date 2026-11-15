@@ -20,4 +20,10 @@ public interface AuthService {
     void logout(LoginUser user);
 
     LoginVO getUserInfo(LoginUser user);
+
+    /** 邮箱修改（论文表 3-1 个人信息维护） */
+    void updateEmail(LoginUser user, String email);
+
+    /** 密码修改：验证旧密码，成功后调用方应使当前令牌失效 */
+    void changePassword(LoginUser user, String oldPassword, String newPassword);
 }

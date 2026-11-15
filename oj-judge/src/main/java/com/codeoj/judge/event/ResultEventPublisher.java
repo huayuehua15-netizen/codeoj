@@ -2,6 +2,7 @@ package com.codeoj.judge.event;
 
 import com.codeoj.common.constant.MqConstants;
 import com.codeoj.common.mq.JudgePushEvent;
+import com.codeoj.common.enums.SubmissionStatus;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
@@ -34,6 +35,19 @@ public class ResultEventPublisher {
                 MqConstants.JUDGE_EVENT_EXCHANGE,
                 MqConstants.JUDGE_EVENT_ROUTING_KEY,
                 event);
+    }
+
+    /** 发布"判题中"阶段事件（论文 4.5 三阶段推送：JUDGING） */
+    public void publishJudging(long submissionId, long userId, long problemId) {
+        rabbitTemplate.convertAndSend(
+                MqConstants.JUDGE_EVENT_EXCHANGE,
+                MqConstants.JUDGE_EVENT_ROUTING_KEY,
+                JudgePushEvent.builder()
+                        .submissionId(submissionId)
+                        .userId(userId)
+                        .problemId(problemId)
+                        .status(SubmissionStatus.JUDGING)
+                        .build());
     }
 
     /** 事件消息 JSON 转换器（oj-server 侧同名 bean 幂等声明） */

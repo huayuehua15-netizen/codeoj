@@ -52,6 +52,7 @@ public class SubmissionServiceImpl implements SubmissionService {
     private final RateLimiter rateLimiter;
     private final IdempotentLockService lockService;
     private final JudgeDispatcher judgeDispatcher;
+    private final com.codeoj.server.ws.PushEventPublisher pushEventPublisher;
 
     @Value("${oj.submit.max-code-bytes:65536}")
     private int maxCodeBytes;
@@ -64,13 +65,15 @@ public class SubmissionServiceImpl implements SubmissionService {
                                  JudgeCaseMapper judgeCaseMapper,
                                  RateLimiter rateLimiter,
                                  IdempotentLockService lockService,
-                                 JudgeDispatcher judgeDispatcher) {
+                                 JudgeDispatcher judgeDispatcher,
+                                 com.codeoj.server.ws.PushEventPublisher pushEventPublisher) {
         this.submissionMapper = submissionMapper;
         this.problemMapper = problemMapper;
         this.judgeCaseMapper = judgeCaseMapper;
         this.rateLimiter = rateLimiter;
         this.lockService = lockService;
         this.judgeDispatcher = judgeDispatcher;
+        this.pushEventPublisher = pushEventPublisher;
     }
 
     @Override
@@ -88,6 +91,8 @@ public class SubmissionServiceImpl implements SubmissionService {
         long sid = createQueued(user.userId(), dto);
         // 发布消息（仅提交 ID）；应在事务提交后发布，此处 createQueued 已独立提交
         judgeDispatcher.publish(sid);
+        // 推送阶段一：JUDGE_QUEUED（论文 4.5 三阶段推送）
+        pushEventPublisher.publishQueued(user.userId(), sid);
         return SubmitVO.of(sid, SubmissionStatus.QUEUING);
     }
 

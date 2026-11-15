@@ -1,8 +1,10 @@
 package com.codeoj.server.controller;
 
 import com.codeoj.common.result.R;
+import com.codeoj.server.dto.ChangePasswordDTO;
 import com.codeoj.server.dto.LoginDTO;
 import com.codeoj.server.dto.RegisterDTO;
+import com.codeoj.server.dto.UpdateEmailDTO;
 import com.codeoj.server.security.JwtUtil;
 import com.codeoj.server.security.LoginUser;
 import com.codeoj.server.security.TokenBlacklistService;
@@ -13,6 +15,7 @@ import jakarta.validation.Valid;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -72,5 +75,27 @@ public class AuthController {
     @GetMapping("/info")
     public R<LoginVO> info(@AuthenticationPrincipal LoginUser user) {
         return R.ok(authService.getUserInfo(user));
+    }
+
+    /** 邮箱修改（论文表 3-1 个人信息维护） */
+    @PutMapping("/info")
+    public R<Void> updateEmail(@Valid @RequestBody UpdateEmailDTO dto,
+                               @AuthenticationPrincipal LoginUser user) {
+        authService.updateEmail(user, dto.getEmail());
+        return R.ok();
+    }
+
+    /** 密码修改：验证旧密码，成功后当前令牌立即失效（黑名单），前端跳转重新登录 */
+    @PutMapping("/password")
+    public R<Void> changePassword(@Valid @RequestBody ChangePasswordDTO dto,
+                                  @AuthenticationPrincipal LoginUser user,
+                                  @RequestHeader(value = "Authorization", required = false) String authHeader) {
+        authService.changePassword(user, dto.getOldPassword(), dto.getNewPassword());
+        if (authHeader != null && authHeader.startsWith("Bearer ")) {
+            String token = authHeader.substring(7);
+            jwtUtil.tryParse(token).ifPresent(claims ->
+                    blacklistService.add(claims.getId(), jwtUtil.remainingMs(token)));
+        }
+        return R.ok();
     }
 }

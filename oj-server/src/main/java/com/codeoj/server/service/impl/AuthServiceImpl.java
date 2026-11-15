@@ -109,7 +109,37 @@ public class AuthServiceImpl implements AuthService {
         return LoginVO.builder()
                 .userId(u.getId())
                 .username(u.getUsername())
+                .email(u.getEmail())
                 .role(u.getRole())
+                .createdAt(u.getCreatedAt())
                 .build();
+    }
+
+    @Override
+    public void updateEmail(LoginUser user, String email) {
+        // 个人信息维护（论文表 3-1）：仅邮箱可改，用户名与角色不可变更
+        User u = userMapper.selectById(user.userId());
+        if (u == null) {
+            throw new BizException(ResultCode.NOT_FOUND);
+        }
+        u.setEmail(email);
+        u.setUpdatedAt(java.time.LocalDateTime.now());
+        userMapper.updateById(u);
+        log.info("email updated, userId={}", user.userId());
+    }
+
+    @Override
+    public void changePassword(LoginUser user, String oldPassword, String newPassword) {
+        User u = userMapper.selectById(user.userId());
+        if (u == null) {
+            throw new BizException(ResultCode.NOT_FOUND);
+        }
+        if (!passwordEncoder.matches(oldPassword, u.getPassword())) {
+            throw new BizException(ResultCode.BAD_REQUEST.getCode(), "原密码错误");
+        }
+        u.setPassword(passwordEncoder.encode(newPassword));
+        u.setUpdatedAt(java.time.LocalDateTime.now());
+        userMapper.updateById(u);
+        log.info("password changed, userId={}", user.userId());
     }
 }

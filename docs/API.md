@@ -115,7 +115,35 @@
 
 ### 1.4 当前用户信息 `GET /api/auth/info`（登录）
 
-响应 `data`：同 LoginVO（无 token 字段值时可为空，前端只取 userId/username/nickname/role）。
+响应 `data`（LoginVO）：
+
+```json
+{
+  "token": null,
+  "userId": 1,
+  "username": "张三丰",
+  "email": "zhangsan@example.com",
+  "role": 0,
+  "createdAt": "2026-11-15 08:00:00"
+}
+```
+
+### 1.5 邮箱修改 `PUT /api/auth/info`（登录）
+
+请求体：`{ "email": "new@example.com" }`（@Valid 校验邮箱格式）。响应 `data: null`。
+
+> 个人信息维护（论文表 3-1）：用户名与角色不可变更，仅邮箱可改。
+
+### 1.6 密码修改 `PUT /api/auth/password`（登录）
+
+请求体：`{ "oldPassword": "…", "newPassword": "…" }`
+
+| 校验 | 说明 |
+|---|---|
+| oldPassword | 与库中 BCrypt 哈希比对，不符返回 40000"原密码错误" |
+| newPassword | 6-32 位 |
+
+**安全语义**：修改成功后当前令牌立即加入 Redis 黑名单失效（论文 4.7），前端应跳转重新登录。
 
 ---
 

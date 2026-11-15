@@ -141,10 +141,12 @@ async function handleSubmit() {
   }
 }
 
-// WebSocket 订阅（论文 5.5）：收到 JUDGE_FINISHED 后更新状态
+// WebSocket 订阅（论文 5.5）：三阶段 QUEUED/JUDGING/FINISHED 幂等推进状态机
 const unsubscribe = onJudgePush((payload) => {
   if (payload.data.submissionId !== currentSubmissionId.value) return
-  if (payload.type === 'JUDGING') {
+  if (payload.type === 'JUDGE_QUEUED') {
+    if (judgeState.value === 'SUBMITTING') judgeState.value = 'QUEUED'
+  } else if (payload.type === 'JUDGING') {
     judgeState.value = 'JUDGING'
   } else if (payload.type === 'JUDGE_FINISHED' && payload.data.status != null) {
     judgeState.value = 'FINISHED'

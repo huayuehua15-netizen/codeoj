@@ -61,6 +61,12 @@ const router = createRouter({
           meta: { title: '排行榜' },
         },
         {
+          path: 'profile',
+          name: 'profile',
+          component: () => import('@/views/auth/ProfileView.vue'),
+          meta: { title: '个人中心', requiresAuth: true },
+        },
+        {
           path: 'admin/problems',
           name: 'admin-problems',
           component: () => import('@/views/admin/ProblemAdminView.vue'),
