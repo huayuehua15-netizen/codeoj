@@ -158,7 +158,7 @@ public class SubmissionServiceImpl implements SubmissionService {
 
     @Override
     public Page<SubmissionListItemVO> pageMy(LoginUser user, Long problemId, Integer status,
-                                             long page, long size) {
+                                             LocalDateTime begin, LocalDateTime end, long page, long size) {
         LambdaQueryWrapper<Submission> wrapper = new LambdaQueryWrapper<>();
         wrapper.eq(Submission::getUserId, user.userId());
         if (problemId != null) {
@@ -166,6 +166,13 @@ public class SubmissionServiceImpl implements SubmissionService {
         }
         if (status != null) {
             wrapper.eq(Submission::getStatus, status);
+        }
+        // 时间筛选（论文 3.3）：提交时间落在 [begin, end]
+        if (begin != null) {
+            wrapper.ge(Submission::getCreatedAt, begin);
+        }
+        if (end != null) {
+            wrapper.le(Submission::getCreatedAt, end);
         }
         wrapper.orderByDesc(Submission::getId);
         Page<Submission> result = submissionMapper.selectPage(new Page<>(page, size), wrapper);

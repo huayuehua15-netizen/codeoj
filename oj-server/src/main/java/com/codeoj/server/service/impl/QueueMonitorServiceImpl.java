@@ -14,6 +14,7 @@ import org.springframework.stereotype.Service;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
+import java.util.Set;
 
 /**
  * 运维监控实现（骨架：队列积压量经 Redis 缓存 30s，论文表 4-6 oj:queue:backlog）。
@@ -40,7 +41,24 @@ public class QueueMonitorServiceImpl implements QueueMonitorService {
                 .ge(Submission::getJudgedAt, LocalDate.now().atStartOfDay())
                 .ne(Submission::getStatus, SubmissionStatus.QUEUING.getCode())
                 .ne(Submission::getStatus, SubmissionStatus.JUDGING.getCode()));
-        return new QueueStatusVO(backlog, judgedTodayCount == null ? 0 : judgedTodayCount, 0, null);
+        return new QueueStatusVO(backlog, judgedTodayCount == null ? 0 : judgedTodayCount,
+                onlineJudgeInstances(), java.time.format.DateTimeFormatter.ISO_INSTANT
+                        .format(java.time.Instant.now()));
+    }
+
+    /** 在线判题实例数：SCAN oj:judge:instance:* 心跳键（TTL 30s，掉线自动消失） */
+    private int onlineJudgeInstances() {
+        Set<String> keys = redis.execute((org.springframework.data.redis.core.RedisCallback<Set<String>>) conn -> {
+            Set<String> result = new java.util.HashSet<>();
+            try (var cursor = conn.scan(org.springframework.data.redis.core.ScanOptions
+                    .scanOptions().match("oj:judge:instance:*").count(100).build())) {
+                while (cursor.hasNext()) {
+                    result.add(new String(cursor.next(), java.nio.charset.StandardCharsets.UTF_8));
+                }
+            }
+            return result;
+        });
+        return keys == null ? 0 : keys.size();
     }
 
     /** 队列积压量：优先 Redis 缓存（TTL 30s），未命中时查询 RabbitMQ 并回填 */

@@ -26,6 +26,9 @@ public final class RedisKeys {
     /** 队列积压量缓存（STRING，30 s，运维展示） */
     public static final String QUEUE_BACKLOG = "oj:queue:backlog";
 
+    /** 判题实例心跳（STRING，TTL 30 s，key 后缀为实例 UUID），运维统计在线实例数 */
+    public static final String JUDGE_INSTANCE = "oj:judge:instance:%s";
+
     public static String statsProblem(long problemId) {
         return String.format(STATS_PROBLEM, problemId);
     }

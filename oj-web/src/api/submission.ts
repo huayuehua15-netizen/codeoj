@@ -26,7 +26,14 @@ export function getSubmission(id: number | string) {
   return http.get<never, SubmissionDetail>(`/api/submissions/${id}`)
 }
 
-export function pageSubmissions(params: { problemId?: number; status?: number; page: number; size: number }) {
+export function pageSubmissions(params: {
+  problemId?: number
+  status?: number
+  begin?: string
+  end?: string
+  page: number
+  size: number
+}) {
   return http.get<never, { records: SubmissionDetail[]; total: number }>('/api/submissions', { params })
 }
 

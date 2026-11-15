@@ -64,4 +64,27 @@ public interface SubmissionMapper extends BaseMapper<Submission> {
             return acceptedCount;
         }
     }
+
+    /**
+     * 排行榜对账数据源（论文 5.6）：每个用户的 AC 题目数（去重题目）。
+     */
+    @Select("SELECT s.user_id AS userId, COUNT(DISTINCT s.problem_id) AS acCount " +
+            "  FROM submission s WHERE s.status = 2 GROUP BY s.user_id")
+    List<AcCountRow> acCountByUser();
+
+    /**
+     * 排行榜对账聚合行。
+     */
+    class AcCountRow {
+        private Long userId;
+        private Long acCount;
+
+        public Long getUserId() {
+            return userId;
+        }
+
+        public Long getAcCount() {
+            return acCount;
+        }
+    }
 }

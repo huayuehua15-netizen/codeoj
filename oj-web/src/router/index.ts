@@ -92,6 +92,8 @@ const router = createRouter({
         },
       ],
     },
+    // 404 兜底：未匹配路由重定向回题目列表
+    { path: '/:pathMatch(.*)*', redirect: '/problems' },
   ],
 })
 

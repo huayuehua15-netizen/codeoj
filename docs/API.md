@@ -321,9 +321,9 @@ Query 参数：
 
 > `code` 字段仅本人/管理员响应中返回；`status` 取值见 [CONTRACT.md 状态机](./CONTRACT.md#2-判题状态机论文表-4-8)。
 
-### 4.3 提交记录分页 `GET /api/submissions`（登录）⚠️ 实现中
+### 4.3 提交记录分页 `GET /api/submissions`（登录）
 
-Query 参数：`problemId`、`status`（0-8）、`page`、`size`。
+Query 参数：`problemId`、`status`（0-8）、`begin`/`end`（ISO 时间范围，按提交时间筛选，论文 3.3"按题目/状态/时间筛选"）、`page`、`size`。
 
 响应 `data.records[]`（SubmissionListItemVO，不含 code）：
 
@@ -384,10 +384,10 @@ Query 参数：`page`（默认 1）、`size`（默认 20）。
 响应 `data`（QueueStatusVO，论文表 3-3 运维监控）：
 
 ```json
-{ "backlog": 5, "judgedToday": 128, "judgeInstances": 2, "cachedAt": "2026-11-13 08:10:00" }
+{ "backlog": 5, "judgedToday": 128, "judgeInstances": 2, "cachedAt": "2026-11-13T08:10:00Z" }
 ```
 
-`backlog` 为 RabbitMQ `oj.judge.queue` 积压量（Redis 缓存 30s）；`judgeInstances` 判题实例数（第二阶段实现心跳统计，当前为 0）。
+`backlog` 为 RabbitMQ `oj.judge.queue` 积压量（Redis 缓存 30s）；`judgeInstances` 为在线判题实例数——oj-judge 每 20s 向 Redis 写心跳键（TTL 30s，掉线自动消失），`--scale oj-judge=4` 扩容后自动可见。
 
 ### 6.2 课程实验 `/api/admin/courses`（管理员）
 
@@ -484,3 +484,4 @@ Query 参数：`page`（默认 1）、`size`（默认 20）。
 | 日期 | 版本 | 变更内容 | 提出人 |
 |---|---|---|---|
 | 2026-11-13 | v1.0 | 骨架阶段定稿 | — |
+| 2026-11-15 | v1.1 | 个人信息维护接口（1.5/1.6）、提交记录时间筛选（4.3）、注册/登录 IP 限流、昵称字段移除、样例编辑器与 XSS 净化 | 成员 B |

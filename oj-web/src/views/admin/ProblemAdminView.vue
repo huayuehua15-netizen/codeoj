@@ -2,7 +2,16 @@
   <div class="page-container">
     <div class="card">
       <div class="toolbar">
-        <el-button type="primary" @click="dialogVisible = true">新建题目</el-button>
+        <el-input
+          v-model="keyword"
+          placeholder="按标题搜索"
+          style="width: 220px"
+          clearable
+          @keyup.enter="load"
+          @clear="load"
+        />
+        <el-button @click="load">搜索</el-button>
+        <el-button type="primary" @click="openCreate">新建题目</el-button>
       </div>
       <el-table :data="problems" v-loading="loading">
         <el-table-column prop="id" label="#" width="70" />
@@ -57,6 +66,18 @@
               </div>
             </div>
           </el-form-item>
+          <el-form-item label="样例">
+            <div class="samples-editor">
+              <div v-for="(s, i) in form.samples" :key="i" class="sample-row">
+                <el-input v-model="s.input" type="textarea" :rows="2" placeholder="样例输入" />
+                <el-input v-model="s.output" type="textarea" :rows="2" placeholder="样例输出" />
+                <el-button link type="danger" @click="form.samples.splice(i, 1)">删除</el-button>
+              </div>
+              <el-button size="small" @click="form.samples.push({ input: '', output: '' })">
+                + 添加样例
+              </el-button>
+            </div>
+          </el-form-item>
           <el-form-item label="语言">
             <el-checkbox-group v-model="form.languages">
               <el-checkbox value="c">C</el-checkbox>
@@ -83,6 +104,7 @@ import { pageProblems, createProblem, updateProblem, deleteProblem, type Problem
 import MarkdownPreview from '@/components/MarkdownPreview.vue'
 
 const problems = ref<Problem[]>([])
+const keyword = ref('')
 const page = ref(1)
 const size = ref(10)
 const total = ref(0)
@@ -97,6 +119,7 @@ const form = reactive({
   timeLimitMs: 1000,
   memoryLimitMb: 256,
   description: '',
+  samples: [] as { input: string; output: string }[],
   languages: ['c', 'cpp', 'java', 'python3'] as string[],
   enabled: true,
 })
@@ -104,12 +127,27 @@ const form = reactive({
 async function load() {
   loading.value = true
   try {
-    const data = await pageProblems({ page: page.value, size: size.value })
+    const data = await pageProblems({ keyword: keyword.value || undefined, page: page.value, size: size.value })
     problems.value = data.records || []
     total.value = data.total
   } finally {
     loading.value = false
   }
+}
+
+function openCreate() {
+  editingId.value = undefined
+  Object.assign(form, {
+    title: '',
+    difficulty: 1,
+    timeLimitMs: 1000,
+    memoryLimitMb: 256,
+    description: '',
+    samples: [],
+    languages: ['c', 'cpp', 'java', 'python3'],
+    enabled: true,
+  })
+  dialogVisible.value = true
 }
 
 function edit(row: Problem) {
@@ -120,6 +158,7 @@ function edit(row: Problem) {
     timeLimitMs: row.timeLimitMs,
     memoryLimitMb: row.memoryLimitMb,
     description: row.description || '',
+    samples: (row.samples || []).map((s) => ({ input: s.input, output: s.output })),
     languages: row.languages || [],
     enabled: row.enabled,
   })
@@ -161,6 +200,15 @@ onMounted(load)
   width: 100%;
   display: flex;
   gap: 12px;
+}
+.samples-editor {
+  width: 100%;
+}
+.sample-row {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 8px;
+  align-items: flex-start;
 }
 .md-pane {
   flex: 1;
