@@ -1,6 +1,7 @@
 package com.codeoj.server.controller;
 
 import com.codeoj.common.entity.TestCase;
+import jakarta.validation.Valid;
 import com.codeoj.common.result.R;
 import com.codeoj.server.dto.TestCaseImportDTO;
 import com.codeoj.server.service.TestCaseService;
@@ -32,7 +33,7 @@ public class TestCaseController {
     @PostMapping
     @PreAuthorize("hasRole('ADMIN')")
     public R<Integer> batchImport(@PathVariable("problemId") Long problemId,
-                                  @RequestBody TestCaseImportDTO dto) {
+                                  @Valid @RequestBody TestCaseImportDTO dto) {
         return R.ok(testCaseService.batchImport(problemId, dto));
     }
 

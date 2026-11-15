@@ -9,6 +9,7 @@ import com.codeoj.server.security.TokenBlacklistService;
 import com.codeoj.server.service.AuthService;
 import com.codeoj.server.vo.LoginVO;
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.validation.Valid;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -36,12 +37,12 @@ public class AuthController {
     }
 
     @PostMapping("/register")
-    public R<LoginVO> register(@RequestBody RegisterDTO dto, HttpServletRequest request) {
+    public R<LoginVO> register(@Valid @RequestBody RegisterDTO dto, HttpServletRequest request) {
         return R.ok(authService.register(dto, clientIp(request)));
     }
 
     @PostMapping("/login")
-    public R<LoginVO> login(@RequestBody LoginDTO dto, HttpServletRequest request) {
+    public R<LoginVO> login(@Valid @RequestBody LoginDTO dto, HttpServletRequest request) {
         return R.ok(authService.login(dto, clientIp(request)));
     }
 

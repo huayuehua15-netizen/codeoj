@@ -4,10 +4,7 @@
       <h2>注册 CodeOJ</h2>
       <el-form :model="form" label-width="0">
         <el-form-item>
-          <el-input v-model="form.username" placeholder="用户名（字母/数字/下划线）" size="large" />
-        </el-form-item>
-        <el-form-item>
-          <el-input v-model="form.nickname" placeholder="昵称（选填）" size="large" />
+          <el-input v-model="form.username" placeholder="用户名（支持中文/字母/数字/下划线）" size="large" />
         </el-form-item>
         <el-form-item>
           <el-input v-model="form.email" placeholder="邮箱（选填）" size="large" />
@@ -37,7 +34,7 @@ import { connectWs } from '@/api/ws'
 const router = useRouter()
 const userStore = useUserStore()
 
-const form = reactive({ username: '', nickname: '', email: '', password: '' })
+const form = reactive({ username: '', email: '', password: '' })
 const loading = ref(false)
 
 async function handleRegister() {

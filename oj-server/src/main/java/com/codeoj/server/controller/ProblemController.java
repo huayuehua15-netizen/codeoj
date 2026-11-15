@@ -1,6 +1,7 @@
 package com.codeoj.server.controller;
 
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import jakarta.validation.Valid;
 import com.codeoj.common.entity.Problem;
 import com.codeoj.common.exception.BizException;
 import com.codeoj.common.result.R;
@@ -52,13 +53,13 @@ public class ProblemController {
 
     @PostMapping
     @PreAuthorize("hasRole('ADMIN')")
-    public R<Long> create(@RequestBody ProblemFormDTO form) {
+    public R<Long> create(@Valid @RequestBody ProblemFormDTO form) {
         return R.ok(problemService.create(form));
     }
 
     @PutMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN')")
-    public R<Void> update(@PathVariable("id") Long id, @RequestBody ProblemFormDTO form) {
+    public R<Void> update(@PathVariable("id") Long id, @Valid @RequestBody ProblemFormDTO form) {
         problemService.update(id, form);
         return R.ok();
     }

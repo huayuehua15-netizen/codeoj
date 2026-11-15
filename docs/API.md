@@ -68,19 +68,19 @@
 
 ```json
 {
-  "username": "zhangsan",
+  "username": "张三丰",
   "password": "123456",
-  "nickname": "张三",
   "email": "zhangsan@example.com"
 }
 ```
 
 | 字段 | 必填 | 校验 |
 |---|---|---|
-| username | ✅ | 3-50 位，仅字母/数字/下划线，全局唯一 |
+| username | ✅ | 2-50 位，支持中文/字母/数字/下划线，全局唯一（`@Valid` 服务端校验） |
 | password | ✅ | 6-32 位，服务端 BCrypt 加盐存储 |
-| nickname | ❌ | ≤50，缺省取 username |
 | email | ❌ | 合法邮箱格式 |
+
+> 昵称字段已移除：`user.nickname` 列保留（论文表 4-1），业务上默认与用户名一致，展示统一使用 username。
 
 限流：按客户端 IP 滑动窗口 **5 次/小时**，防脚本批量刷号（超限返回 42900；机制同论文 4.7 滑动窗口限流）。
 

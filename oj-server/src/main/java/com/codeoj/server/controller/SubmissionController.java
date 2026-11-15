@@ -1,6 +1,7 @@
 package com.codeoj.server.controller;
 
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import jakarta.validation.Valid;
 import com.codeoj.common.result.R;
 import com.codeoj.server.dto.SubmitDTO;
 import com.codeoj.server.security.LoginUser;
@@ -33,7 +34,7 @@ public class SubmissionController {
 
     /** 提交代码，异步判题（论文 5.3） */
     @PostMapping
-    public R<SubmitVO> submit(@RequestBody SubmitDTO dto,
+    public R<SubmitVO> submit(@Valid @RequestBody SubmitDTO dto,
                               @AuthenticationPrincipal LoginUser user) {
         return R.ok(submissionService.submit(user, dto));
     }

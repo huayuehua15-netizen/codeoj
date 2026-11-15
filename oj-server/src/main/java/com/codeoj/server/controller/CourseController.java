@@ -1,6 +1,7 @@
 package com.codeoj.server.controller;
 
 import com.codeoj.common.result.R;
+import jakarta.validation.Valid;
 import com.codeoj.server.dto.CourseFormDTO;
 import com.codeoj.server.security.LoginUser;
 import com.codeoj.server.service.CourseService;
@@ -30,14 +31,14 @@ public class CourseController {
 
     @PostMapping
     @PreAuthorize("hasRole('ADMIN')")
-    public R<Long> create(@RequestBody CourseFormDTO dto,
+    public R<Long> create(@Valid @RequestBody CourseFormDTO dto,
                           @AuthenticationPrincipal LoginUser user) {
         return R.ok(courseService.create(user.userId(), dto));
     }
 
     @PutMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN')")
-    public R<Void> update(@PathVariable("id") Long id, @RequestBody CourseFormDTO dto) {
+    public R<Void> update(@PathVariable("id") Long id, @Valid @RequestBody CourseFormDTO dto) {
         courseService.update(id, dto);
         return R.ok();
     }
