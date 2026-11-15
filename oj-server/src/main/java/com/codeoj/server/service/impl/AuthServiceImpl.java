@@ -50,8 +50,8 @@ public class AuthServiceImpl implements AuthService {
 
     @Override
     public LoginVO register(RegisterDTO dto, String clientIp) {
-        // 注册按 IP 限流：每小时最多 5 次，防脚本批量刷号（论文 4.7 滑动窗口限流机制）
-        rateLimiter.check("register", clientIp, 5, 3600);
+        // 注册按 IP 限流：每小时最多 10 次，防脚本批量刷号（正常人工注册远用不完；论文 4.7 限流机制）
+        rateLimiter.check("register", clientIp, 10, 3600);
         Long count = userMapper.selectCount(
                 new LambdaQueryWrapper<User>().eq(User::getUsername, dto.getUsername()));
         if (count != null && count > 0) {
