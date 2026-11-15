@@ -25,6 +25,13 @@
           <p class="ring-cap">提交 {{ d.submit }} · 通过 {{ d.accepted }}</p>
         </div>
       </div>
+
+      <h3>近 7 天提交趋势</h3>
+      <div ref="trendChart" class="chart"></div>
+
+      <h3>难度分布对比</h3>
+      <div ref="diffChart" class="chart" v-show="stat.byDifficulty.length"></div>
+
       <el-table :data="stat.byDifficulty" v-loading="loading" style="margin-top: 8px">
         <el-table-column prop="difficultyLabel" label="难度" width="120" />
         <el-table-column prop="submit" label="提交次数" />
@@ -43,8 +50,9 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue'
-import { getStatistics } from '@/api/submission'
+import { computed, onMounted, ref, nextTick } from 'vue'
+import * as echarts from 'echarts'
+import { getStatistics, getTrend } from '@/api/submission'
 import { DIFFICULTY_MAP } from '@/utils/status'
 
 const stat = ref<{
@@ -53,14 +61,57 @@ const stat = ref<{
   totalAccepted: number
 }>({ byDifficulty: [], totalSubmit: 0, totalAccepted: 0 })
 const loading = ref(false)
+const trendChart = ref<HTMLElement>()
+const diffChart = ref<HTMLElement>()
 
 const totalRate = computed(() =>
   stat.value.totalSubmit ? Math.round((stat.value.totalAccepted / stat.value.totalSubmit) * 100) : 0)
+
+/** ECharts：趋势折线柱状混合 + 难度对比柱状 */
+function renderCharts(trend: { date: string; total: number; accepted: number }[]) {
+  if (trendChart.value) {
+    const c1 = echarts.init(trendChart.value)
+    const dates = trend.map((t) => t.date.slice(5))
+    c1.setOption({
+      tooltip: { trigger: 'axis' },
+      legend: { data: ['提交', '通过'] },
+      grid: { left: 40, right: 20, top: 36, bottom: 28 },
+      xAxis: { type: 'category', data: dates },
+      yAxis: { type: 'value', minInterval: 1 },
+      series: [
+        { name: '提交', type: 'bar', data: trend.map((t) => t.total), barWidth: '40%',
+          itemStyle: { color: '#3b82f6', borderRadius: [4, 4, 0, 0] } },
+        { name: '通过', type: 'line', data: trend.map((t) => t.accepted), smooth: true,
+          itemStyle: { color: '#16a34a' }, lineStyle: { width: 3 } },
+      ],
+    })
+  }
+  if (diffChart.value && stat.value.byDifficulty.length) {
+    const c2 = echarts.init(diffChart.value)
+    const labels = stat.value.byDifficulty.map((d) => d.difficultyLabel)
+    c2.setOption({
+      tooltip: { trigger: 'axis' },
+      legend: { data: ['提交', '通过'] },
+      grid: { left: 40, right: 20, top: 36, bottom: 28 },
+      xAxis: { type: 'category', data: labels },
+      yAxis: { type: 'value', minInterval: 1 },
+      series: [
+        { name: '提交', type: 'bar', data: stat.value.byDifficulty.map((d) => d.submit), barWidth: '40%',
+          itemStyle: { color: '#6366f1', borderRadius: [4, 4, 0, 0] } },
+        { name: '通过', type: 'bar', data: stat.value.byDifficulty.map((d) => d.accepted), barWidth: '40%',
+          itemStyle: { color: '#16a34a', borderRadius: [4, 4, 0, 0] } },
+      ],
+    })
+  }
+}
 
 onMounted(async () => {
   loading.value = true
   try {
     stat.value = await getStatistics()
+    const trend = await getTrend(7)
+    await nextTick()
+    renderCharts(trend)
   } finally {
     loading.value = false
   }
@@ -96,6 +147,10 @@ onMounted(async () => {
   color: #606266;
   font-size: 12px;
   margin: 8px 0 0;
+}
+.chart {
+  width: 100%;
+  height: 300px;
 }
 .summary {
   color: #606266;

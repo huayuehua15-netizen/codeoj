@@ -12,6 +12,7 @@
     "@stomp/stompjs": "^7.0.0",
     "axios": "^1.7.2",
     "dompurify": "^3.4.18",
+    "echarts": "^6.1.0",
     "element-plus": "^2.7.5",
     "marked": "^12.0.2",
     "monaco-editor": "^0.49.0",

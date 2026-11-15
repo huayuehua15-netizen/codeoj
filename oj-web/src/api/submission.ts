@@ -42,3 +42,8 @@ export function getStatistics() {
     '/api/submissions/statistics',
   )
 }
+
+/** 提交趋势（近 N 天按日聚合，个人维度） */
+export function getTrend(days = 7) {
+  return http.get<never, { date: string; total: number; accepted: number }[]>(`/api/submissions/trend?days=${days}`)
+}

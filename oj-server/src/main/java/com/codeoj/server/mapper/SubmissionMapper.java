@@ -8,6 +8,9 @@ import org.apache.ibatis.annotations.Select;
 import org.apache.ibatis.annotations.Update;
 
 import java.util.List;
+import java.util.Map;
+
+import java.util.List;
 
 @Mapper
 public interface SubmissionMapper extends BaseMapper<Submission> {
@@ -87,4 +90,15 @@ public interface SubmissionMapper extends BaseMapper<Submission> {
             return acCount;
         }
     }
+
+    /**
+     * 提交趋势（个人统计页图表）：近 N 天按日聚合提交数与通过数。
+     */
+    @Select("SELECT DATE(s.created_at) AS date, COUNT(*) AS total, " +
+            "       SUM(s.status = 2) AS accepted " +
+            "  FROM submission s " +
+            " WHERE s.user_id = #{userId} " +
+            "   AND s.created_at >= DATE_SUB(CURDATE(), INTERVAL #{days} DAY) " +
+            " GROUP BY DATE(s.created_at) ORDER BY DATE(s.created_at)")
+    List<Map<String, Object>> trendByUser(@Param("userId") Long userId, @Param("days") int days);
 }
