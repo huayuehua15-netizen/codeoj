@@ -7,7 +7,9 @@
           <el-tag :color="difficultyInfo.color" effect="dark" size="small">{{ difficultyInfo.label }}</el-tag>
         </h2>
         <div class="limits">
-          时间限制：{{ problem.timeLimitMs }}ms ｜ 内存限制：{{ problem.memoryLimitMb }}MB
+          <span class="limit-tag">⏱ {{ problem.timeLimitMs }}ms</span>
+          <span class="limit-tag">💾 {{ problem.memoryLimitMb }}MB</span>
+          <span v-for="l in allowedLanguages" :key="l.value" class="limit-tag lang">{{ l.label }}</span>
         </div>
         <MarkdownPreview :content="problem.description" />
 
@@ -221,9 +223,23 @@ load()
   flex: 1;
 }
 .limits {
-  color: #909399;
-  font-size: 13px;
-  margin-bottom: 12px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 14px;
+}
+.limit-tag {
+  background: #f0f7ff;
+  color: #2563eb;
+  border: 1px solid #dbeafe;
+  border-radius: 999px;
+  padding: 2px 12px;
+  font-size: 12px;
+}
+.limit-tag.lang {
+  background: #f4f4f5;
+  color: #606266;
+  border-color: #e4e7ed;
 }
 .sample {
   display: flex;

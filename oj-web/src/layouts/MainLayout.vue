@@ -2,7 +2,14 @@
   <el-container class="layout">
     <el-header class="header">
       <div class="header-inner">
-        <div class="logo" @click="$router.push('/problems')">CodeOJ</div>
+        <div class="logo" @click="$router.push('/problems')">
+          <svg class="logo-icon" viewBox="0 0 24 24" width="22" height="22" fill="none">
+            <path d="M8 6 L3 12 L8 18" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M16 6 L21 12 L16 18" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M13.5 4 L10.5 20" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/>
+          </svg>
+          <span>Code<em>OJ</em></span>
+        </div>
         <el-menu mode="horizontal" :default-active="activeMenu" router :ellipsis="false" class="menu">
           <el-menu-item index="/problems">题目</el-menu-item>
           <el-menu-item v-if="userStore.isLoggedIn" index="/submissions">提交记录</el-menu-item>
@@ -90,8 +97,11 @@ async function handleLogout() {
 }
 .header {
   background: #fff;
-  border-bottom: 1px solid #e4e7ed;
   padding: 0;
+  box-shadow: 0 1px 3px rgba(16, 24, 40, 0.08), 0 1px 2px rgba(16, 24, 40, 0.04);
+  position: sticky;
+  top: 0;
+  z-index: 20;
 }
 .header-inner {
   max-width: 1200px;
@@ -102,10 +112,21 @@ async function handleLogout() {
   height: 100%;
 }
 .logo {
+  display: flex;
+  align-items: center;
+  gap: 8px;
   font-size: 20px;
-  font-weight: 700;
-  color: #409eff;
+  font-weight: 800;
+  color: #1e3a8a;
   cursor: pointer;
+  letter-spacing: 0.5px;
+}
+.logo em {
+  font-style: normal;
+  color: #2563eb;
+}
+.logo-icon {
+  color: #2563eb;
 }
 .menu {
   flex: 1;
@@ -113,6 +134,10 @@ async function handleLogout() {
 }
 .username {
   margin-right: 8px;
+  cursor: pointer;
+  outline: none;
+  font-weight: 600;
+  color: #303133;
 }
 .main {
   padding: 0;

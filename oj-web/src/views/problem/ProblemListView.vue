@@ -27,11 +27,14 @@
         </el-table-column>
         <el-table-column label="通过率" width="220">
           <template #default="{ row }">
-            <el-progress
-              :percentage="passRate(row)"
-              :stroke-width="10"
-              :format="(p: number) => `${p}% (${row.acceptedCount}/${row.submitCount})`"
-            />
+            <div class="rate-cell">
+              <el-progress
+                :percentage="passRate(row)"
+                :stroke-width="9"
+                :color="rateColor(passRate(row))"
+              />
+              <span class="rate-text">{{ passRate(row) }}% ({{ row.acceptedCount }}/{{ row.submitCount }})</span>
+            </div>
           </template>
         </el-table-column>
       </el-table>
@@ -70,6 +73,13 @@ function passRate(row: Problem) {
   return Math.round((row.acceptedCount / row.submitCount) * 100)
 }
 
+/** 通过率分级配色（OJ 惯例）：高通过率偏绿、低通过率偏红 */
+function rateColor(rate: number) {
+  if (rate >= 60) return '#67c23a'
+  if (rate >= 30) return '#e6a23c'
+  return '#f56c6c'
+}
+
 async function load() {
   loading.value = true
   try {
@@ -97,8 +107,25 @@ onMounted(load)
 }
 .title-link {
   color: #303133;
+  font-weight: 500;
 }
 .title-link:hover {
-  color: #409eff;
+  color: #2563eb;
+}
+.rate-cell {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.rate-cell :deep(.el-progress) {
+  flex: 1;
+}
+.rate-cell :deep(.el-progress__text) {
+  display: none;
+}
+.rate-text {
+  font-size: 12px;
+  color: #606266;
+  white-space: nowrap;
 }
 </style>

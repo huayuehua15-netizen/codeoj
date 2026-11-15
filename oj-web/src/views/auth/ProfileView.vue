@@ -1,7 +1,13 @@
 <template>
   <div class="page-container profile-page">
     <div class="card">
-      <h2>个人中心</h2>
+      <div class="profile-head">
+        <span class="avatar">{{ (userStore.username || '?').slice(0, 1) }}</span>
+        <div>
+          <h2 style="margin: 0">{{ userStore.username }}</h2>
+          <p class="sub">{{ userStore.isAdmin ? '管理员（教师）' : '普通用户（学生）' }}</p>
+        </div>
+      </div>
 
       <!-- 资料查看 -->
       <el-descriptions :column="2" border style="margin: 16px 0">
@@ -109,6 +115,30 @@ async function savePassword() {
 .profile-page {
   max-width: 760px;
   margin: 0 auto;
+}
+.profile-head {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid #f0f0f0;
+}
+.avatar {
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #1e3a8a, #2563eb);
+  color: #fff;
+  font-size: 22px;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+.sub {
+  color: #909399;
+  font-size: 13px;
+  margin: 4px 0 0;
 }
 .tip {
   color: #909399;

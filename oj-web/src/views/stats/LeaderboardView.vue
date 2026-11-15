@@ -9,7 +9,14 @@
           </template>
         </el-table-column>
         <el-table-column label="用户" min-width="200">
-          <template #default="{ row }">{{ row.username || `用户 ${row.userId}` }}</template>
+          <template #default="{ row }">
+            <div class="user-cell">
+              <span class="avatar" :style="{ background: avatarColor(row.userId) }">
+                {{ (row.username || '?').slice(0, 1) }}
+              </span>
+              {{ row.username || `用户 ${row.userId}` }}
+            </div>
+          </template>
         </el-table-column>
         <el-table-column prop="acCount" label="通过题数" width="140">
           <template #default="{ row }">
@@ -56,6 +63,13 @@ function medal(rank: number) {
   return MEDALS[rank] ?? String(rank)
 }
 
+/** 按 userId 稳定取色的头像底色 */
+const AVATAR_COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', '#ec4899', '#06b6d4', '#ef4444']
+
+function avatarColor(userId: number) {
+  return AVATAR_COLORS[Math.abs(userId) % AVATAR_COLORS.length]
+}
+
 function rankRowClass({ row }: { row: { rank: number } }) {
   return row.rank <= 3 ? `top-row top-row-${row.rank}` : ''
 }
@@ -71,6 +85,23 @@ onMounted(load)
 .medal-2,
 .medal-3 {
   font-weight: 700;
+}
+.user-cell {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  font-size: 14px;
+  font-weight: 700;
+  flex-shrink: 0;
 }
 </style>
 
