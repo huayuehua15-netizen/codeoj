@@ -7,7 +7,9 @@ import com.codeoj.common.exception.BizException;
 import com.codeoj.common.result.R;
 import com.codeoj.common.result.ResultCode;
 import com.codeoj.server.mapper.UserMapper;
+import com.codeoj.server.security.LoginUser;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -62,10 +64,12 @@ public class AdminUserController {
         return R.ok(vo);
     }
 
-    /** 提权/降权（role: 0=学生 1=教师） */
+    /** 提权/降权（role: 0=学生 1=教师）；禁止对自身操作（防管理员锁死自己） */
     @PutMapping("/{id}/role")
     public R<Void> changeRole(@PathVariable(name = "id") Long id,
-                              @RequestParam(name = "role") Integer role) {
+                              @RequestParam(name = "role") Integer role,
+                              @AuthenticationPrincipal LoginUser operator) {
+        requireNotSelf(id, operator);
         User u = requireUser(id);
         if (role == null || (role != 0 && role != 1)) {
             throw new BizException(ResultCode.BAD_REQUEST.getCode(), "role 仅允许 0 或 1");
@@ -75,10 +79,12 @@ public class AdminUserController {
         return R.ok();
     }
 
-    /** 封禁/解封（status: 0=正常 1=封禁） */
+    /** 封禁/解封（status: 0=正常 1=封禁）；禁止对自身操作（防管理员封禁自己） */
     @PutMapping("/{id}/status")
     public R<Void> changeStatus(@PathVariable(name = "id") Long id,
-                                @RequestParam(name = "status") Integer status) {
+                                @RequestParam(name = "status") Integer status,
+                                @AuthenticationPrincipal LoginUser operator) {
+        requireNotSelf(id, operator);
         User u = requireUser(id);
         if (status == null || (status != 0 && status != 1)) {
             throw new BizException(ResultCode.BAD_REQUEST.getCode(), "status 仅允许 0 或 1");
@@ -96,6 +102,12 @@ public class AdminUserController {
         u.setPassword(passwordEncoder.encode(tempPassword));
         userMapper.updateById(u);
         return R.ok(tempPassword);
+    }
+
+    private void requireNotSelf(Long id, LoginUser operator) {
+        if (operator != null && operator.userId().equals(id)) {
+            throw new BizException(ResultCode.BAD_REQUEST.getCode(), "不能对自己执行此操作");
+        }
     }
 
     private User requireUser(Long id) {

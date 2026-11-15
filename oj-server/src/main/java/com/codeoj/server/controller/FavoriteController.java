@@ -36,11 +36,13 @@ public class FavoriteController {
         this.problemMapper = problemMapper;
     }
 
-    /** 收藏/取消收藏（toggle），返回当前是否已收藏 */
+    /** 收藏/取消收藏（toggle），返回当前是否已收藏；题目不存在直接 40400 */
     @PostMapping("/problems/{id}/favorite")
     public R<Boolean> toggle(@PathVariable(name = "id") Long problemId,
                              @AuthenticationPrincipal LoginUser user) {
-        problemMapper.selectById(problemId);   // 题目存在性校验
+        if (problemMapper.selectById(problemId) == null) {
+            throw new BizException(ResultCode.NOT_FOUND);
+        }
         Favorite existing = favoriteMapper.selectOne(new LambdaQueryWrapper<Favorite>()
                 .eq(Favorite::getUserId, user.userId())
                 .eq(Favorite::getProblemId, problemId));
@@ -60,6 +62,9 @@ public class FavoriteController {
     @GetMapping("/problems/{id}/favorite")
     public R<Boolean> favorited(@PathVariable(name = "id") Long problemId,
                                 @AuthenticationPrincipal LoginUser user) {
+        if (problemMapper.selectById(problemId) == null) {
+            throw new BizException(ResultCode.NOT_FOUND);
+        }
         Long count = favoriteMapper.selectCount(new LambdaQueryWrapper<Favorite>()
                 .eq(Favorite::getUserId, user.userId())
                 .eq(Favorite::getProblemId, problemId));
