@@ -9,7 +9,7 @@
         <el-table-column prop="title" label="比赛名称" min-width="200" />
         <el-table-column label="时间" min-width="280">
           <template #default="{ row }">
-            {{ row.startTime.slice(0, 16).replace('T', ' ') }} ~ {{ row.endTime.slice(0, 16).replace('T', ' ') }}
+            {{ formatDateTime(row.startTime) }} ~ {{ formatDateTime(row.endTime) }}
           </template>
         </el-table-column>
         <el-table-column label="状态" width="90">
@@ -59,6 +59,7 @@ import {
   type ContestVO,
 } from '@/api/contest'
 import { pageProblems, type Problem } from '@/api/problem'
+import { formatDateTime, serverTimeToPicker, toBodyDateTime } from '@/utils/datetime'
 
 const contests = ref<ContestVO[]>([])
 const allProblems = ref<Problem[]>([])
@@ -95,24 +96,34 @@ function openCreate() {
 
 async function openEdit(row: ContestVO) {
   editingId.value = row.id
-  const detail = await import('@/api/contest').then((m) => m.getContest(row.id))
+  const detail = await getContest(row.id)
   Object.assign(form, {
     title: detail.title,
     description: detail.description || '',
     problemIds: detail.problems.map((p) => p.problemId),
   })
-  timeRange.value = [detail.startTime.slice(0, 19), detail.endTime.slice(0, 19)]
+  // 服务端 UTC → 本地时区回填，避免编辑后时间窗整体偏移
+  timeRange.value = [serverTimeToPicker(detail.startTime), serverTimeToPicker(detail.endTime)]
   dialogVisible.value = true
 }
 
 async function save() {
-  if (!form.title || !timeRange.value) {
+  if (!form.title.trim() || !timeRange.value) {
     ElMessage.warning('请填写名称与起止时间')
+    return
+  }
+  if (new Date(timeRange.value[0]).getTime() >= new Date(timeRange.value[1]).getTime()) {
+    ElMessage.warning('结束时间必须晚于开始时间')
     return
   }
   saving.value = true
   try {
-    const payload = { ...form, startTime: timeRange.value[0], endTime: timeRange.value[1] }
+    const payload = {
+      ...form,
+      // JSON 请求体走 @JsonFormat(pattern="yyyy-MM-dd HH:mm:ss")，必须是空格分隔
+      startTime: toBodyDateTime(timeRange.value[0])!,
+      endTime: toBodyDateTime(timeRange.value[1])!,
+    }
     if (editingId.value) {
       await updateContest(editingId.value, payload)
       ElMessage.success('已更新')

@@ -28,6 +28,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionTemplate;
 
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
@@ -53,6 +54,7 @@ public class SubmissionServiceImpl implements SubmissionService {
     private final IdempotentLockService lockService;
     private final JudgeDispatcher judgeDispatcher;
     private final com.codeoj.server.ws.PushEventPublisher pushEventPublisher;
+    private final TransactionTemplate transactionTemplate;
 
     @Value("${oj.submit.max-code-bytes:65536}")
     private int maxCodeBytes;
@@ -66,7 +68,8 @@ public class SubmissionServiceImpl implements SubmissionService {
                                  RateLimiter rateLimiter,
                                  IdempotentLockService lockService,
                                  JudgeDispatcher judgeDispatcher,
-                                 com.codeoj.server.ws.PushEventPublisher pushEventPublisher) {
+                                 com.codeoj.server.ws.PushEventPublisher pushEventPublisher,
+                                 TransactionTemplate transactionTemplate) {
         this.submissionMapper = submissionMapper;
         this.problemMapper = problemMapper;
         this.judgeCaseMapper = judgeCaseMapper;
@@ -74,6 +77,7 @@ public class SubmissionServiceImpl implements SubmissionService {
         this.lockService = lockService;
         this.judgeDispatcher = judgeDispatcher;
         this.pushEventPublisher = pushEventPublisher;
+        this.transactionTemplate = transactionTemplate;
     }
 
     @Override
@@ -88,14 +92,21 @@ public class SubmissionServiceImpl implements SubmissionService {
             throw new BizException(ResultCode.PROBLEM_UNAVAILABLE);
         }
         validate(p, dto);
-        long sid = createQueued(user.userId(), dto);
-        // 发布消息（仅提交 ID）；应在事务提交后发布，此处 createQueued 已独立提交
+        // 用 TransactionTemplate 显式开启事务：原先 this.createQueued(...) 是自调用，
+        // Spring AOP 代理不生效，@Transactional 只是装饰。现在落库与提交在同一事务里，
+        // 消息发布严格在 commit 之后，避免"库未落盘、消息先到"消费者查无此单。
+        Long sid = transactionTemplate.execute(status -> createQueued(user.userId(), dto));
+        // 事务已提交，发布判题消息（仅提交 ID）
         judgeDispatcher.publish(sid);
         // 推送阶段一：JUDGE_QUEUED（论文 4.5 三阶段推送）
         pushEventPublisher.publishQueued(user.userId(), sid);
         return SubmitVO.of(sid, SubmissionStatus.QUEUING);
     }
 
+    /**
+     * 写库（由 {@link #submit} 在 TransactionTemplate 内调用）。
+     * 保留 @Transactional 是为了被外部直接调用时仍有事务语义，但主链路不依赖它。
+     */
     @Transactional
     @Override
     public Long createQueued(Long userId, SubmitDTO dto) {

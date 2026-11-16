@@ -50,7 +50,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, ref, nextTick } from 'vue'
+import { computed, onMounted, onUnmounted, ref, nextTick } from 'vue'
 import * as echarts from 'echarts'
 import { getStatistics, getTrend } from '@/api/submission'
 import { DIFFICULTY_MAP } from '@/utils/status'
@@ -68,11 +68,15 @@ const totalRate = computed(() =>
   stat.value.totalSubmit ? Math.round((stat.value.totalAccepted / stat.value.totalSubmit) * 100) : 0)
 
 /** ECharts：趋势折线柱状混合 + 难度对比柱状 */
+let trendInstance: echarts.ECharts | null = null
+let diffInstance: echarts.ECharts | null = null
+
 function renderCharts(trend: { date: string; total: number; accepted: number }[]) {
   if (trendChart.value) {
-    const c1 = echarts.init(trendChart.value)
+    // 复用已有实例，避免重复 init 报 "There is a chart instance already initialized"
+    trendInstance = echarts.getInstanceByDom(trendChart.value) ?? echarts.init(trendChart.value)
     const dates = trend.map((t) => t.date.slice(5))
-    c1.setOption({
+    trendInstance.setOption({
       tooltip: { trigger: 'axis' },
       legend: { data: ['提交', '通过'] },
       grid: { left: 40, right: 20, top: 36, bottom: 28 },
@@ -87,9 +91,9 @@ function renderCharts(trend: { date: string; total: number; accepted: number }[]
     })
   }
   if (diffChart.value && stat.value.byDifficulty.length) {
-    const c2 = echarts.init(diffChart.value)
+    diffInstance = echarts.getInstanceByDom(diffChart.value) ?? echarts.init(diffChart.value)
     const labels = stat.value.byDifficulty.map((d) => d.difficultyLabel)
-    c2.setOption({
+    diffInstance.setOption({
       tooltip: { trigger: 'axis' },
       legend: { data: ['提交', '通过'] },
       grid: { left: 40, right: 20, top: 36, bottom: 28 },
@@ -105,16 +109,33 @@ function renderCharts(trend: { date: string; total: number; accepted: number }[]
   }
 }
 
+/** 窗口尺寸变化时重排图表（图表宽度为 100%） */
+function handleResize() {
+  trendInstance?.resize()
+  diffInstance?.resize()
+}
+
 onMounted(async () => {
+  window.addEventListener('resize', handleResize)
   loading.value = true
   try {
     stat.value = await getStatistics()
     const trend = await getTrend(7)
     await nextTick()
     renderCharts(trend)
+  } catch {
+    // 统计接口失败（如未登录 40100）时保持空态，不阻塞页面
   } finally {
     loading.value = false
   }
+})
+
+onUnmounted(() => {
+  window.removeEventListener('resize', handleResize)
+  trendInstance?.dispose()
+  diffInstance?.dispose()
+  trendInstance = null
+  diffInstance = null
 })
 </script>
 

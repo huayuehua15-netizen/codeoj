@@ -13,8 +13,7 @@
           end-placeholder="结束时间"
           value-format="YYYY-MM-DDTHH:mm:ss"
           style="width: 360px"
-        />
-        <el-button type="primary" @click="load">筛选</el-button>
+        />        <el-button type="primary" @click="load">筛选</el-button>
       </div>
       <el-table :data="records" v-loading="loading">
         <el-table-column prop="id" label="提交编号" width="100" />
@@ -31,7 +30,9 @@
         </el-table-column>
         <el-table-column prop="timeUsedMs" label="耗时(ms)" width="100" />
         <el-table-column prop="memoryUsedKb" label="内存(KB)" width="100" />
-        <el-table-column prop="createdAt" label="提交时间" width="170" />
+        <el-table-column label="提交时间" width="170">
+          <template #default="{ row }">{{ formatDateTime(row.createdAt) }}</template>
+        </el-table-column>
         <el-table-column label="操作" width="90">
           <template #default="{ row }">
             <el-button link type="primary" @click="$router.push(`/submissions/${row.id}`)">详情</el-button>
@@ -59,6 +60,7 @@
 import { onMounted, ref } from 'vue'
 import { pageSubmissions, type SubmissionDetail } from '@/api/submission'
 import { STATUS_MAP, statusLabel, statusType } from '@/utils/status'
+import { formatDateTime, toQueryDateTime } from '@/utils/datetime'
 
 const records = ref<SubmissionDetail[]>([])
 const problemId = ref('')
@@ -75,8 +77,9 @@ async function load() {
     const data = await pageSubmissions({
       problemId: problemId.value ? Number(problemId.value) : undefined,
       status: status.value,
-      begin: timeRange.value?.[0],
-      end: timeRange.value?.[1],
+      // Query 参数走 @DateTimeFormat(ISO.DATE_TIME)，必须是 T 分隔
+      begin: toQueryDateTime(timeRange.value?.[0]),
+      end: toQueryDateTime(timeRange.value?.[1]),
       page: page.value,
       size: size.value,
     })

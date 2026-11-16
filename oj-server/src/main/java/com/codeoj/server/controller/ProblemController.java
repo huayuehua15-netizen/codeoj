@@ -9,6 +9,7 @@ import com.codeoj.common.result.ResultCode;
 import com.codeoj.server.dto.ProblemFormDTO;
 import com.codeoj.server.security.LoginUser;
 import com.codeoj.server.service.ProblemService;
+import com.codeoj.server.vo.ProblemListItemVO;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -34,14 +35,14 @@ public class ProblemController {
         this.problemService = problemService;
     }
 
-    /** 分页列表（关键词/难度筛选） */
+    /** 分页列表（关键词/难度/标签筛选；不返回题面大字段，见 API.md §2.1） */
     @GetMapping
-    public R<Page<Problem>> page(@RequestParam(name = "keyword", required = false) String keyword,
-                                 @RequestParam(name = "difficulty", required = false) Integer difficulty,
-                                 @RequestParam(name = "tag", required = false) String tag,
-                                 @RequestParam(name = "page", defaultValue = "1") long page,
-                                 @RequestParam(name = "size", defaultValue = "10") long size,
-                                 @AuthenticationPrincipal LoginUser user) {
+    public R<Page<ProblemListItemVO>> page(@RequestParam(name = "keyword", required = false) String keyword,
+                                           @RequestParam(name = "difficulty", required = false) Integer difficulty,
+                                           @RequestParam(name = "tag", required = false) String tag,
+                                           @RequestParam(name = "page", defaultValue = "1") long page,
+                                           @RequestParam(name = "size", defaultValue = "10") long size,
+                                           @AuthenticationPrincipal LoginUser user) {
         boolean admin = user != null && user.isAdmin();
         return R.ok(problemService.page(keyword, difficulty, tag, page, size, admin));
     }
@@ -55,6 +56,7 @@ public class ProblemController {
                 && (user == null || !user.isAdmin())) {
             throw new BizException(ResultCode.PROBLEM_UNAVAILABLE);
         }
+        // 判题测试用例绝不外泄（API.md §2.2 安全约定）：实体只含题面 samples，不含 test_case
         return R.ok(problem);
     }
 

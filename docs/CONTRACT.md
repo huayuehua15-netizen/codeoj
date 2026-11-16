@@ -116,6 +116,22 @@ UPDATE submission SET status = #{status}, time_used_ms = #{time}, memory_used_kb
 > 两端序列化不一致会产生同一用户的双 member（`40` 与 `"40"`），页面出现重复行——
 > oj-server（读侧/对账）与 oj-judge（ZINCRBY）均已统一为 StringRedisTemplate，勿改回 JSON 序列化。
 
+### 5.1 WebSocket 会话与 Principal 约定（oj-server 内部，但影响推送可用性）
+
+`convertAndSendToUser(userId, "/queue/judge", msg)` 的投递依赖 **STOMP 会话已绑定 `java.security.Principal`**，
+且按 `Principal#getName()` 的返回值匹配目标。约定如下，**三条同时成立才能送达**：
+
+| # | 约定 | 位置 |
+|---|---|---|
+| 1 | `LoginUser` **实现 `java.security.Principal`**，`getName()` 返回 **userId 字符串**（不是 username） | `oj-server/security/LoginUser` |
+| 2 | STOMP `CONNECT` 帧原生头携带 `Authorization: Bearer <token>`，入站通道拦截器校验后 `accessor.setUser(...)` | `oj-server/config/WebSocketConfig#configureClientInboundChannel` |
+| 3 | 前端 `@stomp/stompjs` 的 `Client` 配置 `connectHeaders: { Authorization }` | `oj-web/src/api/ws.ts` |
+
+> **踩坑实证（2026-11-16）**：v1.0 三条全缺——`/ws/**` permitAll、无拦截器、`LoginUser` 不是 Principal、
+> 前端不带凭证。结果是 `UserDestinationMessageHandler` 打印
+> `No active sessions for user destination` 后**静默丢弃**全部推送，接口不报错、日志不打错
+> （只有 `log.debug`），页面看起来正常纯靠前端 2s 轮询兜底。这类"静默失败"必须靠约定锁死。
+
 ## 6. 判题执行约定（oj-judge 内部，论文表 5-2 / 5.4）
 
 ### 6.1 语言与镜像
@@ -165,3 +181,4 @@ UPDATE submission SET status = #{status}, time_used_ms = #{time}, memory_used_kb
 | 日期 | 版本 | 变更内容 | 提出人 |
 |---|---|---|---|
 | 2026-11-13 | v1.0 | 骨架阶段定稿 | — |
+| 2026-11-16 | v1.1 | 补充 **WebSocket 会话 Principal 约定**（见 §5.1）：`LoginUser` 必须实现 `java.security.Principal` 且 `getName()` 返回 userId 字符串，STOMP CONNECT 帧携带 `Authorization` 头。**改动此约定会导致全部判题推送静默丢失** | 成员 B |

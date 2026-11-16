@@ -42,8 +42,10 @@
 
 ### 自测两轮 ✅（发现并修复 6 个 bug + 4 项边界加固，见 §5）
 
+### 交付复审 ✅（2026-11-16，B 侧全面审查 + 修复，见 §11）
+
 ### 当前位置
-**B 侧交付完成，冻结 oj-judge 改动**（文件面留给 A）。P0 = A 侧 real 引擎（HANDOFF-A.md 就绪）。
+**B 侧二审完成：2 个 P0 + 14 个 P1 已修复**（详见 §11）。P0 = A 侧 real 引擎（HANDOFF-A.md 就绪）。
 
 ---
 
@@ -270,3 +272,90 @@ feat/judge-engine (A) ──→ dev（集成联调）──→ main（B 单点�
 | ff32957 | 用户名下拉可识别性 |
 | 95999f4 | PROGRESS.md 进度文档 |
 | f466f92 | 协作流程细化 + dev 分支 |
+
+---
+
+## 11. 交付复审（2026-11-16）：37 → 53 项
+
+> 触发：B 侧自评"功能 100% + bug 清零"。经对 `oj-server` / `oj-common` / `oj-web` / `sql`
+> 全量复审（含契约逐条比对、并发与越权路径推演），结论是**功能面确实完整，但存在
+> 2 个 P0 级"静默失效"缺陷**——这类问题不报错、不打日志、页面看似正常，
+> 只在特定路径暴露，自测很难命中。完整报告见 `review/backend.md`、`review/frontend.md`。
+> **本轮另含 1 处跨边界改动（oj-judge 配置 2 行），见 §11.6 登记。**
+
+### 11.1 P0（阻断级，已修复）
+
+| # | 问题 | 本质 | 修复 |
+|---|---|---|---|
+| 1 | **WebSocket 推送全链路不投递**：`/ws/**` permitAll + 无 STOMP 拦截器 + `LoginUser` 非 `Principal` + 前端不带凭证 | `convertAndSendToUser` 需会话绑 Principal，四层缺一不可；缺了则 `UserDestinationMessageHandler` **静默丢弃**（仅 debug 日志）。§3.3「实测端到端」实为前端 2s 轮询兜底，L3「无轮询收到推送」**从未成立** | `LoginUser implements Principal`（`getName()`=userId）+ `WebSocketConfig` 加 CONNECT 帧拦截器验 JWT + `ws.ts` 加 `connectHeaders`；约定固化进 CONTRACT §5.1 |
+| 2 | **收藏接口被路径级 permitAll 击穿**：匿名请求 `user.userId()` NPE → 50000（契约要 40100），且每请求打一条完整堆栈可刷日志 | `/api/problems/**` 对游客公开是为题目浏览，却把挂在同前缀下的收藏接口一并放行 | `FavoriteController` 显式 `requireLogin` 抛 40100 |
+
+### 11.2 P1（重要，已修复）
+
+| # | 问题 | 修复 |
+|---|---|---|
+| 1 | **角色取自 JWT claim**：管理员降权后旧 token 24h 内仍持 `ROLE_ADMIN`（垂直越权残留）。过滤器已每请求查库，却只用了 status 没用 role | `JwtAuthFilter` 角色改取数据库 |
+| 2 | **时区三重混源**：`created_at` 走 JVM（UTC+8）、`judged_at` 走 SQL `NOW()`（容器 UTC）→ 同一行倒挂 8h；队列监控 00:00-08:00 统计错位。`serverTimezone=UTC` 不下发 `SET time_zone` | 两端连接串加 `sessionVariables=time_zone='+08:00'`，统一 Asia/Shanghai。⚠️ **其中 oj-judge 一侧属成员 A 范围，见 §11.6 跨边界登记** |
+| 3 | **`LocalDateTime` 输出 ISO `T` 格式**，违反 §0.1。`spring.jackson.date-format` 对 java.time **无效** | 新增 `JacksonConfig` 注册全局序列化器；前端 3 处 `.replace('T',' ')` 删除 |
+| 4 | **`SubmitVO.status` 输出枚举名 `"QUEUING"`**，契约要数字 0（WS 侧已转数字，HTTP 侧漏了） | 改 `Integer` + `status.getCode()` |
+| 5 | **`submit()` 自调用导致 `@Transactional` 失效**（`this.createQueued()` 绕过代理）；注释与 Javadoc 三处说谎 | 改 `TransactionTemplate` 显式事务，消息严格在 commit 后发 |
+| 6 | **MQ 可靠投递只有一半**：手工 `new RabbitTemplate` 覆盖自动配置 → 丢 `mandatory`；传了 `CorrelationData` 但全仓零 `ConfirmCallback` → 队列抖动时产生 `status=0` 僵尸单，前端轮询永不终止且日志全绿 | 补 `setMandatory(true)` + `setReturnsCallback` + `setConfirmCallback` |
+| 7 | **登录失败锁按 username 加锁**，任何人可连发 5 次错密码锁死教师 15 分钟（未授权 DoS），且 `INCR`+`EXPIRE` 非原子 | 键加 IP；改 Lua 原子计数 |
+| 8 | **重置密码"临时密码"可预测** = `"oj"` + 当天秒数，同一秒重置的账号密码还完全相同 | 改 `SecureRandom` + Base64 |
+| 9 | `judge_case.status` 可为 NULL（schema 允许），`JudgeCaseVO.of` 拆箱 NPE → 提交详情 50000 | 判空降级 |
+| 10 | **题目列表返回 description/samples/languages 全量大字段**，一页塞整份题面 | 新增 `ProblemListItemVO` + `select` 轻量列 |
+| 11 | `/ws` `setAllowedOriginPatterns("*")` | 已保留但鉴权上移 STOMP 层（见 P0-1 修复说明） |
+| 12 | 配置硬编码凭证 + JWT 默认密钥随仓库分发 | 保留 dev 默认值但加注释警告；生产必须 `JWT_SECRET` |
+| 13 | **零单元测试**（`src/test` 不存在） | 待补（见 §11.5） |
+| 14 | 公告 `Map` 入参绕过 `@Valid`，超 VARCHAR(2000) 直接 50000 | 补长度校验对齐库表 |
+
+### 11.3 一并修复（审查中追加发现）
+
+| # | 问题 | 修复 |
+|---|---|---|
+| 1 | **用例删除 IDOR**：`DELETE /api/problems/{A}/testcases/{caseId}` 只用 caseId 删除，可借 A 题路径删掉 B 题用例（直接改变判题结果） | 校验用例归属 problemId |
+| 2 | 题目删除留下孤儿用例 | 级联清理 `test_case` |
+| 3 | 缺三组复合索引：提交记录页「过滤+排序」、竞赛排名「题目集+时间窗」、趋势聚合 | `schema.sql` 补索引 + `migration-20261116-indexes.sql` 供已建库升级 |
+| 4 | `SubmissionMapper` 重复 `import java.util.List`（真的两行） | 删除 |
+
+### 11.4 复查确认**没有问题**的点（可放心答辩）
+
+`RateLimiter` Lua 原子、幂等锁 `SET NX PX`、排行榜两端 `StringRedisTemplate` 统一、
+`JwtAuthFilter` `clearContext` 防 ThreadLocal 残留、登出/改密真写黑名单、
+状态机两条条件更新与 CONTRACT §3 **逐字符一致**、`JSON_CONTAINS` 参数化无注入面、
+XSS 面干净（全仓 `v-html` 仅 1 处且过 DOMPurify，公告走 `{{ }}` 文本插值）、
+垂直越权无路径级遗漏（18 处 `@PreAuthorize` 逐一核对）、
+水平越权核心链路正确、分页 `maxLimit=100` 且 total 正确、
+N+1 已处理 3 处（提交记录/排行榜/竞赛排名批次补用户名）、
+前端 20+ 接口路径与字段**全部一致**、前端权限判定与后端完全对齐（篡改 localStorage 拿不到数据）、
+Web Worker 沙箱同步死循环确实能被 `terminate()` 杀掉。
+
+### 11.5 仍未完成（诚实定级）
+
+| 级别 | 项 | 说明 |
+|---|---|---|
+| **P0（A 侧）** | real 判题引擎 | 唯一大缺口，`ENGINE_MODE=local` 目前是静态语义判定（无入口判 CE、无输出判 WA），**不是真实运行判定**。答辩若被问"判题是不是真跑代码"需如实说明 |
+| P1 | 零单元测试 | `spring-boot-starter-test` 已引但 `src/test` 不存在。建议至少补：状态机条件更新幂等、限流窗口、`OutputComparator`、越权判定 |
+| P2 | 题目列表 `submitCount` 是题目维度的，横幅"累计提交"只累加当前页 | 演示级可接受，量级大了要单独统计接口 |
+| P2 | 前端按需导入 | `manualChunks` 已拆包（monaco/echarts/element），但 Element Plus 仍是全量注册；再压体积需 `unplugin-vue-components` |
+
+> 已修复并验证：包体拆分（`ProblemDetailView` 3.27MB → 11.4KB，monaco 移入独立 vendor chunk）、
+> Monaco worker（新增 `src/monacoWorker.ts`）。
+
+### 11.6 ⚠️ 跨边界改动登记（需知会成员 A）
+
+**纪律依据**：`COLLABORATION.md` §1 ——「成员 A 只动 oj-judge、judge-images、deploy 中判题相关配置；
+oj-common 改动仍需双方同意」。本轮审查**有 1 处越界改动，仅 2 行，不涉及任何判题逻辑**：
+
+| 项 | 内容 |
+|---|---|
+| 文件 | `oj-judge/src/main/resources/application.yml` |
+| 改动 | ① `serverTimezone=UTC` → `Asia/Shanghai` + 追加 `sessionVariables=time_zone='%2B08:00'`；② `spring.jackson.time-zone: UTC` → `Asia/Shanghai` |
+| 为什么必须动 A 的地盘 | `judged_at` 由 **oj-judge 的 `SubmissionMapper.updateFinalResult` 用 SQL `NOW()`** 写入。只改 oj-server 的时区，`created_at`（JVM 写）与 `judged_at`（judge 写）仍差 8 小时——实测确认过，见 §11.1 时效验证 |
+| 是否碰逻辑 | **否**。未改任何 `.java`、`judge-images/`、`deploy/`、`oj-common/`；仅连接串与会话时区 |
+| 对 A 的影响 | 无行为变化。A 若在本地用 UTC 容器跑，改后 judge 与 server 时间口径一致（原本就是 bug） |
+| 回滚方式 | `git checkout -- oj-judge/src/main/resources/application.yml`（但会重新引入 8 小时倒挂） |
+| 待办 | **需成员 A 确认**；确认后本条可转为常规变更记录 |
+
+> 另：`oj-common` 本轮**零改动**（`LoginUser` 在 `oj-server` 内，不在公共区），不触发"双人同意"条款。
+

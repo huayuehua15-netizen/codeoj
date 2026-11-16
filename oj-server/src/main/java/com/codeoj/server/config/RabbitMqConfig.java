@@ -1,6 +1,8 @@
 package com.codeoj.server.config;
 
 import com.codeoj.common.constant.MqConstants;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.amqp.core.Binding;
 import org.springframework.amqp.core.BindingBuilder;
 import org.springframework.amqp.core.DirectExchange;
@@ -21,14 +23,31 @@ import org.springframework.context.annotation.Configuration;
 @Configuration
 public class RabbitMqConfig {
 
+    private static final Logger log = LoggerFactory.getLogger(RabbitMqConfig.class);
+
     /**
      * 判题任务发送模板：消息体为纯文本 submissionId（CONTRACT.md §1.1）。
      * 显式指定 SimpleMessageConverter，避免容器内的事件 JSON 转换器被自动应用到发送端。
+     *
+     * <p>注意：自动配置里的 mandatory/publisher-confirm 不会作用于手工 new 出来的
+     * RabbitTemplate——必须在这里重新设置，否则 yml 中的 publisher-confirm 配置形同虚设。
      */
     @Bean
     public RabbitTemplate rabbitTemplate(ConnectionFactory connectionFactory) {
         RabbitTemplate template = new RabbitTemplate(connectionFactory);
         template.setMessageConverter(new SimpleMessageConverter());
+        // 消息无路由时回调（配合 publisher-returns），否则会静默丢弃
+        template.setMandatory(true);
+        template.setReturnsCallback(returned ->
+                log.error("judge message returned: exchange={}, routingKey={}, replyText={}",
+                        returned.getExchange(), returned.getRoutingKey(), returned.getReplyText()));
+        // 投递确认：失败时留痕，便于配合 StartupScanner 兜底重投
+        template.setConfirmCallback((correlationData, ack, cause) -> {
+            if (!ack) {
+                log.error("judge message nack by broker, submissionId={}, cause={}",
+                        correlationData == null ? null : correlationData.getId(), cause);
+            }
+        });
         return template;
     }
 

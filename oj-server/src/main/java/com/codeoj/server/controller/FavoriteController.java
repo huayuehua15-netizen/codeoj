@@ -23,6 +23,13 @@ import java.util.stream.Collectors;
 
 /**
  * 题目收藏接口：详情页收藏/取消（toggle），个人中心收藏列表。
+ *
+ * <p><b>为何显式判空而不是加 @PreAuthorize</b>：本控制器挂在
+ * /api/problems/{id}/favorite 下，而 SecurityConfig 对 {@code /api/problems/**}
+ * 是 permitAll（题目浏览对游客公开）。匿名请求会让 {@code @AuthenticationPrincipal}
+ * 为 null，直接调用 {@code user.userId()} 会空指针并被兜底成 50000；
+ * 而契约（API.md §0.3）要求未登录统一返回 <b>40100</b>,
+ * 不是 40300（@PreAuthorize 拒绝走的是 AccessDenied）。故统一走 {@link #requireLogin}。
  */
 @RestController
 @RequestMapping("/api")
@@ -40,18 +47,20 @@ public class FavoriteController {
     @PostMapping("/problems/{id}/favorite")
     public R<Boolean> toggle(@PathVariable(name = "id") Long problemId,
                              @AuthenticationPrincipal LoginUser user) {
-        if (problemMapper.selectById(problemId) == null) {
+        LoginUser me = requireLogin(user);
+        Problem problem = problemMapper.selectById(problemId);
+        if (problem == null) {
             throw new BizException(ResultCode.NOT_FOUND);
         }
         Favorite existing = favoriteMapper.selectOne(new LambdaQueryWrapper<Favorite>()
-                .eq(Favorite::getUserId, user.userId())
+                .eq(Favorite::getUserId, me.userId())
                 .eq(Favorite::getProblemId, problemId));
         if (existing != null) {
             favoriteMapper.deleteById(existing.getId());
             return R.ok(false);
         }
         Favorite f = new Favorite();
-        f.setUserId(user.userId());
+        f.setUserId(me.userId());
         f.setProblemId(problemId);
         f.setCreatedAt(LocalDateTime.now());
         favoriteMapper.insert(f);
@@ -62,11 +71,12 @@ public class FavoriteController {
     @GetMapping("/problems/{id}/favorite")
     public R<Boolean> favorited(@PathVariable(name = "id") Long problemId,
                                 @AuthenticationPrincipal LoginUser user) {
+        LoginUser me = requireLogin(user);
         if (problemMapper.selectById(problemId) == null) {
             throw new BizException(ResultCode.NOT_FOUND);
         }
         Long count = favoriteMapper.selectCount(new LambdaQueryWrapper<Favorite>()
-                .eq(Favorite::getUserId, user.userId())
+                .eq(Favorite::getUserId, me.userId())
                 .eq(Favorite::getProblemId, problemId));
         return R.ok(count != null && count > 0);
     }
@@ -74,8 +84,9 @@ public class FavoriteController {
     /** 我的收藏列表（个人中心） */
     @GetMapping("/favorites")
     public R<List<Map<String, Object>>> myFavorites(@AuthenticationPrincipal LoginUser user) {
+        LoginUser me = requireLogin(user);
         List<Favorite> favs = favoriteMapper.selectList(new LambdaQueryWrapper<Favorite>()
-                .eq(Favorite::getUserId, user.userId())
+                .eq(Favorite::getUserId, me.userId())
                 .orderByDesc(Favorite::getId));
         List<Long> pids = favs.stream().map(Favorite::getProblemId).distinct().toList();
         Map<Long, Problem> problems = pids.isEmpty() ? Map.of()
@@ -92,5 +103,16 @@ public class FavoriteController {
                             "favoritedAt", String.valueOf(f.getCreatedAt()));
                 })
                 .collect(Collectors.toList()));
+    }
+
+    /**
+     * 未登录统一抛 40100。_路径级 permitAll 让匿名请求能进到方法体，
+     * 因此认证前提必须在这里显式表达。_
+     */
+    private static LoginUser requireLogin(LoginUser user) {
+        if (user == null) {
+            throw new BizException(ResultCode.UNAUTHORIZED);
+        }
+        return user;
     }
 }

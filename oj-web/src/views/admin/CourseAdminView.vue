@@ -8,7 +8,9 @@
         <el-table-column prop="id" label="#" width="70" />
         <el-table-column prop="name" label="课程名称" min-width="180" />
         <el-table-column prop="description" label="描述" min-width="240" show-overflow-tooltip />
-        <el-table-column prop="createdAt" label="创建时间" width="170" />
+        <el-table-column label="创建时间" width="170">
+          <template #default="{ row }">{{ formatDateTime(row.createdAt) }}</template>
+        </el-table-column>
         <el-table-column label="操作" width="220">
           <template #default="{ row }">
             <el-button link type="primary" @click="showCompletion(row)">完成情况</el-button>
@@ -65,6 +67,7 @@ import {
   type Course, type CompletionItem,
 } from '@/api/course'
 import { pageProblems, type Problem } from '@/api/problem'
+import { formatDateTime } from '@/utils/datetime'
 
 const courses = ref<Course[]>([])
 const allProblems = ref<Problem[]>([])
@@ -89,7 +92,8 @@ async function load() {
 }
 
 async function loadProblems() {
-  const data = await pageProblems({ page: 1, size: 200 })
+  // 后端分页上限 maxLimit=100，传 200 会被静默截断
+  const data = await pageProblems({ page: 1, size: 100 })
   allProblems.value = data.records || []
 }
 

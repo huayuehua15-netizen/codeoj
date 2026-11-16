@@ -24,6 +24,9 @@
             </el-tag>
           </template>
         </el-table-column>
+        <el-table-column label="注册时间" width="170">
+          <template #default="{ row }">{{ formatDateTime(row.createdAt) }}</template>
+        </el-table-column>
         <el-table-column label="操作" width="260">
           <template #default="{ row }">
             <el-button link :type="row.role === 1 ? 'info' : 'warning'" @click="setRole(row)">
@@ -53,6 +56,7 @@
 import { onMounted, ref } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { pageAdminUsers, changeUserRole, changeUserStatus, resetUserPassword, type AdminUserItem } from '@/api/adminUser'
+import { formatDateTime } from '@/utils/datetime'
 
 const users = ref<AdminUserItem[]>([])
 const keyword = ref('')

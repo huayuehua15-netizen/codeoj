@@ -86,7 +86,14 @@ CREATE TABLE IF NOT EXISTS `submission` (
   KEY `idx_submission_user` (`user_id`),
   KEY `idx_submission_problem` (`problem_id`),
   KEY `idx_submission_status` (`status`),
-  KEY `idx_submission_judged_at` (`judged_at`)
+  KEY `idx_submission_judged_at` (`judged_at`),
+  -- 提交记录页：WHERE user_id=? [AND problem_id=?] [AND status=?] ORDER BY id DESC
+  -- 复合索引让排序也走索引，避免"过滤+filesort"；单列 user_id 索引只能覆盖前半段
+  KEY `idx_submission_user_id` (`user_id`, `id`),
+  -- 竞赛排名：题目集 IN (...) + 时间窗 BETWEEN，按时间升序扫描
+  KEY `idx_submission_problem_created` (`problem_id`, `created_at`),
+  -- 个人统计/趋势：user_id + created_at 范围聚合
+  KEY `idx_submission_user_created` (`user_id`, `created_at`)
 ) ENGINE = InnoDB COMMENT = '提交记录表';
 
 -- ---------------------------------------------------------------------

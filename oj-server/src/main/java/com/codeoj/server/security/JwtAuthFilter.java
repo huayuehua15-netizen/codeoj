@@ -59,39 +59,23 @@ public class JwtAuthFilter extends OncePerRequestFilter {
                     log.debug("token in blacklist, jti={}", jti);
                     return;
                 }
-                LoginUser user = buildLoginUser(claims);
-                if (!userExists(user.userId())) {
-                    // 账号已删除：不注入认证，受保护接口统一返回 40100（行为一致）
-                    log.debug("token for deleted user {}, reject", user.userId());
+                // 每请求主键查库：同时校验存在性、封禁状态与**当前角色**
+                User u = userMapper.selectById(Long.valueOf(claims.getSubject()));
+                if (u == null || (u.getStatus() != null && u.getStatus() == 1)) {
+                    log.debug("token for deleted/banned user {}, reject", claims.getSubject());
                     return;
                 }
+                // 角色以数据库为准，不信令牌里的 role claim——
+                // 否则管理员降权后，旧令牌在 24h 有效期内仍持 ROLE_ADMIN（垂直越权）
+                LoginUser user = new LoginUser(u.getId(), u.getRole(), jti);
                 UsernamePasswordAuthenticationToken authentication =
                         new UsernamePasswordAuthenticationToken(user, null,
-                                List.of(new SimpleGrantedAuthority("ROLE_" + roleOf(claims))));
+                                List.of(new SimpleGrantedAuthority(
+                                        "ROLE_" + (u.getRole() != null && u.getRole() == 1 ? "ADMIN" : "USER"))));
                 authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
                 SecurityContextHolder.getContext().setAuthentication(authentication);
             });
         }
         chain.doFilter(request, response);
-    }
-
-    /**
-     * 用户有效性校验：每请求主键查库（主键查询代价极小）——
-     * 删号/封禁后 token 立即全面失效、各接口行为一致。
-     * 此前用 Redis 缓存 5 分钟的方案存在删号前已建立的缓存窗口，窗口内行为不一致，故弃用。
-     */
-    private boolean userExists(Long userId) {
-        User u = userMapper.selectById(userId);
-        return u != null && (u.getStatus() == null || u.getStatus() != 1);
-    }
-
-    private LoginUser buildLoginUser(Claims claims) {
-        return new LoginUser(Long.valueOf(claims.getSubject()),
-                (Integer) claims.get("role"), claims.getId());
-    }
-
-    private String roleOf(Claims claims) {
-        Object role = claims.get("role");
-        return role != null && ((Number) role).intValue() == 1 ? "ADMIN" : "USER";
     }
 }

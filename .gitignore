@@ -23,3 +23,7 @@ Thumbs.db
 
 # ===== Maven wrapper 临时 =====
 *.original
+
+# 审查/构建临时产物
+.tmp/
+review/

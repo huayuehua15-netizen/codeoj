@@ -147,7 +147,8 @@ Query 参数：
 |---|---|---|
 | keyword | ❌ | 标题模糊搜索 |
 | difficulty | ❌ | 1=简单 2=中等 3=困难 |
-| page / size | ❌ | 默认 1 / 10 |
+| tag | ❌ | 标签精确筛选（`JSON_CONTAINS` 参数化） |
+| page / size | ❌ | 默认 1 / 10（size 上限 100） |
 
 响应 `data.records[]`（未登录游客仅见已上架题目）：
 
@@ -155,6 +156,7 @@ Query 参数：
 {
   "id": 1,
   "title": "A+B Problem",
+  "tags": ["模拟"],
   "difficulty": 1,
   "timeLimitMs": 1000,
   "memoryLimitMb": 256,
@@ -166,7 +168,12 @@ Query 参数：
 }
 ```
 
-> 列表接口不返回 description/samples/languages 大字段。
+> **列表接口不返回 `description` / `samples` / `languages`**（v1.3 起后端已按此实现，
+> 只查轻量列）。`description` 是 LONGTEXT、`samples` 是 JSON，一页 10 条会把
+> 整份题面塞进响应体。
+>
+> ⚠️ **管理端编辑表单必须调 2.2 详情接口回填**，不能复用列表行数据——否则
+> description/samples/languages 为空，保存即静默清空题面。
 
 ### 2.2 题目详情 `GET /api/problems/{id}`（公开）
 
@@ -278,6 +285,9 @@ Query 参数：
 ```json
 { "submissionId": 100, "status": 0 }
 ```
+
+> `status` 是**数字状态码**（0=排队中），与 [CONTRACT.md §2 状态机](./CONTRACT.md#2-判题状态机论文表-4-8) 一致；
+> 不是枚举名字符串（早期实现曾输出 `"QUEUING"`，前后端口径不一致，v1.3 修正）。
 
 失败：`42901` 提交过于频繁 / `40002` 题目不可用 / `40003` 语言或代码不合法。
 
@@ -401,7 +411,25 @@ Query 参数：`page`（默认 1）、`size`（默认 20）。
 | 端点 | `/ws`（SockJS 升级，STOMP 子协议） |
 | 客户端库 | `@stomp/stompjs` + `sockjs-client` |
 | 心跳/重连 | 客户端 `reconnectDelay: 3000` 自动重连 |
-| 鉴权 | SockJS 握手经 Nginx 转发；推送按 userId 定向，无独立 token 校验（STOMP 层） |
+| **鉴权** | **STOMP `CONNECT` 帧原生头 `Authorization: Bearer <token>`**，服务端在入站通道拦截器校验并绑定会话 Principal |
+
+> **鉴权为什么在 STOMP 层而不是握手层**：SockJS 的 `/ws/info`、`/ws/xhr` 是普通 HTTP 请求，
+> 浏览器握手阶段无法携带自定义头，因此 `SecurityConfig` 对 `/ws/**` 保持 `permitAll`；
+> 真正的身份校验发生在 STOMP `CONNECT` 帧——解析 `Authorization` 后 `setUser(LoginUser)`。
+> 未通过校验的连接不绑定 Principal，`/user/**` 订阅解析不到用户，**消息不会投递给它**（fail-closed）。
+
+```ts
+// 前端连接方式（oj-web/src/api/ws.ts）
+new Client({
+  webSocketFactory: () => new SockJS('/ws'),
+  connectHeaders: { Authorization: `Bearer ${token}` },  // ← 必需
+  reconnectDelay: 3000,
+})
+```
+
+> ⚠️ **契约要点**：`convertAndSendToUser(String.valueOf(userId), ...)` 是按
+> `Principal#getName()` 匹配会话的，服务端 `LoginUser.getName()` 必须返回 **userId 字符串**
+> （不是 username）。改这里会让所有推送静默丢失（没有报错，只有 `log.debug`）。
 
 ### 7.2 订阅目标
 
@@ -512,3 +540,4 @@ Query 参数：`page`（默认 1）、`size`（默认 20）。
 | 2026-11-13 | v1.0 | 骨架阶段定稿 | — |
 | 2026-11-15 | v1.1 | 个人信息维护接口（1.5/1.6）、提交记录时间筛选（4.3）、注册/登录 IP 限流、昵称字段移除、样例编辑器与 XSS 净化 | 成员 B |
 | 2026-11-15 | v1.2 | 竞赛模式（8.1）、用户管理（8.2）、公告（8.3）、题目标签与收藏（8.4） | 成员 B |
+| 2026-11-16 | v1.3 | **审查修复批次**：① 4.1 `SubmitVO.status` 明确为数字码（原输出枚举名）；② 2.1 列表接口明确不返回 description/samples/languages（后端已按此瘦身），管理端编辑须走 2.2；③ 7.1 WS 鉴权改为 STOMP CONNECT 帧 `Authorization` 头（原「无独立 token 校验」不可投递，属文档与实现双缺失）；④ 收藏接口未登录返回 40100；⑤ 全局时间序列化统一 `yyyy-MM-dd HH:mm:ss`（`spring.jackson.date-format` 对 `LocalDateTime` 无效，需注册序列化器）；⑥ 补登记 `GET /api/submissions/trend` | 成员 B |

@@ -16,10 +16,12 @@ import com.codeoj.server.vo.LoginVO;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.redis.core.StringRedisTemplate;
+import org.springframework.data.redis.core.script.DefaultRedisScript;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.time.Duration;
+import java.util.List;
 
 /**
  * 认证服务实现（论文 4.7/5.2）：
@@ -29,6 +31,12 @@ import java.time.Duration;
 public class AuthServiceImpl implements AuthService {
 
     private static final Logger log = LoggerFactory.getLogger(AuthServiceImpl.class);
+
+    /** 原子计数：首次失败设置过期，返回当前计数（避免 INCR/EXPIRE 两步留下永不过期键） */
+    private static final DefaultRedisScript<Long> COUNT_WITH_TTL = new DefaultRedisScript<>(
+            "local c = redis.call('INCR', KEYS[1]) "
+            + "if c == 1 then redis.call('EXPIRE', KEYS[1], ARGV[1]) end "
+            + "return c", Long.class);
 
     private final UserMapper userMapper;
     private final PasswordEncoder passwordEncoder;
@@ -73,8 +81,10 @@ public class AuthServiceImpl implements AuthService {
     public LoginVO login(LoginDTO dto, String clientIp) {
         // 登录按 IP 限流：每小时最多 30 次，防密码喷洒（论文 4.7 滑动窗口限流机制）
         rateLimiter.check("login", clientIp, 30, 3600);
-        // 登录限流：失败 5 次锁定 15 分钟（论文 4.7 / 测试 F-02）
-        String lockKey = "oj:rate:login:fail:" + dto.getUsername();
+        // 登录失败锁定：失败 5 次锁 15 分钟（论文 4.7 / 测试 F-02）。
+        // 键同时包含 IP：只用 username 做键时，任何人知道教师账号就能连发 5 次
+        // 错误密码把该账号锁死 15 分钟（每次失败还续期），构成未授权 DoS。
+        String lockKey = "oj:rate:login:fail:" + clientIp + ":" + dto.getUsername();
         String failsRaw = redis.opsForValue().get(lockKey);
         long fails = failsRaw != null ? Long.parseLong(failsRaw) : 0;
         if (fails >= 5) {
@@ -84,8 +94,9 @@ public class AuthServiceImpl implements AuthService {
         User user = userMapper.selectOne(
                 new LambdaQueryWrapper<User>().eq(User::getUsername, dto.getUsername()));
         if (user == null || !passwordEncoder.matches(dto.getPassword(), user.getPassword())) {
-            redis.opsForValue().increment(lockKey);
-            redis.expire(lockKey, Duration.ofMinutes(15));
+            // 原子计数：INCR 与 EXPIRE 分两步时，进程中断会留下永不过期的计数键
+            Long now = redis.execute(COUNT_WITH_TTL, List.of(lockKey), "900");
+            log.debug("login failed, count={}", now);
             throw new BizException(ResultCode.UNAUTHORIZED.getCode(), "用户名或密码错误");
         }
         // 封禁账号拒绝登录（论文 4.7 安全设计延伸，管理员在用户管理中操作）

@@ -18,17 +18,20 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import java.time.LocalDateTime;
+import java.security.SecureRandom;
+import java.util.Base64;
 import java.util.Map;
 
 /**
  * 用户管理接口（管理端补齐）：列表/搜索/提权降权/封禁解封/重置密码。
- * 封禁联动：登录拒绝（40101）+ 认证过滤器存在性/状态校验（既有 token 立即失效）。
+ * 封禁联动：登录拒绝（40100）+ 认证过滤器存在性/状态校验（既有 token 立即失效）。
  */
 @RestController
 @RequestMapping("/api/admin/users")
 @PreAuthorize("hasRole('ADMIN')")
 public class AdminUserController {
+
+    private static final SecureRandom SECURE_RANDOM = new SecureRandom();
 
     private final UserMapper userMapper;
     private final PasswordEncoder passwordEncoder;
@@ -94,14 +97,25 @@ public class AdminUserController {
         return R.ok();
     }
 
-    /** 管理员重置密码（设为临时密码，返回给教师转告学生） */
+    /** 管理员重置密码（设为随机临时密码，返回给教师转告学生） */
     @PutMapping("/{id}/password")
     public R<String> resetPassword(@PathVariable(name = "id") Long id) {
         User u = requireUser(id);
-        String tempPassword = "oj" + String.valueOf(LocalDateTime.now().toLocalTime().toSecondOfDay());
+        String tempPassword = generateTempPassword();
         u.setPassword(passwordEncoder.encode(tempPassword));
         userMapper.updateById(u);
         return R.ok(tempPassword);
+    }
+
+    /**
+     * 生成临时密码：SecureRandom 32 位熵 → Base64 URL-safe 取 12 位。
+     * 旧实现用 "oj" + 当天秒数，完全可预测（同一秒重置的账号密码还完全相同），
+     * 且符合 Api.md §8.2「重置密码返回临时密码」的安全语义。
+     */
+    private static String generateTempPassword() {
+        byte[] buf = new byte[12];
+        SECURE_RANDOM.nextBytes(buf);
+        return Base64.getUrlEncoder().withoutPadding().encodeToString(buf);
     }
 
     private void requireNotSelf(Long id, LoginUser operator) {

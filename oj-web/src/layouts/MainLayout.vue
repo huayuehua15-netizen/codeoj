@@ -63,10 +63,16 @@ const userStore = useUserStore()
 
 const activeMenu = computed(() => route.path)
 
-onMounted(() => {
+onMounted(async () => {
   // 登录用户建立 WebSocket 连接（论文 5.5）
   if (userStore.isLoggedIn) {
     connectWs()
+    // 校验登录态与角色：token 过期/被降权/被封禁时同步本地状态（失败静默，不打断页面）
+    try {
+      await userStore.refreshUserInfo()
+    } catch {
+      // 40100 由响应拦截器统一处理；其它错误忽略
+    }
   }
 })
 

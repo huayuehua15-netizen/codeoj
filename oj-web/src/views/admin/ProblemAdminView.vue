@@ -85,12 +85,13 @@
               <el-option v-for="t in ['动态规划', '贪心', '模拟', '字符串', '数学', '二分', '图论']" :key="t" :label="t" :value="t" />
             </el-select>
           </el-form-item>
-          <el-form-item label="语言">
+          <el-form-item label="语言" required>
             <el-checkbox-group v-model="form.languages">
               <el-checkbox value="c">C</el-checkbox>
               <el-checkbox value="cpp">C++</el-checkbox>
               <el-checkbox value="java">Java</el-checkbox>
               <el-checkbox value="python3">Python3</el-checkbox>
+              <el-checkbox value="js">JavaScript</el-checkbox>
             </el-checkbox-group>
           </el-form-item>
           <el-form-item label="上架"><el-switch v-model="form.enabled" /></el-form-item>
@@ -125,7 +126,7 @@
 <script setup lang="ts">
 import { onMounted, reactive, ref } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { pageProblems, createProblem, updateProblem, deleteProblem, type Problem } from '@/api/problem'
+import { pageProblems, getProblem, createProblem, updateProblem, deleteProblem, type Problem } from '@/api/problem'
 import MarkdownPreview from '@/components/MarkdownPreview.vue'
 import { publishAnnouncement, deleteAnnouncement, listAnnouncements, type AnnouncementItem } from '@/api/announcement'
 
@@ -183,21 +184,51 @@ function openCreate() {
 
 function edit(row: Problem) {
   editingId.value = row.id
-  Object.assign(form, {
-    title: row.title,
-    difficulty: row.difficulty,
-    timeLimitMs: row.timeLimitMs,
-    memoryLimitMb: row.memoryLimitMb,
-    description: row.description || '',
-    tags: row.tags || [],
-    samples: (row.samples || []).map((s) => ({ input: s.input, output: s.output })),
-    languages: row.languages || [],
-    enabled: row.enabled,
-  })
   dialogVisible.value = true
+  // 列表接口按契约瘦身（不返回 description/samples/languages），
+  // 必须以详情接口回填，否则保存会用空值覆盖题面。
+  getProblem(row.id)
+    .then((detail) => {
+      Object.assign(form, {
+        title: detail.title,
+        difficulty: detail.difficulty,
+        timeLimitMs: detail.timeLimitMs,
+        memoryLimitMb: detail.memoryLimitMb,
+        description: detail.description || '',
+        tags: detail.tags || [],
+        samples: (detail.samples || []).map((s) => ({ input: s.input, output: s.output })),
+        languages: detail.languages || [],
+        enabled: detail.enabled,
+      })
+    })
+    .catch(() => {
+      dialogVisible.value = false
+      editingId.value = undefined
+    })
 }
 
 async function save() {
+  // 前端校验（后端也会兜，但空 languages 会让该题任何语言都无法提交，必须提前拦）
+  if (!form.title.trim()) {
+    ElMessage.warning('请填写题目名称')
+    return
+  }
+  if (!form.languages.length) {
+    ElMessage.warning('至少勾选一种允许提交的语言')
+    return
+  }
+  if (!form.timeLimitMs || form.timeLimitMs <= 0) {
+    ElMessage.warning('时间限制必须大于 0')
+    return
+  }
+  if (!form.memoryLimitMb || form.memoryLimitMb <= 0) {
+    ElMessage.warning('内存限制必须大于 0')
+    return
+  }
+  if (!form.difficulty) {
+    ElMessage.warning('请选择难度')
+    return
+  }
   saving.value = true
   try {
     if (editingId.value) {

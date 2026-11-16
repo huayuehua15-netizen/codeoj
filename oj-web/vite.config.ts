@@ -30,5 +30,21 @@ export default defineConfig({
   },
   build: {
     outDir: 'dist',
+    // 拆包：monaco / echarts / element-plus 体量大且低频，独立成 chunk 便于缓存
+    rollupOptions: {
+      output: {
+        manualChunks(id) {
+          if (id.includes('node_modules')) {
+            if (id.includes('monaco-editor')) return 'vendor-monaco'
+            if (id.includes('echarts') || id.includes('zrender')) return 'vendor-echarts'
+            if (id.includes('element-plus') || id.includes('@element-plus')) return 'vendor-element'
+            if (id.includes('vue-router') || id.includes('pinia') || /node_modules[\\/]vue[\\/]/.test(id)) {
+              return 'vendor-vue'
+            }
+            return 'vendor'
+          }
+        },
+      },
+    },
   },
 })

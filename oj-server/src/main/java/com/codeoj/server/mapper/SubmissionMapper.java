@@ -10,8 +10,6 @@ import org.apache.ibatis.annotations.Update;
 import java.util.List;
 import java.util.Map;
 
-import java.util.List;
-
 @Mapper
 public interface SubmissionMapper extends BaseMapper<Submission> {
 

@@ -8,7 +8,10 @@ spring:
 
   datasource:
     driver-class-name: com.mysql.cj.jdbc.Driver
-    url: jdbc:mysql://${MYSQL_HOST:localhost}:${MYSQL_PORT:3306}/${MYSQL_DB:codeoj}?useUnicode=true&characterEncoding=UTF-8&serverTimezone=UTC&useSSL=false&allowPublicKeyRetrieval=true
+    # 与 oj-server 保持一致：serverTimezone 只告诉驱动"服务端时区"，不会下发 SET time_zone。
+    # 判题服务回写 judged_at = NOW()（见 SubmissionMapper.updateFinalResult），
+    # 若会话时区与 JVM 不一致，同一行记录的 created_at / judged_at 会相差 8 小时。
+    url: jdbc:mysql://${MYSQL_HOST:localhost}:${MYSQL_PORT:3306}/${MYSQL_DB:codeoj}?useUnicode=true&characterEncoding=UTF-8&serverTimezone=Asia/Shanghai&useSSL=false&allowPublicKeyRetrieval=true&sessionVariables=time_zone='%2B08:00'
     username: ${MYSQL_USER:root}
     password: ${MYSQL_PASSWORD:123456}
 
@@ -33,7 +36,7 @@ spring:
         concurrency: 4   # 实例内第一层并发控制（论文 5.4）
 
   jackson:
-    time-zone: UTC
+    time-zone: Asia/Shanghai
 
 # 判题沙箱配置（论文表 4-9 / 5.4 docker run 参数）
 oj:

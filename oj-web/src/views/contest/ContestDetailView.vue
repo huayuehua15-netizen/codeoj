@@ -8,7 +8,7 @@
             {{ contest.title }}
           </h2>
           <p class="desc">{{ contest.description }}</p>
-          <p class="meta">⏰ {{ contest.startTime.slice(0, 16).replace('T', ' ') }} ~ {{ contest.endTime.slice(0, 16).replace('T', ' ') }}</p>
+          <p class="meta">⏰ {{ formatDateTime(contest.startTime) }} ~ {{ formatDateTime(contest.endTime) }}</p>
           <p class="meta countdown" v-if="contest.status !== 2">
             {{ contest.status === 1 ? '⏳ 距离结束还剩' : '🚀 距离开始还剩' }}：{{ countdown }}
           </p>
@@ -66,6 +66,7 @@
 import { computed, onMounted, onUnmounted, ref } from 'vue'
 import { useRoute } from 'vue-router'
 import { getContest, getContestRanking, type ContestDetail, type ContestRankItem } from '@/api/contest'
+import { formatDateTime, parseServerTime } from '@/utils/datetime'
 
 const route = useRoute()
 const id = route.params.id as string
@@ -79,8 +80,9 @@ const nowTick = ref(0)
 const countdown = computed(() => {
   nowTick.value // 依赖 tick 触发重算
   if (!contest.value) return ''
-  const target = new Date(contest.value.status === 1 ? contest.value.endTime : contest.value.startTime).getTime()
-  const diff = target - Date.now()
+  const target = parseServerTime(contest.value.status === 1 ? contest.value.endTime : contest.value.startTime)
+  if (!target) return '—'
+  const diff = target.getTime() - Date.now()
   if (diff <= 0) return '已到时'
   const h = Math.floor(diff / 3600000)
   const m = Math.floor((diff % 3600000) / 60000)

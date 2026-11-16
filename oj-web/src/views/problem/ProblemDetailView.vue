@@ -1,5 +1,13 @@
 <template>
-  <div class="page-container problem-detail" v-if="problem">
+  <!-- 加载失败空态：题目不存在/已下架/后端不可用时不要白屏 -->
+  <div v-if="!problem" class="page-container">
+    <div class="card">
+      <el-empty :description="loadError ? '题目不存在或已下架' : '题目加载中…'">
+        <el-button v-if="loadError" type="primary" @click="$router.push('/problems')">返回题库</el-button>
+      </el-empty>
+    </div>
+  </div>
+  <div v-else class="page-container problem-detail">
     <div class="left">
       <div class="card">
         <h2>
@@ -96,6 +104,12 @@
               <el-button @click="resetJudge">再提交一次</el-button>
             </template>
           </el-result>
+          <!-- 中止出口：排队/判题异常耗时过久时，允许用户主动退出并去看记录 -->
+          <div v-if="judgeState === 'QUEUED' || judgeState === 'JUDGING'" class="judge-abort">
+            <el-button link type="info" size="small" @click="abortJudge">
+              暂时不看结果（可稍后在提交记录中查看）
+            </el-button>
+          </div>
         </div>
       </div>
     </div>
@@ -103,16 +117,16 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onUnmounted, ref } from 'vue'
+import { computed, onMounted, onUnmounted, ref } from 'vue'
 import { useRoute } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { isFavorited, toggleFavorite } from '@/api/favorite'
 import { runInSandbox, type RunResult } from '@/utils/jsRunner'
 import { getProblem, type Problem } from '@/api/problem'
-import { submitCode, getSubmission, type SubmissionDetail } from '@/api/submission'
+import { submitCode, getSubmission } from '@/api/submission'
 import { useUserStore } from '@/stores/user'
-import { connectWs, onJudgePush, disconnectWs } from '@/api/ws'
-import { CODE_TEMPLATES, DIFFICULTY_MAP, LANGUAGE_OPTIONS, statusLabel, statusType } from '@/utils/status'
+import { onJudgePush } from '@/api/ws'
+import { CODE_TEMPLATES, DIFFICULTY_MAP, LANGUAGE_OPTIONS, statusLabel } from '@/utils/status'
 import MarkdownPreview from '@/components/MarkdownPreview.vue'
 import CodeEditor from '@/components/CodeEditor.vue'
 
@@ -120,6 +134,7 @@ const route = useRoute()
 const userStore = useUserStore()
 
 const problem = ref<Problem>()
+const loadError = ref(false)
 const language = ref('cpp')
 const prevLanguage = ref('cpp')
 const code = ref('')
@@ -167,6 +182,14 @@ function resetJudge() {
   currentSubmissionId.value = undefined
 }
 
+/** 主动中止等待：停止轮询并回到可操作状态（结果仍可在提交记录里查到） */
+function abortJudge() {
+  stopPolling()
+  judgeState.value = 'IDLE'
+  result.value = undefined
+  currentSubmissionId.value = undefined
+}
+
 const favorited = ref(false)
 const running = ref(false)
 const consoleInput = ref('')
@@ -196,22 +219,25 @@ async function loadFav() {
 
 async function toggleFav() {
   if (!problem.value) return
-  favorited.value = await toggleFavorite(problem.value.id)
-  ElMessage.success(favorited.value ? '已加入收藏' : '已取消收藏')
+  try {
+    favorited.value = await toggleFavorite(problem.value.id)
+    ElMessage.success(favorited.value ? '已加入收藏' : '已取消收藏')
+  } catch {
+    // 未登录/会话过期返回 40100，拦截器已提示并跳转登录
+  }
 }
 
 function onLanguageChange(lang: string) {
   // 论文 5.7：切换语言载入对应模板代码。
   // 当前内容为空或仍是任一模板（未编辑）→ 直接替换；已编辑 → 确认后替换，取消则回退。
   const label = LANGUAGE_OPTIONS.find((l) => l.value === lang)?.label ?? lang
-  const untouched = !code.value.trim()
-      || Object.values(CODE_TEMPLATES).includes(code.value)
+  const untouched = !code.value.trim() || Object.values(CODE_TEMPLATES).includes(code.value)
   if (untouched) {
     code.value = CODE_TEMPLATES[lang] ?? ''
-  prevLanguage.value = lang
-  consoleInput.value = problem.value?.samples?.[0]?.input ?? ''
-  return
-}
+    prevLanguage.value = lang
+    consoleInput.value = problem.value?.samples?.[0]?.input ?? ''
+    return
+  }
   ElMessageBox.confirm(
     `切换到 ${label} 将载入对应模板，当前已编辑的代码会被替换。是否继续？`,
     '切换语言',
@@ -220,6 +246,8 @@ function onLanguageChange(lang: string) {
     .then(() => {
       code.value = CODE_TEMPLATES[lang] ?? ''
       prevLanguage.value = lang
+      // 与未编辑分支保持一致：切换语言后重新预填样例 1
+      consoleInput.value = problem.value?.samples?.[0]?.input ?? ''
     })
     .catch(() => {
       language.value = prevLanguage.value
@@ -247,10 +275,15 @@ async function handleSubmit() {
       language: language.value,
       code: code.value,
     })
+    // 尽快赋值：QUEUED 推送若晚于本响应即可命中（早到的已在 handler 里忽略）
     currentSubmissionId.value = data.submissionId
     judgeState.value = 'QUEUED'
     // 订阅推送兜底：若 WebSocket 未送达，定时回查结果
     startPolling()
+  } catch {
+    // 拦截器已提示具体原因（42901/40003/40002/网络），此处只负责退出不可操作状态
+    judgeState.value = 'IDLE'
+    currentSubmissionId.value = undefined
   } finally {
     submitting.value = false
   }
@@ -272,18 +305,37 @@ const unsubscribe = onJudgePush((payload) => {
 
 // HTTP 兜底轮询：连接断开重连后以提交编号回查结果（论文 5.5）
 let pollTimer: ReturnType<typeof setInterval> | null = null
+let pollStartedAt = 0
+/** 轮询总时长上限：判题排队久或实例掉线时不无限轮询 */
+const POLL_TIMEOUT_MS = 60_000
 
 function startPolling() {
   stopPolling()
+  pollStartedAt = Date.now()
   pollTimer = setInterval(async () => {
-    if (!currentSubmissionId.value) return
-    const detail = await getSubmission(currentSubmissionId.value)
-    if (detail.status >= 2) {
-      judgeState.value = 'FINISHED'
-      result.value = { submissionId: detail.id, status: detail.status }
+    if (!currentSubmissionId.value) {
       stopPolling()
-    } else if (detail.status === 1) {
-      judgeState.value = 'JUDGING'
+      return
+    }
+    if (Date.now() - pollStartedAt > POLL_TIMEOUT_MS) {
+      stopPolling()
+      judgeState.value = 'IDLE'
+      ElMessage.warning('判题超时，请稍后到「提交记录」中查看结果')
+      return
+    }
+    try {
+      const detail = await getSubmission(currentSubmissionId.value)
+      if (detail.status >= 2) {
+        judgeState.value = 'FINISHED'
+        result.value = { submissionId: detail.id, status: detail.status }
+        stopPolling()
+      } else if (detail.status === 1) {
+        judgeState.value = 'JUDGING'
+      }
+    } catch {
+      // 单次失败即停（40100/40400/网络抖动），避免每 2s 刷一次错误提示
+      stopPolling()
+      judgeState.value = 'IDLE'
     }
   }, 2000)
 }
@@ -297,9 +349,18 @@ function stopPolling() {
 
 onUnmounted(() => {
   stopPolling()
+  unsubscribe()
+  currentSubmissionId.value = undefined
 })
 
-load()
+onMounted(async () => {
+  try {
+    await load()
+  } catch {
+    // 40002 题目不存在/未上架、40400、后端不可用：保持 problem 为空，由模板渲染空态
+    loadError.value = true
+  }
+})
 </script>
 
 <style scoped>
@@ -411,5 +472,9 @@ load()
 }
 .judge-steps {
   padding: 8px 4px 0;
+}
+.judge-abort {
+  text-align: center;
+  padding-bottom: 4px;
 }
 </style>

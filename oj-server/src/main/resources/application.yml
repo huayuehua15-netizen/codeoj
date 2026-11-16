@@ -8,7 +8,11 @@ spring:
 
   datasource:
     driver-class-name: com.mysql.cj.jdbc.Driver
-    url: jdbc:mysql://${MYSQL_HOST:localhost}:${MYSQL_PORT:3306}/${MYSQL_DB:codeoj}?useUnicode=true&characterEncoding=UTF-8&serverTimezone=UTC&useSSL=false&allowPublicKeyRetrieval=true
+    # serverTimezone 只告诉驱动"服务端时区"，并不会给会话下发 SET time_zone。
+    # 不显式下发时，Java 侧 LocalDateTime.now()（JVM 本地时区）与 SQL 侧 NOW()
+    # （MySQL 容器默认 UTC）会相差 8 小时——同一行记录的 created_at 与 judged_at
+    # 时间倒挂。sessionVariables 让会话时间与 JVM 保持一致（论文 4.4 时间一致性）。
+    url: jdbc:mysql://${MYSQL_HOST:localhost}:${MYSQL_PORT:3306}/${MYSQL_DB:codeoj}?useUnicode=true&characterEncoding=UTF-8&serverTimezone=Asia/Shanghai&useSSL=false&allowPublicKeyRetrieval=true&sessionVariables=time_zone='%2B08:00'
     username: ${MYSQL_USER:root}
     password: ${MYSQL_PASSWORD:123456}
     hikari:
@@ -39,7 +43,7 @@ spring:
 
   jackson:
     date-format: yyyy-MM-dd HH:mm:ss
-    time-zone: UTC   # 所有时间字段统一 UTC 存储、展示层转换（论文 4.4）
+    time-zone: Asia/Shanghai
 
 mybatis-plus:
   mapper-locations: classpath*:mapper/*.xml
@@ -54,6 +58,8 @@ mybatis-plus:
 
 # JWT 认证配置（论文 4.7：24 小时过期，登出进入 Redis 黑名单）
 jwt:
+  # 生产环境必须通过 JWT_SECRET 覆盖；默认值仅供本地开发，随仓库分发意味着
+  # 任何人都能用它伪造任意 userId/role 的令牌。至少 32 字节才能满足 HS256 密钥强度。
   secret: ${JWT_SECRET:codeoj-dev-secret-key-please-change-in-production-0123456789}
   expire-hours: 24
 

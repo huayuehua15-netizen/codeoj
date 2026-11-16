@@ -14,7 +14,7 @@
         <el-descriptions-item label="用户名">{{ userStore.username }}</el-descriptions-item>
         <el-descriptions-item label="角色">{{ userStore.isAdmin ? '管理员（教师）' : '普通用户（学生）' }}</el-descriptions-item>
         <el-descriptions-item label="邮箱">{{ info?.email || '未设置' }}</el-descriptions-item>
-        <el-descriptions-item label="注册时间">{{ info?.createdAt || '-' }}</el-descriptions-item>
+        <el-descriptions-item label="注册时间">{{ formatDateTime(info?.createdAt) }}</el-descriptions-item>
       </el-descriptions>
 
       <!-- 我的收藏 -->
@@ -32,7 +32,9 @@
             </el-tag>
           </template>
         </el-table-column>
-        <el-table-column prop="favoritedAt" label="收藏时间" width="180" />
+        <el-table-column label="收藏时间" width="180">
+          <template #default="{ row }">{{ formatDateTime(row.favoritedAt) }}</template>
+        </el-table-column>
       </el-table>
 
       <el-divider />
@@ -80,6 +82,7 @@ import { changePassword, getUserInfo, updateEmail, type LoginVO } from '@/api/au
 import { myFavorites } from '@/api/favorite'
 import { useUserStore } from '@/stores/user'
 import { disconnectWs } from '@/api/ws'
+import { formatDateTime } from '@/utils/datetime'
 
 const router = useRouter()
 const userStore = useUserStore()

@@ -46,7 +46,7 @@ public class TestCaseController {
     @DeleteMapping("/{caseId}")
     @PreAuthorize("hasRole('ADMIN')")
     public R<Void> delete(@PathVariable("problemId") Long problemId, @PathVariable("caseId") Long caseId) {
-        testCaseService.delete(caseId);
+        testCaseService.delete(problemId, caseId);
         return R.ok();
     }
 }

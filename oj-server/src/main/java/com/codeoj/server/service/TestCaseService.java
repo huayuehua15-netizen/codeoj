@@ -16,5 +16,5 @@ public interface TestCaseService {
     /** 用例仅管理员可见（论文 4.7：测试用例等敏感数据仅对管理员可见） */
     List<TestCase> listByProblem(Long problemId);
 
-    void delete(Long caseId);
+    void delete(Long problemId, Long caseId);
 }

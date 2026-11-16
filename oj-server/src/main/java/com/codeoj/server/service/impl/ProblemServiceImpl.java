@@ -3,29 +3,35 @@ package com.codeoj.server.service.impl;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.codeoj.common.entity.Problem;
+import com.codeoj.common.entity.TestCase;
 import com.codeoj.common.exception.BizException;
 import com.codeoj.common.result.ResultCode;
 import com.codeoj.server.dto.ProblemFormDTO;
 import com.codeoj.server.mapper.ProblemMapper;
+import com.codeoj.server.mapper.TestCaseMapper;
 import com.codeoj.server.service.ProblemService;
+import com.codeoj.server.vo.ProblemListItemVO;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 
 /**
- * 题目服务实现（骨架：列表/详情已可用；增删改查为第二阶段补全项）。
+ * 题目服务实现（论文表 3-3：题目增删改查与上下架）。
  */
 @Service
 public class ProblemServiceImpl implements ProblemService {
 
     private final ProblemMapper problemMapper;
+    private final TestCaseMapper testCaseMapper;
 
-    public ProblemServiceImpl(ProblemMapper problemMapper) {
+    public ProblemServiceImpl(ProblemMapper problemMapper, TestCaseMapper testCaseMapper) {
         this.problemMapper = problemMapper;
+        this.testCaseMapper = testCaseMapper;
     }
 
     @Override
-    public Page<Problem> page(String keyword, Integer difficulty, String tag, long page, long size, boolean isAdmin) {
+    public Page<ProblemListItemVO> page(String keyword, Integer difficulty, String tag, long page, long size, boolean isAdmin) {
         LambdaQueryWrapper<Problem> wrapper = new LambdaQueryWrapper<>();
         if (!isAdmin) {
             wrapper.eq(Problem::getEnabled, true);
@@ -40,8 +46,19 @@ public class ProblemServiceImpl implements ProblemService {
         if (tag != null && !tag.isBlank()) {
             wrapper.apply("JSON_CONTAINS(tags, JSON_QUOTE({0}))", tag);
         }
+        // 列表只查轻量列：description 是 LONGTEXT、samples 是 JSON，
+        // 一页 10 条全带会把整份题面塞进响应（API.md §2.1：列表不返回大字段）
+        wrapper.select(Problem::getId, Problem::getTitle, Problem::getTags,
+                Problem::getDifficulty, Problem::getTimeLimitMs, Problem::getMemoryLimitMb,
+                Problem::getSubmitCount, Problem::getAcceptedCount, Problem::getEnabled,
+                Problem::getCreatedAt, Problem::getUpdatedAt);
         wrapper.orderByAsc(Problem::getId);
-        return problemMapper.selectPage(new Page<>(page, size), wrapper);
+        Page<Problem> result = problemMapper.selectPage(new Page<>(page, size), wrapper);
+
+        Page<ProblemListItemVO> voPage =
+                new Page<>(result.getCurrent(), result.getSize(), result.getTotal());
+        voPage.setRecords(result.getRecords().stream().map(ProblemListItemVO::of).toList());
+        return voPage;
     }
 
     @Override
@@ -65,7 +82,6 @@ public class ProblemServiceImpl implements ProblemService {
 
     @Override
     public Long create(ProblemFormDTO form) {
-        // TODO 第二阶段：字段组装 + 样例/语言 JSON 落库
         Problem p = new Problem();
         p.setTitle(form.getTitle());
         p.setDescription(form.getDescription());
@@ -86,7 +102,6 @@ public class ProblemServiceImpl implements ProblemService {
 
     @Override
     public void update(Long id, ProblemFormDTO form) {
-        // TODO 第二阶段：完整更新逻辑
         Problem p = getById(id);
         p.setTitle(form.getTitle());
         p.setDescription(form.getDescription());
@@ -102,9 +117,12 @@ public class ProblemServiceImpl implements ProblemService {
     }
 
     @Override
+    @Transactional
     public void delete(Long id) {
-        // TODO 第二阶段：删除题目并级联清理用例关联
         getById(id);
+        // 级联清理：题目删了用例还在，会留下永久孤儿数据（且旧用例可能被新题 ID 复用时误用）
+        testCaseMapper.delete(new LambdaQueryWrapper<TestCase>()
+                .eq(TestCase::getProblemId, id));
         problemMapper.deleteById(id);
     }
 }

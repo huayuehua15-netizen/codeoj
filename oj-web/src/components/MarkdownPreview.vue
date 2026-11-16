@@ -14,8 +14,13 @@ const rendered = computed(() => {
   if (!props.content) return ''
   marked.setOptions({ async: false })
   const html = marked.parse(props.content, { async: false }) as string
-  // 白名单净化：剔除 script/on* 属性等注入面，仅保留安全标签
-  return DOMPurify.sanitize(html)
+  // 白名单净化：剔除 script/on* 属性等注入面，仅保留安全标签。
+  // 额外禁用 <style> 与 style 属性（DOMPurify 默认白名单会放行，
+  // 题面可借此注入 CSS 覆盖页面元素做视觉伪造）；排版由本组件 scoped CSS 提供。
+  return DOMPurify.sanitize(html, {
+    FORBID_TAGS: ['style'],
+    FORBID_ATTR: ['style'],
+  })
 })
 </script>
 

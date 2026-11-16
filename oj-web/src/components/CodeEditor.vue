@@ -4,6 +4,8 @@
 
 <script setup lang="ts">
 // 在线编辑器组件（论文 5.7）：封装 Monaco Editor，按语言切换语法模式并载入模板代码
+// 先注册 worker 环境，再引入 monaco，避免 defaultWorkerFactory 抛错后回落到主线程
+import '@/monacoWorker'
 import * as monaco from 'monaco-editor'
 import { onMounted, onUnmounted, ref, watch } from 'vue'
 import { MONACO_LANGUAGE } from '@/utils/status'
@@ -19,6 +21,7 @@ const emit = defineEmits<{
 
 const editorEl = ref<HTMLElement>()
 let editor: monaco.editor.IStandaloneCodeEditor | null = null
+let changeDisposable: monaco.IDisposable | null = null
 
 onMounted(() => {
   editor = monaco.editor.create(editorEl.value!, {
@@ -30,7 +33,9 @@ onMounted(() => {
     minimap: { enabled: false },
     scrollBeyondLastLine: false,
   })
-  editor.onDidChangeModelContent(() => emit('update:modelValue', editor!.getValue()))
+  changeDisposable = editor.onDidChangeModelContent(() =>
+    emit('update:modelValue', editor!.getValue()),
+  )
 })
 
 watch(
@@ -52,7 +57,10 @@ watch(
 )
 
 onUnmounted(() => {
-  editor?.dispose()
+  changeDisposable?.dispose()
+  changeDisposable = null
+  editor?.dispose() // standalone editor 会连同内部 model 一并释放
+  editor = null
 })
 </script>
 
