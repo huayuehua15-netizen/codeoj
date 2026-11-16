@@ -2,6 +2,7 @@ package com.codeoj.server.service.impl;
 
 import com.codeoj.common.constant.RedisKeys;
 import com.codeoj.common.entity.User;
+import com.codeoj.server.mapper.LeaderboardStatsMapper;
 import com.codeoj.server.mapper.UserMapper;
 import com.codeoj.server.service.LeaderboardService;
 import com.codeoj.server.vo.LeaderboardVO;
@@ -11,7 +12,10 @@ import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.data.redis.core.ZSetOperations;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -19,9 +23,15 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 
 /**
- * 排行榜服务实现（论文 5.6）：Redis ZSet oj:leaderboard:ac 为唯一数据源，
- * 按分数倒序取前 N 名，再以用户表补齐昵称等展示信息；
- * 通过异步对账任务与数据库汇总保持一致（对账任务见第二阶段 M3）。
+ * 排行榜服务实现（论文 5.6）。
+ *
+ * <p><b>数据源</b>：Redis ZSet {@code oj:leaderboard:ac}（score = AC 题数）为解题数权威来源，
+ * 写侧由 oj-judge 在 AC 时 ZINCRBY；展示用统计（总提交/通过率/最后活跃）与
+ * <b>同分排序依据</b>从数据库聚合。
+ *
+ * <p><b>排名规则</b>：解题数降序 → 首次达成该解题数的时间升序 → userId 升序。
+ * 早期实现只取 ZSet 倒序，同分时顺序由 member 字典序决定（等价于 userId 大小），
+ * 两个人都做了 4 题时谁排前面纯属偶然，无法解释也无法复现。
  */
 @Service
 public class LeaderboardServiceImpl implements LeaderboardService {
@@ -30,41 +40,132 @@ public class LeaderboardServiceImpl implements LeaderboardService {
 
     private final StringRedisTemplate redis;
     private final UserMapper userMapper;
+    private final LeaderboardStatsMapper statsMapper;
 
-    public LeaderboardServiceImpl(StringRedisTemplate redis, UserMapper userMapper) {
+    public LeaderboardServiceImpl(StringRedisTemplate redis,
+                                  UserMapper userMapper,
+                                  LeaderboardStatsMapper statsMapper) {
         this.redis = redis;
         this.userMapper = userMapper;
+        this.statsMapper = statsMapper;
     }
 
     @Override
     public LeaderboardVO page(long page, long size) {
         Long zsetSize = redis.opsForZSet().size(RedisKeys.LEADERBOARD_AC);
         long total = zsetSize == null ? 0 : zsetSize;
-        long offset = (page - 1) * size;
-        // 分页倒序取前 N 名（论文 5.6）
-        Set<ZSetOperations.TypedTuple<String>> top =
-                redis.opsForZSet().reverseRangeWithScores(RedisKeys.LEADERBOARD_AC, offset, offset + size - 1);
 
         List<LeaderboardVO.Item> items = new ArrayList<>();
-        if (top != null && !top.isEmpty()) {
-            // 批量补齐用户展示信息（一次查询，避免 N+1）
-            List<Long> userIds = top.stream()
-                    .map(t -> Long.valueOf(String.valueOf(t.getValue())))
-                    .toList();
-            Map<Long, User> users = userMapper.selectBatchIds(userIds).stream()
-                    .collect(Collectors.toMap(User::getId, Function.identity()));
+        if (total > 0) {
+            items = buildPage(page, size, total);
+        }
+        return new LeaderboardVO(total, items, buildSummary(items));
+    }
 
-            for (var tuple : top) {
-                Long userId = Long.valueOf(String.valueOf(tuple.getValue()));
-                User u = users.get(userId);
-                items.add(new LeaderboardVO.Item(
-                        userId,
-                        u != null ? u.getUsername() : null,
-                        tuple.getScore() == null ? 0 : tuple.getScore().longValue(),
-                        offset + items.size() + 1));
+    /**
+     * 构建一页排行。
+     *
+     * <p>同分排序要求全局有序，无法只在"当前页"内排序（否则分页结果会错乱）。
+     * 演示级数据量（数十~数百人）下直接全量取出排序再切片：
+     * 一次 ZSet 读取 + 两次数据库批量查询，不产生 N+1。
+     * 若日后用户量上千，应改为离线计算排名并落库/落缓存。
+     */
+    private List<LeaderboardVO.Item> buildPage(long page, long size, long total) {
+        Set<ZSetOperations.TypedTuple<String>> all =
+                redis.opsForZSet().reverseRangeWithScores(RedisKeys.LEADERBOARD_AC, 0, -1);
+        if (all == null || all.isEmpty()) {
+            return new ArrayList<>();
+        }
+
+        List<Long> userIds = all.stream()
+                .map(t -> Long.valueOf(String.valueOf(t.getValue())))
+                .toList();
+
+        // 一次查出：用户信息、提交统计、首次 AC 时间
+        Map<Long, User> users = userMapper.selectBatchIds(userIds).stream()
+                .collect(Collectors.toMap(User::getId, Function.identity()));
+        Map<Long, LeaderboardStatsMapper.UserSubmitStat> stats = statsMapper
+                .submitStatsByUsers(userIds).stream()
+                .collect(Collectors.toMap(LeaderboardStatsMapper.UserSubmitStat::getUserId,
+                        Function.identity()));
+        Map<Long, List<LocalDateTime>> firstAcs = new HashMap<>();
+        for (LeaderboardStatsMapper.FirstAcRow row : statsMapper.firstAcTimes(userIds)) {
+            firstAcs.computeIfAbsent(row.getUserId(), k -> new ArrayList<>()).add(row.getAcAt());
+        }
+
+        // 组装 + 计算同分排序键
+        record Ranked(long acCount, LocalDateTime achievedAt, Long userId, LeaderboardVO.Item item) { }
+
+        List<Ranked> ranked = new ArrayList<>(all.size());
+        for (var tuple : all) {
+            Long userId = Long.valueOf(String.valueOf(tuple.getValue()));
+            long acCount = tuple.getScore() == null ? 0 : tuple.getScore().longValue();
+            // 首次达成"当前解题数"的时刻：把该用户的首次 AC 时间升序排，取第 acCount 个
+            LocalDateTime achievedAt = null;
+            List<LocalDateTime> times = firstAcs.get(userId);
+            if (times != null && acCount > 0) {
+                List<LocalDateTime> sorted = times.stream().sorted().toList();
+                int idx = (int) Math.min(acCount, sorted.size()) - 1;
+                if (idx >= 0) {
+                    achievedAt = sorted.get(idx);
+                }
+            }
+
+            LeaderboardStatsMapper.UserSubmitStat st = stats.get(userId);
+            long totalSubmit = st != null && st.getTotalSubmit() != null ? st.getTotalSubmit() : 0;
+            long acceptedSubmit = st != null && st.getAcceptedSubmit() != null ? st.getAcceptedSubmit() : 0;
+            User u = users.get(userId);
+
+            LeaderboardVO.Item item = new LeaderboardVO.Item(
+                    userId,
+                    u != null ? u.getUsername() : null,
+                    acCount,
+                    0,
+                    totalSubmit,
+                    acceptedSubmit,
+                    totalSubmit == 0 ? 0 : Math.round(acceptedSubmit * 1000.0 / totalSubmit) / 10.0,
+                    st != null ? st.getLastSubmitAt() : null);
+            ranked.add(new Ranked(acCount, achievedAt, userId, item));
+        }
+
+        // 排序：解题数降序 → 达成时间升序（null 视为最晚）→ userId 升序兜底
+        ranked.sort(Comparator
+                .comparingLong(Ranked::acCount).reversed()
+                .thenComparing(r -> r.achievedAt() == null ? LocalDateTime.MAX : r.achievedAt())
+                .thenComparing(Ranked::userId));
+
+        // 切片 + 回填名次
+        int from = (int) Math.min((page - 1) * size, ranked.size());
+        int to = (int) Math.min(from + size, ranked.size());
+        List<LeaderboardVO.Item> pageItems = new ArrayList<>();
+        for (int i = from; i < to; i++) {
+            LeaderboardVO.Item it = ranked.get(i).item();
+            it.setRank(i + 1L);
+            pageItems.add(it);
+        }
+        return pageItems;
+    }
+
+    /** 顶部统计条：人数 / 最高解题数 / 全站提交 / 全站通过率 */
+    private LeaderboardVO.Summary buildSummary(List<LeaderboardVO.Item> currentPage) {
+        LeaderboardStatsMapper.OverviewRow ov = statsMapper.overview();
+        long solverCount = ov != null && ov.getSolverCount() != null ? ov.getSolverCount() : 0;
+        long totalSubmit = ov != null && ov.getTotalSubmit() != null ? ov.getTotalSubmit() : 0;
+        long accepted = ov != null && ov.getAcceptedSubmit() != null ? ov.getAcceptedSubmit() : 0;
+        double rate = totalSubmit == 0 ? 0
+                : Math.round(accepted * 1000.0 / totalSubmit) / 10.0;
+
+        // 最高解题数取 ZSet 头部分数（第一页时已是排序后的第一项，避免多一次全量扫描）
+        long maxAc = currentPage.isEmpty() ? 0 : currentPage.get(0).getAcCount();
+        if (maxAc == 0) {
+            Set<ZSetOperations.TypedTuple<String>> top =
+                    redis.opsForZSet().reverseRangeWithScores(RedisKeys.LEADERBOARD_AC, 0, 0);
+            if (top != null && !top.isEmpty()) {
+                Double s = top.iterator().next().getScore();
+                maxAc = s == null ? 0 : s.longValue();
             }
         }
-        return new LeaderboardVO(total, items);
+        return new LeaderboardVO.Summary(solverCount, maxAc, totalSubmit, rate);
     }
 
     @Override

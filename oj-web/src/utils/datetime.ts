@@ -63,3 +63,22 @@ export function toBodyDateTime(value?: string | null): string | undefined {
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} `
     + `${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`
 }
+
+/**
+ * 相对时间（"3 分钟前" / "2 天前"），用于活跃度展示。
+ * 超过 30 天直接显示日期，避免"387 天前"这种没用的信息。
+ */
+export function relativeTime(value?: string | null): string {
+  const d = parseServerTime(value)
+  if (!d) return '-'
+  const diffMs = Date.now() - d.getTime()
+  if (diffMs < 0) return '刚刚'
+  const min = Math.floor(diffMs / 60000)
+  if (min < 1) return '刚刚'
+  if (min < 60) return `${min} 分钟前`
+  const hour = Math.floor(min / 60)
+  if (hour < 24) return `${hour} 小时前`
+  const day = Math.floor(hour / 24)
+  if (day < 30) return `${day} 天前`
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`
+}
