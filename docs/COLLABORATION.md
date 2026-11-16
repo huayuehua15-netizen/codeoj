@@ -58,19 +58,23 @@
 
 ### 3.0 一句话理解（新手先看这段）
 
-> **`main` 和 `dev` 是"公共的"，谁都不要直接往上推。**
-> 每个人都先在**自己的分支**上干活，干完了再合到 `dev`。等全部做完、验收通过了，才把 `dev` 合到 `main`。
+> **每个人都只推自己的分支。`dev` 和 `main` 全由成员 B 一个人合。**
 
-为什么要这样？就为一个目的：**`dev` 任何时候拉下来都能跑起来**。
-如果两个人都直接往 `dev` 推，一旦有人推了半成品，另一个人（和你答辩那天）就拉到一个跑不起来的版本。
+分工就两句话：
+
+- **成员 A**：改代码 → 推自己的 `feat/judge-engine` 分支 → 在群里说一声。**结束。**
+- **成员 B**：收到通知 → 看 diff → 合进 `dev` → 跑通构建 → 推 `dev` → 验收后推 `main`。
+
+为什么这样安排？因为**合并权收在一个人手上，`dev` 才能保证随时能跑**。
+两个人都能往 `dev` 推，一旦有人推了半成品，另一个人（和你答辩那天）就拉到一个跑不起来的版本。
 
 ### 3.1 分支结构
 
 ```
-main                  ← 发布分支：答辩快照，只在验收通过后前进
-└── dev               ← 集成分支：两人成果汇合处，任何时候都必须能跑
+main                  ← 发布分支：答辩快照，只在验收通过后由成员 B 前进
+└── dev               ← 集成分支：成员 B 统一合并，任何时候都必须能跑
     ├── feat/judge-engine   ← 成员 A 的个人分支（判题链路）
-    └── feat/web-pages      ← 成员 B 的个人分支（业务与前端）
+    └── niuzj               ← 成员 B 的个人分支（业务与前端）
 ```
 
 下次再做新功能，就再开一个：`feat/新功能名`、`fix/要修的问题`。
@@ -85,14 +89,14 @@ git checkout dev
 git pull origin dev
 
 # 创建自己的分支（名字按 §3.1）
-git checkout -b feat/web-pages     # 成员 B
+git checkout -b niuzj               # 成员 B（已完成，此行为示例）
 # git checkout -b feat/judge-engine  # 成员 A
 
 # 推到远程，并建立跟踪关系（-u 只需第一次加）
-git push -u origin feat/web-pages
+git push -u origin niuzj
 ```
 
-> **GitHub Desktop 用户**：Branch → New Branch → Name 填 `feat/web-pages`，
+> **GitHub Desktop 用户**：Branch → New Branch → Name 填 `niuzj`（成员 B 的已有分支），
 > 「Create branch based on...」**选 `dev`**（不是 main）→ Create branch → 再点 **Publish branch**。
 
 #### ② 每天动手前：先同步别人的改动
@@ -101,7 +105,7 @@ git push -u origin feat/web-pages
 git checkout dev
 git pull origin dev            # 拿到对方已合进 dev 的更新
 
-git checkout feat/web-pages    # 回到自己分支
+git checkout niuzj             # 回到自己分支
 git merge dev                  # 把更新并进来（越早合并越不容易冲突）
 ```
 
@@ -143,19 +147,45 @@ git push                       # 已经设过 -u 就不用再写 origin/分支�
 > ⚠️ 本仓库历史提交混用过 `feat(scope): 描述` 和 `[bug] 描述` 两种格式。
 > **从现在起统一用上面的方括号格式**，旧提交不用改。
 
-#### ④ 做完一个功能：合进 dev
+#### ④ 合进 dev —— **只由成员 B 操作**
+
+> **规则就一句：谁都不许直接推 dev，dev 和 main 全部由成员 B（仓库 owner）一个人合。**
+>
+> 成员 A 只做三件事：改代码 → 推自己分支 → 在群里说一声。**合并不归他管**。
+
+成员 A 的流程（到这里就结束了）：
 
 ```bash
-git checkout dev
-git pull origin dev                    # 先确保 dev 最新
-git merge feat/web-pages               # 合并自己的分支
-# 跑一遍：mvn clean install -DskipTests  +  cd oj-web && npm run build
-git push origin dev                    # 验证通过再推
+git add .
+git commit -m "[新增] 沙箱帧流解析与 16MB 截断"
+git push                       # 推自己的 feat/judge-engine 分支
+# 然后在群里说：判题沙箱好了，在 feat/judge-engine 分支
 ```
 
-> **合并前必须先跑通构建**。`dev` 挂了，两个人都没法干活。
+成员 B 收到通知后合并：
 
-#### ⑤ 验收通过后：dev → main（由成员 B 执行）
+```bash
+# 1. 先看对方改了什么，确认没问题
+git fetch origin
+git diff dev...origin/feat/judge-engine --stat
+
+# 2. 合进本地 dev
+git checkout dev
+git pull origin dev
+git merge origin/feat/judge-engine
+
+# 3. 必须跑通构建，否则不许推
+mvn clean install -DskipTests
+cd oj-web && npm run build && cd ..
+
+# 4. 构建通过才推
+git push origin dev
+```
+
+> **如果第 3 步构建失败**：不要推，直接在群里告诉对方哪里编译不过，让他修。
+> 记住这条：**dev 必须是随时能跑的**。推上去一个跑不起来的 dev，两个人当天都干不了活。
+
+#### ⑤ 验收通过后：dev → main（同样只由成员 B 操作）
 
 ```bash
 git checkout main
