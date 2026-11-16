@@ -188,7 +188,7 @@ Query 参数：
   "difficulty": 1,
   "timeLimitMs": 1000,
   "memoryLimitMb": 256,
-  "languages": ["c", "cpp", "java", "python3"],
+  "languages": ["c", "cpp", "java", "python3", "js"],
   "submitCount": 12,
   "acceptedCount": 8,
   "enabled": true
@@ -209,7 +209,7 @@ Query 参数：
   "difficulty": 2,
   "timeLimitMs": 1000,
   "memoryLimitMb": 256,
-  "languages": ["c", "cpp", "java", "python3"],
+  "languages": ["c", "cpp", "java", "python3", "js"],
   "enabled": true
 }
 ```

@@ -24,7 +24,7 @@ public class Submission {
     /** 题目 */
     private Long problemId;
 
-    /** c/cpp/java/python3 */
+    /** c/cpp/java/python3/js */
     private String language;
 
     /** 提交代码（≤64KB） */

@@ -78,7 +78,7 @@ CREATE TABLE IF NOT EXISTS `submission` (
   `id`             BIGINT      NOT NULL AUTO_INCREMENT COMMENT '提交 ID',
   `user_id`        BIGINT      NOT NULL COMMENT '提交用户',
   `problem_id`     BIGINT      NOT NULL COMMENT '题目',
-  `language`       VARCHAR(20) NOT NULL COMMENT 'c/cpp/java/python3',
+  `language`       VARCHAR(20) NOT NULL COMMENT 'c/cpp/java/python3/js',
   `code`           LONGTEXT    NOT NULL COMMENT '提交代码（≤64KB）',
   `status`         TINYINT     NOT NULL DEFAULT 0 COMMENT '0排队 1判题中 2AC 3WA 4TLE 5MLE 6RE 7CE 8SE',
   `time_used_ms`   INT         DEFAULT NULL COMMENT '最大用例耗时（毫秒）',
@@ -198,7 +198,7 @@ VALUES
    '## 题目描述\n\n输入两个整数 a 和 b，输出它们的和。\n\n## 输入格式\n\n一行两个整数，以空格分隔。\n\n## 输出格式\n\n一行一个整数，即 a+b 的值。\n\n## 数据范围\n\n0 ≤ a, b ≤ 10^9',
    '[{"input": "1 2", "output": "3"}, {"input": "10 20", "output": "30"}]',
    1, 1000, 256,
-   '["c", "cpp", "java", "python3"]',
+   '["c", "cpp", "java", "python3", "js"]',
    0, 0, 1);
 
 INSERT INTO `test_case` (`problem_id`, `input`, `expected_output`, `score`, `is_sample`)

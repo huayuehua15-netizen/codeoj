@@ -124,7 +124,7 @@ def main():
             "title": p["title"], "description": p["description"], "samples": p["samples"],
             "difficulty": p["difficulty"], "timeLimitMs": p["time_limit_ms"],
             "memoryLimitMb": p["memory_limit_mb"],
-            "languages": ["c", "cpp", "java", "python3"], "enabled": True,
+            "languages": ["c", "cpp", "java", "python3", "js"], "enabled": True,
         }
         resp = http("POST", "/problems", token, body)
         data = (resp or {}).get("data")

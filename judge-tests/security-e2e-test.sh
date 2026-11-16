@@ -4,7 +4,7 @@
 #
 # 前置条件：
 #   1. docker compose 栈运行中，oj-judge 使用 ENGINE_MODE=real（真实沙箱判题）；
-#   2. 四语言判题镜像已构建并拉取到判题节点；
+#   2. 五语言判题镜像已构建并拉取到判题节点；
 #   3. 存在至少一道允许 c/cpp/python3 的题目（默认取第一道，可用 PROBLEM_ID 指定）；
 #   4. 测试主机具备 python3（用于 JSON 转义）与 curl。
 #

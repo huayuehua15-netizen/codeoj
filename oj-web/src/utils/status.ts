@@ -31,7 +31,7 @@ export const DIFFICULTY_MAP: Record<number, { label: string; color: string }> = 
 }
 
 /**
- * 四语言模板代码（论文 5.7：按题目允许的语言切换语法模式并载入对应模板代码）。
+ * 五语言模板代码（论文 5.7：按题目允许的语言切换语法模式并载入对应模板代码）。
  */
 export const CODE_TEMPLATES: Record<string, string> = {
   js: `// 在此编写你的代码

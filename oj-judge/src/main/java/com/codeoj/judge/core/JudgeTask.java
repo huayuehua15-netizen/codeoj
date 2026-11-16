@@ -18,7 +18,7 @@ public class JudgeTask {
     private Long userId;
     private Long problemId;
 
-    /** c/cpp/java/python3 */
+    /** c/cpp/java/python3/js */
     private String language;
 
     /** 提交代码 */

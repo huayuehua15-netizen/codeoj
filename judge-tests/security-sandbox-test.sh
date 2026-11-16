@@ -2,7 +2,7 @@
 # =====================================================================
 # security-sandbox-test.sh —— 恶意样例沙箱直测（论文 6.3 / 表 6-2）
 #
-# 前置条件：Linux + Docker Engine + 四语言判题镜像已构建（judge-images/）
+# 前置条件：Linux + Docker Engine + 五语言判题镜像已构建（judge-images/）
 # 用法：    ./security-sandbox-test.sh
 #
 # 原理：以论文表 4-9 与 DockerSandbox.buildHostConfig 完全一致的
