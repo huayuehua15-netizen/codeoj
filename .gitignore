@@ -27,3 +27,10 @@ Thumbs.db
 # 审查/构建临时产物
 .tmp/
 review/
+
+# ===== Python 与压测产物 =====
+__pycache__/
+*.pyc
+judge-tests/perf/perf-users.csv
+judge-tests/perf/perf-problems.json
+judge-tests/perf/perf-report-*.json
