@@ -208,14 +208,41 @@ public class SubmissionServiceImpl implements SubmissionService {
         List<SubmissionMapper.DifficultyStatRow> rows = submissionMapper.statisticsByUser(userId);
         List<StatisticsVO.Item> items = rows.stream()
                 .sorted(Comparator.comparing(SubmissionMapper.DifficultyStatRow::getDifficulty))
-                .map(row -> new StatisticsVO.Item(
-                        row.getDifficulty(),
-                        Difficulty.of(row.getDifficulty()).getLabel(),
-                        row.getSubmitCount() == null ? 0 : row.getSubmitCount(),
-                        row.getAcceptedCount() == null ? 0 : row.getAcceptedCount()))
+                .map(row -> {
+                    long submit = row.getSubmitCount() == null ? 0 : row.getSubmitCount();
+                    long accepted = row.getAcceptedCount() == null ? 0 : row.getAcceptedCount();
+                    return new StatisticsVO.Item(
+                            row.getDifficulty(),
+                            Difficulty.of(row.getDifficulty()).getLabel(),
+                            submit,
+                            accepted,
+                            submit == 0 ? 0 : Math.round(accepted * 1000.0 / submit) / 10.0,
+                            row.getSolvedCount() == null ? 0 : row.getSolvedCount(),
+                            row.getTotalCount() == null ? 0 : row.getTotalCount());
+                })
                 .toList();
+
         long totalSubmit = items.stream().mapToLong(StatisticsVO.Item::getSubmit).sum();
         long totalAccepted = items.stream().mapToLong(StatisticsVO.Item::getAccepted).sum();
-        return new StatisticsVO(items, totalSubmit, totalAccepted);
+        double acceptRate = totalSubmit == 0 ? 0
+                : Math.round(totalAccepted * 1000.0 / totalSubmit) / 10.0;
+
+        // 状态维度：哪些类型的错误最多（答辩时能讲"我的短板是 TLE"这类结论）
+        List<StatisticsVO.StatusItem> statusItems = submissionMapper.statusCountByUser(userId).stream()
+                .map(row -> {
+                    long cnt = row.getCnt() == null ? 0 : row.getCnt();
+                    return new StatisticsVO.StatusItem(
+                            row.getStatus(),
+                            SubmissionStatus.of(row.getStatus()).getDesc(),
+                            cnt,
+                            totalSubmit == 0 ? 0 : Math.round(cnt * 1000.0 / totalSubmit) / 10.0);
+                })
+                .toList();
+
+        long solvedCount = items.stream().mapToLong(StatisticsVO.Item::getSolvedCount).sum();
+        long attemptedCount = submissionMapper.attemptedCountByUser(userId);
+
+        return new StatisticsVO(items, statusItems, totalSubmit, totalAccepted,
+                acceptRate, solvedCount, attemptedCount);
     }
 }

@@ -37,10 +37,36 @@ export function pageSubmissions(params: {
   return http.get<never, { records: SubmissionDetail[]; total: number }>('/api/submissions', { params })
 }
 
+/** 个人统计（论文 5.6：难度维度 + 状态维度 + 汇总） */
+export interface StatisticsDifficultyItem {
+  difficulty: number
+  difficultyLabel: string
+  submit: number
+  accepted: number
+  acceptRate: number
+  solvedCount: number
+  totalCount: number
+}
+
+export interface StatisticsStatusItem {
+  status: number
+  statusDesc: string
+  count: number
+  percent: number
+}
+
+export interface Statistics {
+  byDifficulty: StatisticsDifficultyItem[]
+  byStatus: StatisticsStatusItem[]
+  totalSubmit: number
+  totalAccepted: number
+  acceptRate: number
+  solvedCount: number
+  attemptedCount: number
+}
+
 export function getStatistics() {
-  return http.get<never, { byDifficulty: { difficulty: number; difficultyLabel: string; submit: number; accepted: number }[]; totalSubmit: number; totalAccepted: number }>(
-    '/api/submissions/statistics',
-  )
+  return http.get<never, Statistics>('/api/submissions/statistics')
 }
 
 /** 提交趋势（近 N 天按日聚合，个人维度） */

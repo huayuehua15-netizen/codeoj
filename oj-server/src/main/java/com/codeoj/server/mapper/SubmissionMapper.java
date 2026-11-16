@@ -37,13 +37,35 @@ public interface SubmissionMapper extends BaseMapper<Submission> {
     /**
      * 个人通过率统计（论文 5.6）：按难度分组聚合提交记录。
      * submission 无难度列，JOIN problem 取值。
+     *
+     * <p>同时给出该难度的题目总数与已 AC 题目数，用于计算"难度覆盖度"
+     * （做了 5 道简单题里的 3 道 vs 做了 1 道困难题里的 1 道）。
      */
-    @Select("SELECT p.difficulty AS difficulty, COUNT(*) AS submitCount, " +
-            "       SUM(s.status = 2) AS acceptedCount " +
-            "  FROM submission s JOIN problem p ON s.problem_id = p.id " +
-            " WHERE s.user_id = #{userId} " +
-            " GROUP BY p.difficulty")
+    @Select("SELECT p.difficulty AS difficulty, "
+            + "       COUNT(*) AS submitCount, "
+            + "       SUM(s.status = 2) AS acceptedCount, "
+            + "       COUNT(DISTINCT CASE WHEN s.status = 2 THEN s.problem_id END) AS solvedCount, "
+            + "       (SELECT COUNT(*) FROM problem p2 "
+            + "         WHERE p2.difficulty = p.difficulty AND p2.enabled = 1) AS totalCount "
+            + "  FROM submission s JOIN problem p ON s.problem_id = p.id "
+            + " WHERE s.user_id = #{userId} "
+            + " GROUP BY p.difficulty")
     List<DifficultyStatRow> statisticsByUser(@Param("userId") Long userId);
+
+    /**
+     * 按判题状态分组计数（个人）：哪些类型的错误最多。
+     */
+    @Select("SELECT s.status AS status, COUNT(*) AS cnt "
+            + "  FROM submission s "
+            + " WHERE s.user_id = #{userId} "
+            + " GROUP BY s.status ORDER BY s.status")
+    List<StatusCountRow> statusCountByUser(@Param("userId") Long userId);
+
+    /**
+     * 个人题目覆盖：提交过的不同题目数。
+     */
+    @Select("SELECT COUNT(DISTINCT s.problem_id) FROM submission s WHERE s.user_id = #{userId}")
+    long attemptedCountByUser(@Param("userId") Long userId);
 
     /**
      * 难度维度聚合行。
@@ -52,6 +74,8 @@ public interface SubmissionMapper extends BaseMapper<Submission> {
         private Integer difficulty;
         private Long submitCount;
         private Long acceptedCount;
+        private Long solvedCount;
+        private Long totalCount;
 
         public Integer getDifficulty() {
             return difficulty;
@@ -63,6 +87,30 @@ public interface SubmissionMapper extends BaseMapper<Submission> {
 
         public Long getAcceptedCount() {
             return acceptedCount;
+        }
+
+        public Long getSolvedCount() {
+            return solvedCount;
+        }
+
+        public Long getTotalCount() {
+            return totalCount;
+        }
+    }
+
+    /**
+     * 状态维度聚合行。
+     */
+    class StatusCountRow {
+        private Integer status;
+        private Long cnt;
+
+        public Integer getStatus() {
+            return status;
+        }
+
+        public Long getCnt() {
+            return cnt;
         }
     }
 
