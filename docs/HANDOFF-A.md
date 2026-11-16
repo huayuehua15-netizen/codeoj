@@ -4,6 +4,118 @@
 > oj-server / oj-web / docs 已由成员 B 交付并实测——**不要动**（oj-common 改动需双方同意）。
 > 配套：[CONTRACT.md](./CONTRACT.md)（模块契约）、[API.md](./API.md)（前后端契约）。
 
+## 0. 上手第一步（新手请先看完这段，10 分钟）
+
+### 0.1 你需要装什么
+
+| 工具 | 版本 | 说明 |
+|---|---|---|
+| JDK | 17（必须 17，不是 21） | `java -version` 确认 |
+| Maven | 3.9+ | 项目根目录有 `pom.xml` |
+| Node.js | 18+ | 只在你需要跑前端时用 |
+| Docker Desktop | 最新 | 判题沙箱依赖它，**装完要确认 `docker ps` 能跑通** |
+| Git | 最新 | |
+
+> Docker 在本机可能连不上镜像源（国内网络），需要配 DaoCloud 加速，见 §3。
+
+### 0.2 把项目跑起来（4 步）
+
+```bash
+# 1. 拿到代码，切到自己的分支
+git clone <仓库地址>
+cd code-king
+git checkout dev
+git checkout -b feat/judge-engine     # 建自己的分支
+git push -u origin feat/judge-engine
+
+# 2. 起中间件（MySQL / Redis / RabbitMQ，三个容器）
+docker run -d --name oj-mysql -p 3306:3306 -e MYSQL_ROOT_PASSWORD=123456 mysql:8.0
+docker run -d --name oj-redis -p 6379:6379 redis:7
+docker run -d --name oj-rabbitmq -p 5672:5672 -p 15672:15672 \
+  -e RABBITMQ_DEFAULT_USER=codeoj -e RABBITMQ_DEFAULT_PASS=codeoj123 \
+  rabbitmq:3.13-management
+
+# 3. 导入数据库
+mysql -h127.0.0.1 -uroot -p123456 < sql/schema.sql
+
+# 4. 编译整个项目（第一次会比较慢，要下依赖）
+mvn clean install -DskipTests
+```
+
+**验证成功**：`mvn` 最后显示 `BUILD SUCCESS`。失败先看 §3 的环境备忘。
+
+### 0.3 启动两个服务
+
+```bash
+# 终端 1：业务服务（8080）
+mvn spring-boot:run -pl oj-server
+
+# 终端 2：判题服务（8081）——你主要改这个
+mvn spring-boot:run -pl oj-judge
+```
+
+> **RabbitMQ 账号必须对上（最常见的启动失败原因）**
+>
+> 项目配置文件里的默认值是 `guest / guest`，但**实际联调环境用的是 `codeoj / codeoj123`**。
+> 容器和代码两边必须一致，否则启动会报
+> `ACCESS_REFUSED - Login was refused using authentication mechanism PLAIN`。两种做法任选其一：
+>
+> - **做法 A（本仓库现状）**：容器按上面带 `-e RABBITMQ_DEFAULT_USER=codeoj ...` 创建，
+>   启动服务前一定要设环境变量（否则代码用 guest 去连 codeoj 容器，连不上）：
+>
+>   ```bash
+>   # Windows PowerShell
+>   $env:RABBITMQ_USER="codeoj"; $env:RABBITMQ_PASSWORD="codeoj123"
+>   # macOS / Linux
+>   export RABBITMQ_USER=codeoj; export RABBITMQ_PASSWORD=codeoj123
+>   ```
+>
+> - **做法 B（更省事）**：容器创建时**不加** `-e` 参数（即默认 guest/guest），
+>   代码也不用设环境变量，开箱即连。
+>
+> 判断当前容器用的什么账号：`docker inspect oj-rabbitmq | findstr RABBITMQ_DEFAULT`
+
+### 0.4 怎么知道你的判题真的跑通了
+
+**最简单的验证**：在浏览器打开前端（或直接用 curl），注册一个账号 → 提交一段代码 → 看返回的判题状态。
+
+```bash
+# 注册（拿 token）
+curl -X POST http://localhost:8080/api/auth/register \
+  -H "Content-Type: application/json" \
+  -d '{"username":"test1","password":"123456"}'
+
+# 登录，把返回的 token 记下来
+curl -X POST http://localhost:8080/api/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"username":"test1","password":"123456"}'
+
+# 提交一段 C++ 代码（把 <token> 换成上一步的）
+curl -X POST http://localhost:8080/api/submissions \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer <token>" \
+  -d '{"problemId":1,"language":"cpp","code":"#include<iostream>\nint main(){int a,b;std::cin>>a>>b;std::cout<<a+b;}"}'
+
+# 几秒后查结果（<id> 是上一步返回的 submissionId）
+curl http://localhost:8080/api/submissions/<id> -H "Authorization: Bearer <token>"
+```
+
+返回里 `status` 的数字含义：**0=排队中 1=判题中 2=通过 3=答案错误 4=超时 5=超内存 6=运行错误 7=编译错误 8=系统错误**。
+
+> 现在 `ENGINE_MODE=local`，判的是"代码里有没有入口/有没有输出"这种静态检查。
+> 你要做的是让它**真编译真运行**，见 §2。
+
+### 0.5 卡住了看哪里
+
+| 现象 | 先看 |
+|---|---|
+| 启动报连不上 MySQL/Redis | 三个 docker 容器起了吗？`docker ps` |
+| 启动报 `ACCESS_REFUSED` | RabbitMQ 账号错了，见 §0.3 |
+| 端口被占用 | `netstat -ano \| findstr :8080` 找到进程杀掉 |
+| 提交后一直"排队中" | oj-judge 没启动，或没连上 RabbitMQ |
+| 改了代码没生效 | `mvn clean install -DskipTests`（改 pom 后必须 clean） |
+| 判题结果和你预期不符 | 看 `oj-judge` 控制台日志 |
+
 ## 1. 现状（B 侧已交付）
 
 - 全链路已通：注册登录 → 提交（限流/幂等/校验）→ 入队 `oj.judge.queue` → 消费 → 回写 → 事件 → WS 推送 → 前端三阶段展示

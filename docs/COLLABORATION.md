@@ -56,21 +56,174 @@
 
 ## 3. Git 协作规范
 
-```bash
-main            # 可运行版本，只进经过验证的合并
-├── dev         # 集成分支，两人各自分支向它合并
-│   ├── feat/judge-engine    # 成员 A
-│   └── feat/web-pages       # 成员 B
+### 3.0 一句话理解（新手先看这段）
+
+> **`main` 和 `dev` 是"公共的"，谁都不要直接往上推。**
+> 每个人都先在**自己的分支**上干活，干完了再合到 `dev`。等全部做完、验收通过了，才把 `dev` 合到 `main`。
+
+为什么要这样？就为一个目的：**`dev` 任何时候拉下来都能跑起来**。
+如果两个人都直接往 `dev` 推，一旦有人推了半成品，另一个人（和你答辩那天）就拉到一个跑不起来的版本。
+
+### 3.1 分支结构
+
+```
+main                  ← 发布分支：答辩快照，只在验收通过后前进
+└── dev               ← 集成分支：两人成果汇合处，任何时候都必须能跑
+    ├── feat/judge-engine   ← 成员 A 的个人分支（判题链路）
+    └── feat/web-pages      ← 成员 B 的个人分支（业务与前端）
 ```
 
-- **分支命名**：`feat/模块-功能`、`fix/模块-问题`、`docs/文档主题`
-- **Commit 格式**：`<type>(<scope>): <一句话>`，如 `feat(judge): 沙箱帧流解析与16MB截断`
-- **合并纪律**：不直接 push main/dev；跨契约改动（API.md/CONTRACT.md 涉及的代码）合并前必须让对方过一眼 diff
-- **o-common 是公共区**：改实体/枚举/常量 = 改契约，**必须双人都同意**并更新 CONTRACT.md
-- **dev 合并规则**：谁的功能谁合并（A 合 feat/judge-engine → dev，B 合 feat/web-biz → dev），合并到 dev 后由**合并方**跑一轮联调验证
-- **main 推送权**：单点把关——**dev → main 由成员 B（仓库 owner）执行**，且仅在里程碑验收通过后；
-  A 的交付方式：推送 feat/judge-engine 到远程 → 通知 B → B review diff → 合并 dev → 联调 → 验收 → 推 main
-- **main 保护**：main 上任何时刻可检出稳定版本用于演示；若发现 main 回归，以 dev 最新验收点回滚
+下次再做新功能，就再开一个：`feat/新功能名`、`fix/要修的问题`。
+
+### 3.2 日常操作流程（照着敲就行）
+
+#### ① 第一次：创建自己的分支
+
+```bash
+# 先切到 dev，并确保是最新的
+git checkout dev
+git pull origin dev
+
+# 创建自己的分支（名字按 §3.1）
+git checkout -b feat/web-pages     # 成员 B
+# git checkout -b feat/judge-engine  # 成员 A
+
+# 推到远程，并建立跟踪关系（-u 只需第一次加）
+git push -u origin feat/web-pages
+```
+
+> **GitHub Desktop 用户**：Branch → New Branch → Name 填 `feat/web-pages`，
+> 「Create branch based on...」**选 `dev`**（不是 main）→ Create branch → 再点 **Publish branch**。
+
+#### ② 每天动手前：先同步别人的改动
+
+```bash
+git checkout dev
+git pull origin dev            # 拿到对方已合进 dev 的更新
+
+git checkout feat/web-pages    # 回到自己分支
+git merge dev                  # 把更新并进来（越早合并越不容易冲突）
+```
+
+> 养成习惯：**每天开工前同步一次**。这样冲突都是小冲突，拖久了会变成大冲突。
+
+#### ③ 干活、提交、推送
+
+```bash
+git add .
+git commit -m "feat(judge): 沙箱帧流解析与 16MB 截断"
+git push                       # 已经设过 -u 就不用再写 origin/分支名
+```
+
+提交信息格式：`<type>(<scope>): <一句话>`
+
+| type | 用在什么时候 |
+|---|---|
+| `feat` | 新增功能 |
+| `fix` | 修 bug |
+| `docs` | 只改文档 |
+| `style` | 只改样式/格式（不影响功能） |
+| `refactor` | 重构（不改行为） |
+| `chore` | 杂务（改配置、删临时文件） |
+
+例子：`fix(server): 收藏接口匿名访问返回 50000 改为 40100`
+
+#### ④ 做完一个功能：合进 dev
+
+```bash
+git checkout dev
+git pull origin dev                    # 先确保 dev 最新
+git merge feat/web-pages               # 合并自己的分支
+# 跑一遍：mvn clean install -DskipTests  +  cd oj-web && npm run build
+git push origin dev                    # 验证通过再推
+```
+
+> **合并前必须先跑通构建**。`dev` 挂了，两个人都没法干活。
+
+#### ⑤ 验收通过后：dev → main（由成员 B 执行）
+
+```bash
+git checkout main
+git pull origin main
+git merge dev
+git push origin main
+```
+
+### 3.3 冲突了怎么办（新手最容易慌）
+
+`git merge` 报 `CONFLICT` 不代表代码坏了，是**同一行被两个人改了**，Git 要你选一个。
+
+1. 打开冲突文件，会看到这样的标记：
+
+   ```java
+   <<<<<<< HEAD
+   我这一版的代码
+   =======
+   对方那一版的代码
+   >>>>>>> dev
+   ```
+
+2. **手工把文件改成最终想要的样子**，把 `<<<<<<<`、`=======`、`>>>>>>>` 三行全部删掉
+3. 保存后：
+
+   ```bash
+   git add 冲突的那个文件
+   git commit          # 不用写 -m，Git 会自带合并信息
+   ```
+
+**彻底乱了想放弃重来**（还没 commit 时）：
+
+```bash
+git merge --abort      # 回到合并前的状态，什么都不丢
+```
+
+> 记住这句：**没 commit 之前，什么都救得回来。** 慌的时候先 `git merge --abort`。
+
+### 3.4 几条硬规矩（违反会出事）
+
+| # | 规则 | 违反的后果 |
+|---|---|---|
+| 1 | **不直接 push `main`** | 答辩快照被半成品污染 |
+| 2 | **不直接 push `dev`**（只通过合并进） | 别人拉下来跑不起来 |
+| 3 | **合并进 dev 前必须构建通过** | dev 挂掉，两人停工 |
+| 4 | 改 `oj-common`（实体/枚举/常量）= 改契约 | **必须双方同意** + 更新 CONTRACT.md |
+| 5 | 改 `API.md` / `CONTRACT.md` 涉及的接口 | 先改文档 → 知会对方 → 再改代码 |
+| 6 | 动别人负责的目录（见 §1） | **先打招呼**，把 diff 发给对方过一眼 |
+
+> 第 6 条不是形式主义：对方 pull 之后会看到莫名其妙的改动，排查半天。
+> 一句话说清「我改了哪个文件、为什么、有没有碰逻辑」，就能省掉对方半小时。
+
+### 3.5 谁负责什么（避免互相踩）
+
+| 目录 | 负责人 | 别人能动吗 |
+|---|---|---|
+| `oj-server/`、`oj-web/` | 成员 B | 要动先说 |
+| `oj-judge/`、`judge-images/` | 成员 A | 要动先说 |
+| `deploy/` | 成员 A（判题相关）/ 共用 | 要动先说 |
+| `oj-common/` | **公共区** | **必须双方同意** |
+| `docs/`、`sql/` | 共用 | 改完知会 |
+
+### 3.6 常用命令速查
+
+| 我想…… | 命令 |
+|---|---|
+| 看我现在在哪个分支 | `git branch --show-current` |
+| 看有哪些分支 | `git branch -a` |
+| 看改了什么文件 | `git status` |
+| 看具体改了什么内容 | `git diff` |
+| 切分支 | `git checkout 分支名` |
+| 建新分支并切过去 | `git checkout -b 新分支名` |
+| 拉别人的更新 | `git pull origin dev` |
+| 把某分支合进来 | `git merge 分支名` |
+| 放弃合并 | `git merge --abort` |
+| 撤销某个还没提交的改动 | `git checkout -- 文件名` |
+| 看提交历史 | `git log --oneline -10` |
+
+### 3.7 三条救命提示
+
+1. **推错了分支**（比如推到了 main）—— 别慌，先告诉对方，一起处理。**不要自己 force push。**
+2. **不确定现在什么状态** —— 运行 `git status` 和 `git branch --show-current`，把输出发给对方看。
+3. **任何操作前不确定** —— 先 `git status`，确认干净再动手。看不懂就先停，问一句比事后回滚便宜。
 
 ## 4. 本地联调环境
 
