@@ -1,17 +1,26 @@
 <template>
   <div class="page-container" v-if="contest">
-    <div class="card head-card">
+    <div class="head-card" :class="`hs-${contest.status}`">
       <div class="head-row">
-        <div>
-          <h2 style="margin: 0">
-            <el-tag :type="statusInfo(contest.status).type" effect="dark" size="small">{{ statusInfo(contest.status).label }}</el-tag>
-            {{ contest.title }}
-          </h2>
+        <div class="head-main">
+          <div class="head-badge" :class="`badge-${contest.status}`">
+            <span v-if="contest.status === 1" class="pulse" />
+            {{ statusInfo(contest.status).label }}
+          </div>
+          <h1 class="head-title">{{ contest.title }}</h1>
           <p class="desc">{{ contest.description }}</p>
-          <p class="meta">⏰ {{ formatDateTime(contest.startTime) }} ~ {{ formatDateTime(contest.endTime) }}</p>
-          <p class="meta countdown" v-if="contest.status !== 2">
-            {{ contest.status === 1 ? '⏳ 距离结束还剩' : '🚀 距离开始还剩' }}：{{ countdown }}
-          </p>
+          <div class="head-meta">
+            <span class="meta-item">
+              <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="12" cy="12" r="9" /><path d="M12 7v5l3 2" />
+              </svg>
+              {{ formatDateTime(contest.startTime) }} ~ {{ formatDateTime(contest.endTime) }}
+            </span>
+          </div>
+        </div>
+        <div v-if="contest.status !== 2" class="head-countdown">
+          <div class="cd-label">{{ contest.status === 1 ? '距结束' : '距开始' }}</div>
+          <div class="cd-value">{{ countdown }}</div>
         </div>
       </div>
     </div>
@@ -121,70 +130,126 @@ onUnmounted(() => window.clearInterval(timer))
 .head-card {
   position: relative;
   overflow: hidden;
-  background: linear-gradient(130deg, #1e1b4b 0%, #4338ca 55%, #6366f1 100%);
+  background: linear-gradient(135deg, #312e81 0%, #4338ca 55%, #4f46e5 100%);
   color: #fff;
-  border: none;
-  padding: 30px 34px;
+  border-radius: var(--oj-radius);
+  padding: 28px 32px;
+  box-shadow: 0 8px 28px -10px rgba(67, 56, 202, 0.5);
 }
+/* 右上柔光，避免纯色块发闷 */
 .head-card::before {
-  /* 装饰光斑 */
   content: '';
   position: absolute;
-  right: -60px;
-  top: -80px;
-  width: 260px;
-  height: 260px;
+  right: -70px;
+  top: -90px;
+  width: 280px;
+  height: 280px;
   border-radius: 50%;
-  background: radial-gradient(circle, rgba(255, 255, 255, 0.14), transparent 65%);
+  background: radial-gradient(circle, rgba(139, 92, 246, 0.55), transparent 68%);
 }
+/* 细网格纹理，弱化"大色块"感 */
 .head-card::after {
-  /* 网格纹理 */
   content: '';
   position: absolute;
   inset: 0;
   background-image:
-    linear-gradient(rgba(255, 255, 255, 0.05) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(255, 255, 255, 0.05) 1px, transparent 1px);
-  background-size: 28px 28px;
+    linear-gradient(rgba(255, 255, 255, 0.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.04) 1px, transparent 1px);
+  background-size: 30px 30px;
   pointer-events: none;
 }
-.head-card :deep(h2),
-.head-card :deep(.meta),
-.head-card :deep(.desc) {
+.head-row {
   position: relative;
   z-index: 1;
-}
-.head-row h2 {
   display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 24px;
+}
+.head-main {
+  min-width: 0;
+}
+.head-badge {
+  display: inline-flex;
   align-items: center;
-  gap: 10px;
+  gap: 7px;
+  padding: 3px 11px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.16);
+  font-size: 11.5px;
+  font-weight: 600;
+  letter-spacing: 0.3px;
+}
+.pulse {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #4ade80;
+  animation: pulse 1.8s infinite;
+}
+@keyframes pulse {
+  70% {
+    box-shadow: 0 0 0 7px rgba(74, 222, 128, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(74, 222, 128, 0);
+  }
+}
+.head-title {
+  margin: 12px 0 0;
+  font-size: 24px;
+  font-weight: 800;
+  letter-spacing: -0.3px;
+  line-height: 1.3;
 }
 .desc {
-  opacity: 0.9;
+  margin: 8px 0 0;
   font-size: 13px;
-  margin: 8px 0;
+  color: rgba(255, 255, 255, 0.82);
+  line-height: 1.65;
+  max-width: 640px;
 }
-.meta {
-  font-size: 13px;
-  opacity: 0.9;
-  margin: 4px 0;
+.head-meta {
+  display: flex;
+  gap: 18px;
+  margin-top: 12px;
 }
-.countdown {
+.meta-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12.5px;
+  color: rgba(255, 255, 255, 0.75);
+}
+.head-countdown {
+  flex-shrink: 0;
+  text-align: right;
+}
+.cd-label {
+  font-size: 11.5px;
+  color: rgba(255, 255, 255, 0.7);
+  letter-spacing: 0.5px;
+}
+.cd-value {
+  margin-top: 2px;
+  font-family: 'JetBrains Mono', Consolas, monospace;
+  font-size: 28px;
   font-weight: 700;
-  font-size: 15px;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.5px;
 }
 .label-badge {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 32px;
-  height: 32px;
-  border-radius: 10px;
-  background: linear-gradient(135deg, #4338ca, #6366f1);
-  color: #fff;
+  width: 30px;
+  height: 30px;
+  border-radius: 8px;
+  background: var(--oj-primary-soft);
+  color: var(--oj-primary);
   font-weight: 800;
   font-family: 'JetBrains Mono', Consolas, monospace;
-  box-shadow: 0 2px 6px rgba(37, 99, 235, 0.35);
+  font-size: 13.5px;
 }
 .p-link {
   color: var(--oj-text);
@@ -196,5 +261,14 @@ onUnmounted(() => window.clearInterval(timer))
 }
 .head-card + .card {
   margin-top: 16px;
+}
+@media (max-width: 820px) {
+  .head-row {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  .head-countdown {
+    text-align: left;
+  }
 }
 </style>
