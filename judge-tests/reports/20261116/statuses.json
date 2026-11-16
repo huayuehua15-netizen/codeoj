@@ -1,0 +1,90 @@
+{
+  "ok": true,
+  "results": [
+    {
+      "status": 3,
+      "errorInfo": null,
+      "timeUsedMs": 20,
+      "memoryUsedKb": 9260,
+      "submissionId": 970000004,
+      "name": "wrong-answer",
+      "expectedStatus": 3,
+      "ok": true
+    },
+    {
+      "status": 3,
+      "errorInfo": null,
+      "timeUsedMs": 20,
+      "memoryUsedKb": 9168,
+      "submissionId": 970000005,
+      "name": "leading-space",
+      "expectedStatus": 3,
+      "ok": true
+    },
+    {
+      "status": 7,
+      "errorInfo": "main.c:1:11: error: expected declaration specifiers or '...' before '{' token\n    1 | int main( {\n      |           ^\n\n",
+      "timeUsedMs": 10,
+      "memoryUsedKb": 18980,
+      "submissionId": 970000006,
+      "name": "compile-error",
+      "expectedStatus": 7,
+      "ok": true
+    },
+    {
+      "status": 6,
+      "errorInfo": "Traceback (most recent call last):\n  File \"<workdir>/main.py\", line 1, in <module>\n    raise ValueError('bounded test')\nValueError: bounded test\n\n",
+      "timeUsedMs": 10,
+      "memoryUsedKb": 9584,
+      "submissionId": 970000007,
+      "name": "runtime-error",
+      "expectedStatus": 6,
+      "ok": true
+    },
+    {
+      "status": 4,
+      "errorInfo": "运行超过墙钟时间限制",
+      "timeUsedMs": 1000,
+      "memoryUsedKb": 9492,
+      "submissionId": 970000008,
+      "name": "wall-timeout",
+      "expectedStatus": 4,
+      "ok": true
+    },
+    {
+      "status": 8,
+      "errorInfo": "评测服务异常，重试后仍未完成",
+      "timeUsedMs": null,
+      "memoryUsedKb": null,
+      "submissionId": 970000009,
+      "name": "empty-cases",
+      "expectedStatus": 8,
+      "ok": true
+    },
+    {
+      "status": 2,
+      "errorInfo": null,
+      "timeUsedMs": 160,
+      "memoryUsedKb": 9632,
+      "submissionId": 970000010,
+      "name": "fractional-timeout",
+      "expectedStatus": 2,
+      "ok": true
+    },
+    {
+      "status": 5,
+      "errorInfo": "内存超限",
+      "timeUsedMs": 50,
+      "memoryUsedKb": 58580,
+      "submissionId": 970000011,
+      "name": "memory-limit",
+      "expectedStatus": 5,
+      "ok": true
+    }
+  ],
+  "distinctLeaderboard": {
+    "databaseDistinct": 1,
+    "cachedScore": "1",
+    "ok": true
+  }
+}

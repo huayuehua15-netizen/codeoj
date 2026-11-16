@@ -1,0 +1,35 @@
+{
+  "platform": "Linux-6.18.58.1-microsoft-standard-WSL2-x86_64-with-glibc2.43",
+  "dockerVersion": "29.9.3",
+  "availableCPUs": "16",
+  "memoryTotal": "MemTotal:       12248956 kB",
+  "engineMode": "real",
+  "testServices": "isolated MySQL8 Redis7 RabbitMQ3.13, no original application database modified",
+  "finalJudgeConcurrency": 2,
+  "finalMaxParallelContainers": 2,
+  "workspace": "Linux-native isolated Docker volume",
+  "images": {
+    "codeoj/c:gcc13": "sha256:91010e1f2bae7e99269641aed0b47bf20ddfe281e3be248463feb66e3f9fcee1",
+    "codeoj/cpp:gcc13": "sha256:f866a47c8acf03915732e102bf209aa64d0d462937af9e2530e844e0e9ae4208",
+    "codeoj/java:openjdk17": "sha256:0432c3b2b66a606364634018fffdf489a0f6d79cc4a314a081794deb97126ce3",
+    "codeoj/python:3.12": "sha256:0f83f04ad8d8a2faa128d404309fd15876ed6bea8b49712bd36fbcd0d35ecca4",
+    "codeoj/node:20": "sha256:ddf4b4fd9feb0b08b2ab035f3ec1a4f0d380dbec32f825325e57455b2a15f4e0",
+    "codeoj-verify/server:fix": "sha256:c0afdb5b121a62968a1733a56817bc5fbf863e3ffb30e4aada312f25901aaab6",
+    "codeoj-verify/judge:fix": "sha256:a12531298e2d1b1b64a1858d391d83249af790137f0b2962446126f5c37f4b1b",
+    "node:22-alpine": "sha256:1314fb30ec37592d5845e5a160d522c0e680972aa534549940b8d73bde88481a"
+  },
+  "javaTests": {
+    "total": 55,
+    "failures": 0,
+    "errors": 0
+  },
+  "pythonTests": {
+    "total": 10,
+    "failures": 0
+  },
+  "frontendBuild": "npm ci; npm run build (vue-tsc + Vite), Linux Node22",
+  "notes": [
+    "No large-concurrency load or complete malicious-code suite executed",
+    "Pre-fix runner tags retained as codeoj-before-fix/*"
+  ]
+}

@@ -1,0 +1,90 @@
+{
+  "ok": true,
+  "purpose": "12 short C programs; two concurrent consumers; finite logs read after exit",
+  "results": [
+    {
+      "status": 2,
+      "timeUsedMs": 0,
+      "memoryUsedKb": 1844,
+      "submissionId": 970000020,
+      "ok": true
+    },
+    {
+      "status": 2,
+      "timeUsedMs": 0,
+      "memoryUsedKb": 1860,
+      "submissionId": 970000021,
+      "ok": true
+    },
+    {
+      "status": 2,
+      "timeUsedMs": 0,
+      "memoryUsedKb": 1876,
+      "submissionId": 970000022,
+      "ok": true
+    },
+    {
+      "status": 2,
+      "timeUsedMs": 0,
+      "memoryUsedKb": 1860,
+      "submissionId": 970000023,
+      "ok": true
+    },
+    {
+      "status": 2,
+      "timeUsedMs": 0,
+      "memoryUsedKb": 1844,
+      "submissionId": 970000024,
+      "ok": true
+    },
+    {
+      "status": 2,
+      "timeUsedMs": 0,
+      "memoryUsedKb": 1732,
+      "submissionId": 970000025,
+      "ok": true
+    },
+    {
+      "status": 2,
+      "timeUsedMs": 0,
+      "memoryUsedKb": 1892,
+      "submissionId": 970000026,
+      "ok": true
+    },
+    {
+      "status": 2,
+      "timeUsedMs": 0,
+      "memoryUsedKb": 1860,
+      "submissionId": 970000027,
+      "ok": true
+    },
+    {
+      "status": 2,
+      "timeUsedMs": 0,
+      "memoryUsedKb": 1892,
+      "submissionId": 970000028,
+      "ok": true
+    },
+    {
+      "status": 2,
+      "timeUsedMs": 0,
+      "memoryUsedKb": 1868,
+      "submissionId": 970000029,
+      "ok": true
+    },
+    {
+      "status": 2,
+      "timeUsedMs": 0,
+      "memoryUsedKb": 1780,
+      "submissionId": 970000030,
+      "ok": true
+    },
+    {
+      "status": 2,
+      "timeUsedMs": 0,
+      "memoryUsedKb": 1892,
+      "submissionId": 970000031,
+      "ok": true
+    }
+  ]
+}

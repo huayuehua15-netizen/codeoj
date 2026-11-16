@@ -1,0 +1,19 @@
+{
+  "ok": true,
+  "source": "Original local pre-fix schema, applied once to a separate database inside test MySQL",
+  "migrationSha256": "9b19669ee8416c3967ba98a5e3d4bd5a3cd0d9ce0fa13c8cc4fe65928a0784c1",
+  "newColumns": [
+    "judge_token",
+    "judge_lease_until",
+    "judge_attempts",
+    "next_dispatch_at"
+  ],
+  "preservedLegacyRow": [
+    "1",
+    "1",
+    "0",
+    "1",
+    "1",
+    "1"
+  ]
+}

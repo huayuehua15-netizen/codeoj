@@ -1,0 +1,92 @@
+{
+  "base": "72a9c2e",
+  "ok": true,
+  "checks": [
+    {
+      "check": "problem_list_stays_lightweight",
+      "passed": true
+    },
+    {
+      "check": "problem_detail_keeps_edit_fields",
+      "passed": true
+    },
+    {
+      "check": "dev_statistics_dimensions_preserved",
+      "passed": true,
+      "stats": {
+        "byDifficulty": [
+          {
+            "difficulty": 1,
+            "difficultyLabel": "简单",
+            "submit": 5,
+            "accepted": 5,
+            "acceptRate": 100.0,
+            "solvedCount": 1,
+            "totalCount": 2
+          }
+        ],
+        "byStatus": [
+          {
+            "status": 2,
+            "statusDesc": "通过",
+            "count": 5,
+            "percent": 100.0
+          }
+        ],
+        "totalSubmit": 5,
+        "totalAccepted": 5,
+        "acceptRate": 100.0,
+        "solvedCount": 1,
+        "attemptedCount": 1
+      }
+    },
+    {
+      "check": "dev_leaderboard_fields_and_distinct_projection",
+      "passed": true,
+      "item": {
+        "userId": 1000001,
+        "username": "verify_a",
+        "acCount": 1,
+        "rank": 1,
+        "totalSubmit": 5,
+        "acceptedSubmit": 5,
+        "acceptRate": 100.0,
+        "lastSubmitAt": "2026-11-16 23:24:41"
+      }
+    },
+    {
+      "check": "business_time_is_shanghai_with_numeric_status",
+      "passed": true,
+      "row": {
+        "id": 1,
+        "judgedAt": "2026-11-16 23:24:25.000000",
+        "createdAt": "2026-11-16 23:24:24.000000",
+        "elapsedSec": 1,
+        "createdAgeSec": 43
+      },
+      "apiCreatedAt": "2026-11-16 23:24:24"
+    },
+    {
+      "check": "today_trend_includes_new_submissions",
+      "passed": true
+    },
+    {
+      "check": "contest_window_includes_new_ac",
+      "passed": true,
+      "contestStatus": 1,
+      "rank": {
+        "rank": 2,
+        "userId": 1000001,
+        "username": "verify_a",
+        "solved": 1,
+        "penalty": 29,
+        "detail": "B ✅29min"
+      }
+    },
+    {
+      "check": "anonymous_favorite_keeps_40100_contract",
+      "passed": true,
+      "code": 40100
+    }
+  ]
+}

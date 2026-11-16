@@ -1,0 +1,15 @@
+{
+  "ok": true,
+  "checks": [
+    "UID/GID 1000:1000",
+    "effective capability mask zero",
+    "runtime /work writes rejected",
+    "trusted /run/codeoj directory inaccessible to program"
+  ],
+  "record": {
+    "status": 2,
+    "errorInfo": null,
+    "submissionId": 970000036
+  },
+  "acceptedCases": 2
+}

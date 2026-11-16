@@ -1,0 +1,124 @@
+{
+  "started_at_utc": "2026-11-16T10:11:53.929679+00:00",
+  "database": "isolated codeoj on codex-ojfix-1116a-mysql",
+  "submission_ids": [
+    970000001,
+    970000002,
+    970000003
+  ],
+  "checks": {
+    "stale_token_cannot_write_active_lease": {
+      "affected_rows": 0,
+      "passed": true
+    },
+    "second_instance_does_not_steal_healthy_lease": {
+      "status": 1,
+      "token": "active-unexpired-token",
+      "attempts": 1,
+      "passed": true
+    },
+    "queued_database_row_automatically_dispatched": {
+      "record": {
+        "id": 970000001,
+        "status": 2,
+        "attempts": 1,
+        "token": "NULL",
+        "lease_until": "NULL"
+      },
+      "passed": true
+    },
+    "expired_lease_automatically_recovered": {
+      "record": {
+        "id": 970000002,
+        "status": 2,
+        "attempts": 2,
+        "token": "NULL",
+        "lease_until": "NULL"
+      },
+      "passed": true
+    },
+    "healthy_test_row_completes_after_explicit_expiry": {
+      "record": {
+        "id": 970000003,
+        "status": 2,
+        "attempts": 2,
+        "token": "NULL",
+        "lease_until": "NULL"
+      },
+      "passed": true
+    }
+  },
+  "judge2_container": "codex-ojfix-1116a-judge2",
+  "initial_rows": [
+    {
+      "id": 970000001,
+      "status": 0,
+      "attempts": 0,
+      "token": "NULL",
+      "lease_until": "NULL"
+    },
+    {
+      "id": 970000002,
+      "status": 1,
+      "attempts": 1,
+      "token": "orphan-token",
+      "lease_until": "2026-11-16T10:11:24.400187"
+    },
+    {
+      "id": 970000003,
+      "status": 1,
+      "attempts": 1,
+      "token": "active-unexpired-token",
+      "lease_until": "2026-11-16T10:21:54.400187"
+    }
+  ],
+  "after_judge2_startup": [
+    {
+      "id": 970000001,
+      "status": 2,
+      "attempts": 1,
+      "token": "NULL",
+      "lease_until": "NULL"
+    },
+    {
+      "id": 970000002,
+      "status": 2,
+      "attempts": 2,
+      "token": "NULL",
+      "lease_until": "NULL"
+    },
+    {
+      "id": 970000003,
+      "status": 1,
+      "attempts": 1,
+      "token": "active-unexpired-token",
+      "lease_until": "2026-11-16T10:21:54.400187"
+    }
+  ],
+  "final_case_counts": "970000001\t2\t2\n970000002\t2\t2\n970000003\t2\t2",
+  "final_rows": [
+    {
+      "id": 970000001,
+      "status": 2,
+      "attempts": 1,
+      "token": "NULL",
+      "lease_until": "NULL"
+    },
+    {
+      "id": 970000002,
+      "status": 2,
+      "attempts": 2,
+      "token": "NULL",
+      "lease_until": "NULL"
+    },
+    {
+      "id": 970000003,
+      "status": 2,
+      "attempts": 2,
+      "token": "NULL",
+      "lease_until": "NULL"
+    }
+  ],
+  "passed": true,
+  "finished_at_utc": "2026-11-16T10:12:22.892714+00:00"
+}
