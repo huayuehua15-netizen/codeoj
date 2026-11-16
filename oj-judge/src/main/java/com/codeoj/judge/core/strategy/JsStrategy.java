@@ -29,6 +29,11 @@ public class JsStrategy implements LanguageStrategy {
 
     @Override
     public String[] runCommand(int memoryLimitMb) {
-        return new String[]{"node", "main.js"};
+        return new String[]{"node", "--max-old-space-size=" + memoryLimitMb, "main.js"};
+    }
+
+    @Override
+    public int memoryOverheadMb() {
+        return 64;
     }
 }
