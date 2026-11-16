@@ -416,7 +416,7 @@ Query 参数：`page`（默认 1）、`size`（默认 20）。
 > **鉴权为什么在 STOMP 层而不是握手层**：SockJS 的 `/ws/info`、`/ws/xhr` 是普通 HTTP 请求，
 > 浏览器握手阶段无法携带自定义头，因此 `SecurityConfig` 对 `/ws/**` 保持 `permitAll`；
 > 真正的身份校验发生在 STOMP `CONNECT` 帧——解析 `Authorization` 后 `setUser(LoginUser)`。
-> 未通过校验的连接不绑定 Principal，`/user/**` 订阅解析不到用户，**消息不会投递给它**（fail-closed）。
+> v1.4 安全补充：未通过签名、黑名单或数据库用户状态校验的 CONNECT 会被明确拒绝；通过后绑定 `LoginUser`，角色使用数据库当前值。只允许订阅 `/user/queue/judge`，客户端不能 SEND 判题事件。
 
 ```ts
 // 前端连接方式（oj-web/src/api/ws.ts）
@@ -541,3 +541,4 @@ new Client({
 | 2026-11-15 | v1.1 | 个人信息维护接口（1.5/1.6）、提交记录时间筛选（4.3）、注册/登录 IP 限流、昵称字段移除、样例编辑器与 XSS 净化 | 成员 B |
 | 2026-11-15 | v1.2 | 竞赛模式（8.1）、用户管理（8.2）、公告（8.3）、题目标签与收藏（8.4） | 成员 B |
 | 2026-11-16 | v1.3 | **审查修复批次**：① 4.1 `SubmitVO.status` 明确为数字码（原输出枚举名）；② 2.1 列表接口明确不返回 description/samples/languages（后端已按此瘦身），管理端编辑须走 2.2；③ 7.1 WS 鉴权改为 STOMP CONNECT 帧 `Authorization` 头（原「无独立 token 校验」不可投递，属文档与实现双缺失）；④ 收藏接口未登录返回 40100；⑤ 全局时间序列化统一 `yyyy-MM-dd HH:mm:ss`（`spring.jackson.date-format` 对 `LocalDateTime` 无效，需注册序列化器）；⑥ 补登记 `GET /api/submissions/trend` | 成员 B |
+| 2026-11-16 | v1.4 | 保留 v1.3 接口及 LoginUser Principal；补充 STOMP 黑名单/数据库状态鉴权、订阅白名单与 SEND 限制。提交事务及时间字段保持 B 契约，内部租约/补发采用 UTC | A 评测修复，待 B 评审 |
