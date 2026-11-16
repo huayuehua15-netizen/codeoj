@@ -1,0 +1,6 @@
+# 行尾规范：shell 脚本必须 LF，否则容器内 bash 会因 CRLF 报错
+* text=auto
+*.sh text eol=lf
+*.java text eol=lf
+*.yml text eol=lf
+*.xml text eol=lf

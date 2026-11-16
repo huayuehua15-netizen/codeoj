@@ -29,4 +29,10 @@ public class Python3Strategy implements LanguageStrategy {
     public String[] runCommand(int memoryLimitMb) {
         return new String[]{"python3", "main.py"};
     }
+
+    /** 解释器本体占用约 20~40MB，容器限制预留 64MB 余量 */
+    @Override
+    public int memoryOverheadMb() {
+        return 64;
+    }
 }

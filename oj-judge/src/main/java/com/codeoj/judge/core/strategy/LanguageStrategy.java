@@ -23,4 +23,12 @@ public interface LanguageStrategy {
     default long compileTimeoutMs() {
         return 10000;
     }
+
+    /**
+     * 容器内存余量（MB）：cgroup 限制 = 题目内存限制 + 余量，
+     * 为运行时（JVM 堆外/解释器本身等）预留空间，MLE 仍按题目限制判定。
+     */
+    default int memoryOverheadMb() {
+        return 16;
+    }
 }

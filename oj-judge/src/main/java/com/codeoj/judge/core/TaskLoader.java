@@ -43,17 +43,20 @@ public class TaskLoader {
         List<TestCase> testCases = testCaseMapper.selectList(new LambdaQueryWrapper<TestCase>()
                 .eq(TestCase::getProblemId, submission.getProblemId())
                 .orderByAsc(TestCase::getId));
+        if (testCases == null || testCases.isEmpty()) {
+            throw new IllegalStateException("problem has no test cases: " + submission.getProblemId());
+        }
 
         List<JudgeTask.CaseInput> cases = new ArrayList<>();
         for (int i = 0; i < testCases.size(); i++) {
             cases.add(JudgeTask.CaseInput.builder()
-                    .index(i)
+                    .index(i + 1)   // 用例序号从 1 开始（论文表 4-5 / API 约定）
                     .input(testCases.get(i).getInput())
                     .expectedOutput(testCases.get(i).getExpectedOutput())
                     .build());
         }
 
-        return JudgeTask.builder()
+        JudgeTask task = JudgeTask.builder()
                 .submissionId(submission.getId())
                 .userId(submission.getUserId())
                 .problemId(submission.getProblemId())
@@ -63,5 +66,8 @@ public class TaskLoader {
                 .memoryLimitMb(problem.getMemoryLimitMb())
                 .cases(cases)
                 .build();
+        String error = JudgeEngine.validate(task);
+        if (error != null) throw new IllegalStateException(error);
+        return task;
     }
 }

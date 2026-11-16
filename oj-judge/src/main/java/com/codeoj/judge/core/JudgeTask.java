@@ -13,6 +13,8 @@ import java.util.List;
 public class JudgeTask {
 
     private Long submissionId;
+    /** Unique lease token; keeps retry workspaces and containers separate. */
+    private String executionToken;
     private Long userId;
     private Long problemId;
 

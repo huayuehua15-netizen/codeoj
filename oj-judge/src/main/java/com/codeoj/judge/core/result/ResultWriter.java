@@ -35,22 +35,23 @@ public class ResultWriter {
     }
 
     /**
-     * 回写判题结果：条件更新（WHERE status=1）+ judge_case 明细 + 冗余统计。
+     * 回写判题结果：当前未过期租约条件更新 + judge_case 明细 + 冗余统计。
      *
-     * @return false = 条件更新影响行数为零（重复投递，直接确认消息）
+     * @return false = 已终结或租约失效，禁止明细、统计和结果推送等副作用
      */
     @Transactional
-    public boolean save(long submissionId, JudgeResult result) {
-        // 条件更新（论文 5.4）：仅判题中可流转到终态，保证幂等
+    public boolean save(long submissionId, String token, JudgeResult result) {
+        // The current lease owner alone may commit; expired/replaced attempts have no side effects.
         int updated = submissionMapper.updateFinalResult(
                 submissionId,
+                token,
                 result.getStatus().getCode(),
                 result.getTimeUsedMs(),
                 result.getMemoryUsedKb(),
                 result.getErrorInfo());
 
         if (updated == 0) {
-            log.info("duplicate delivery, skip: submission={}", submissionId);
+            log.info("terminal or stale judge lease, skip result: submission={}", submissionId);
             return false;
         }
 
