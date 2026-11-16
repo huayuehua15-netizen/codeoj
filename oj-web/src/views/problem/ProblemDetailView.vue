@@ -10,33 +10,68 @@
   <div v-else class="page-container problem-detail">
     <div class="left">
       <div class="card">
-        <h2>
-          {{ problem.id }}. {{ problem.title }}
-          <el-tag :color="difficultyInfo.color" effect="dark" size="small">{{ difficultyInfo.label }}</el-tag>
-        </h2>
-        <div class="limits">
-          <span class="limit-tag">⏱ {{ problem.timeLimitMs }}ms</span>
-          <span class="limit-tag">💾 {{ problem.memoryLimitMb }}MB</span>
-          <span v-for="l in allowedLanguages" :key="l.value" class="limit-tag lang">{{ l.label }}</span>
-          <span v-for="t in problem.tags || []" :key="t" class="limit-tag lang">{{ t }}</span>
+        <!-- 头部：题号徽章 + 标题 + 难度软标签 + 收藏 -->
+        <div class="prob-head">
+          <span class="pid-badge">{{ problem.id }}</span>
+          <h2 class="prob-title">{{ problem.title }}</h2>
+          <span class="diff-chip" :class="`diff-${problem.difficulty}`">{{ difficultyInfo.label }}</span>
           <el-button
             v-if="userStore.isLoggedIn"
             link :type="favorited ? 'warning' : 'primary'" size="small"
-            style="margin-left: auto" @click="toggleFav"
+            class="fav-btn" @click="toggleFav"
           >
             {{ favorited ? '★ 已收藏' : '☆ 收藏' }}
           </el-button>
         </div>
+
+        <!-- 限制与元信息：内联 SVG 图标 + 等宽数值 -->
+        <div class="limits">
+          <span class="limit-tag">
+            <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+              <circle cx="12" cy="12" r="9" /><path d="M12 7 L12 12 L15.5 14.5" />
+            </svg>
+            {{ limitTime }}
+          </span>
+          <span class="limit-tag">
+            <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round">
+              <rect x="6" y="6" width="12" height="12" rx="1.5" /><rect x="10" y="10" width="4" height="4" />
+              <path d="M9 2v4M15 2v4M9 18v4M15 18v4M2 9h4M2 15h4M18 9h4M18 15h4" />
+            </svg>
+            {{ problem.memoryLimitMb }} MB
+          </span>
+          <span class="limit-tag rate" :class="rateClass">
+            通过率 {{ passRate }}%（{{ problem.acceptedCount }}/{{ problem.submitCount }}）
+          </span>
+          <span v-for="l in allowedLanguages" :key="l.value" class="limit-tag lang">{{ l.label }}</span>
+          <span v-for="t in problem.tags || []" :key="t" class="limit-tag lang">{{ t }}</span>
+        </div>
+
         <MarkdownPreview :content="problem.description" />
 
         <h3>样例</h3>
         <div v-for="(s, i) in problem.samples || []" :key="i" class="sample">
           <div class="sample-item">
-            <div class="sample-title">输入 {{ i + 1 }}</div>
+            <div class="sample-head">
+              <span class="sample-title">输入 {{ i + 1 }}</span>
+              <button class="copy-btn" type="button" @click="copyText(s.input)">
+                <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <rect x="9" y="9" width="12" height="12" rx="2" /><path d="M5 15 L4 15 A2 2 0 0 1 2 13 L2 4 A2 2 0 0 1 4 2 L13 2 A2 2 0 0 1 15 4 L15 5" />
+                </svg>
+                复制
+              </button>
+            </div>
             <pre>{{ s.input }}</pre>
           </div>
           <div class="sample-item">
-            <div class="sample-title">输出 {{ i + 1 }}</div>
+            <div class="sample-head">
+              <span class="sample-title">输出 {{ i + 1 }}</span>
+              <button class="copy-btn" type="button" @click="copyText(s.output)">
+                <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <rect x="9" y="9" width="12" height="12" rx="2" /><path d="M5 15 L4 15 A2 2 0 0 1 2 13 L2 4 A2 2 0 0 1 4 2 L13 2 A2 2 0 0 1 15 4 L15 5" />
+                </svg>
+                复制
+              </button>
+            </div>
             <pre>{{ s.output }}</pre>
           </div>
         </div>
@@ -49,18 +84,35 @@
           <el-select v-model="language" style="width: 140px" @change="onLanguageChange">
             <el-option v-for="lang in allowedLanguages" :key="lang.value" :label="lang.label" :value="lang.value" />
           </el-select>
-          <el-button v-if="language === 'js'" :disabled="running" @click="runConsole">▶ 运行</el-button>
-          <el-button type="primary" :loading="submitting" :disabled="!userStore.isLoggedIn" @click="handleSubmit">
-            {{ userStore.isLoggedIn ? '提交' : '登录后提交' }}
-          </el-button>
+          <div class="toolbar-actions">
+            <el-button v-if="language === 'js'" :disabled="running" @click="runConsole">
+              <svg class="btn-icon" viewBox="0 0 24 24" width="12" height="12" fill="currentColor">
+                <path d="M8 5 L19 12 L8 19 Z" />
+              </svg>
+              运行
+            </el-button>
+            <el-button type="primary" :loading="submitting" :disabled="!userStore.isLoggedIn" @click="handleSubmit">
+              {{ userStore.isLoggedIn ? '提交' : '登录后提交' }}
+            </el-button>
+          </div>
         </div>
         <CodeEditor v-model="code" :language="language" />
 
         <!-- 控制台（JS 题目：浏览器沙箱自测运行） -->
         <div v-if="language === 'js'" class="console-panel">
           <div class="console-head">
-            <span class="console-title">🖥 控制台（自测运行）</span>
-            <el-button size="small" type="success" :loading="running" @click="runConsole">▶ 运行</el-button>
+            <span class="console-title">
+              <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="3" y="4" width="18" height="12" rx="2" /><path d="M8 20 L16 20 M12 16 L12 20" />
+              </svg>
+              控制台（自测运行）
+            </span>
+            <el-button size="small" type="success" :loading="running" @click="runConsole">
+              <svg v-if="!running" class="btn-icon" viewBox="0 0 24 24" width="12" height="12" fill="currentColor">
+                <path d="M8 5 L19 12 L8 19 Z" />
+              </svg>
+              运行
+            </el-button>
           </div>
           <el-input
             v-model="consoleInput"
@@ -70,7 +122,12 @@
             class="console-input"
           />
           <div v-if="consoleResult" class="console-out" :class="{ err: !!consoleResult.error }">
-            <div v-if="consoleResult.error" class="console-err">✖ {{ consoleResult.error }}</div>
+            <div v-if="consoleResult.error" class="console-err">
+              <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round">
+                <path d="M6 6 L18 18 M18 6 L6 18" />
+              </svg>
+              {{ consoleResult.error }}
+            </div>
             <pre class="console-stdout">{{ consoleResult.stdout || '(无输出)' }}</pre>
             <div class="console-meta">耗时 {{ consoleResult.elapsedMs }}ms ｜ 浏览器沙箱运行（仅 JS）</div>
           </div>
@@ -150,6 +207,27 @@ const allowedLanguages = computed(() =>
   LANGUAGE_OPTIONS.filter((l) => (problem.value?.languages || []).includes(l.value)),
 )
 
+/** 时间限制呈现：<1s 用 ms，否则转秒（1000ms → "1 s"，1500ms → "1.5 s"） */
+const limitTime = computed(() => {
+  const ms = problem.value?.timeLimitMs
+  if (ms == null) return '—'
+  return ms < 1000 ? `${ms} ms` : `${+(ms / 1000).toFixed(1)} s`
+})
+
+/** 题目维度通过率（数据随题目接口自带，纯呈现层聚合） */
+const passRate = computed(() => {
+  const p = problem.value
+  if (!p?.submitCount) return 0
+  return Math.round(((p.acceptedCount || 0) / p.submitCount) * 100)
+})
+
+/** 通过率分级配色（与列表页/排行榜一致）：>=60 绿、>=30 橙、否则红 */
+const rateClass = computed(() => {
+  if (passRate.value >= 60) return 'rate-good'
+  if (passRate.value >= 30) return 'rate-mid'
+  return 'rate-low'
+})
+
 const resultIcon = computed(() => {
   const s = result.value?.status
   if (s === 2) return 'success'
@@ -194,6 +272,16 @@ const favorited = ref(false)
 const running = ref(false)
 const consoleInput = ref('')
 const consoleResult = ref<RunResult>()
+
+/** 剪贴板复制（样例输入/输出）：失败静默提示，不打断答题流程 */
+async function copyText(text: string) {
+  try {
+    await navigator.clipboard.writeText(text)
+    ElMessage.success('已复制到剪贴板')
+  } catch {
+    ElMessage.error('复制失败，请手动选择复制')
+  }
+}
 
 /** 控制台运行：浏览器沙箱执行当前代码（仅 JS 题）。
  *  输入框为空时显式填入样例 1 输入（所见即所得——用户能看到运行用了什么输入）。 */
@@ -371,9 +459,69 @@ onMounted(async () => {
 }
 .left {
   flex: 1;
+  min-width: 0;
 }
 .right {
   flex: 1;
+  min-width: 0;
+  /* 长题面滚动时编辑器保持可见 */
+  position: sticky;
+  top: 76px;
+}
+.prob-head {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+.prob-title {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 800;
+}
+.pid-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 32px;
+  height: 26px;
+  padding: 0 8px;
+  border-radius: 7px;
+  background: #eef2ff;
+  color: #4f46e5;
+  font-weight: 800;
+  font-size: 14px;
+  font-variant-numeric: tabular-nums;
+  flex-shrink: 0;
+}
+.diff-chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 12px;
+  border-radius: 999px;
+  font-size: 12.5px;
+  font-weight: 600;
+  border: 1px solid transparent;
+  flex-shrink: 0;
+}
+.diff-chip.diff-1 {
+  background: #f0fdf4;
+  color: #16a34a;
+  border-color: #bbf7d0;
+}
+.diff-chip.diff-2 {
+  background: #fffbeb;
+  color: #d97706;
+  border-color: #fde68a;
+}
+.diff-chip.diff-3 {
+  background: #fef2f2;
+  color: #dc2626;
+  border-color: #fecaca;
+}
+.fav-btn {
+  margin-left: auto;
+  font-size: 13px;
 }
 .limits {
   display: flex;
@@ -382,17 +530,36 @@ onMounted(async () => {
   margin-bottom: 14px;
 }
 .limit-tag {
-  background: #eef2ff;
-  color: #4f46e5;
-  border: 1px solid #e0e7ff;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: #f8f9fc;
+  color: #4b5563;
+  border: 1px solid var(--oj-border);
   border-radius: 999px;
-  padding: 2px 12px;
-  font-size: 12px;
+  padding: 3px 12px;
+  font-size: 12.5px;
+  font-variant-numeric: tabular-nums;
 }
 .limit-tag.lang {
-  background: #f4f4f5;
-  color: #606266;
-  border-color: #e4e7ed;
+  background: #eef2ff;
+  color: #4f46e5;
+  border-color: #e0e7ff;
+}
+.limit-tag.rate.rate-good {
+  color: #16a34a;
+  border-color: #bbf7d0;
+  background: #f0fdf4;
+}
+.limit-tag.rate.rate-mid {
+  color: #d97706;
+  border-color: #fde68a;
+  background: #fffbeb;
+}
+.limit-tag.rate.rate-low {
+  color: #dc2626;
+  border-color: #fecaca;
+  background: #fef2f2;
 }
 .sample {
   display: flex;
@@ -401,25 +568,65 @@ onMounted(async () => {
 }
 .sample-item {
   flex: 1;
-  background: #f5f7fa;
-  border-radius: 6px;
-  padding: 10px;
+  min-width: 0;
+  border: 1px solid var(--oj-border);
+  border-radius: 10px;
+  overflow: hidden;
+}
+.sample-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px 12px;
+  background: #f8f9fc;
+  border-bottom: 1px solid var(--oj-border);
 }
 .sample-title {
   font-size: 12px;
-  color: #909399;
-  margin-bottom: 6px;
+  color: #6b7280;
+  font-weight: 600;
+}
+.copy-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  border: none;
+  background: none;
+  color: #9ca3af;
+  font-size: 12px;
+  cursor: pointer;
+  padding: 2px 8px;
+  border-radius: 6px;
+  transition: all 0.15s var(--oj-ease);
+}
+.copy-btn:hover {
+  color: var(--oj-primary);
+  background: var(--oj-primary-soft);
 }
 .sample-item pre {
   margin: 0;
+  padding: 12px 14px;
+  min-height: 58px;
+  background: #0f172a;
+  color: #e2e8f0;
   white-space: pre-wrap;
-  font-family: Consolas, Monaco, monospace;
+  word-break: break-all;
+  font-family: 'JetBrains Mono', 'Cascadia Code', Consolas, Menlo, monospace;
   font-size: 13px;
+  line-height: 1.6;
 }
 .editor-toolbar {
   display: flex;
+  align-items: center;
   justify-content: space-between;
   margin-bottom: 10px;
+}
+.toolbar-actions {
+  display: flex;
+  gap: 8px;
+}
+.btn-icon {
+  margin-right: 4px;
 }
 .judge-status {
   margin-top: 12px;
@@ -439,6 +646,9 @@ onMounted(async () => {
   padding: 8px 14px;
 }
 .console-title {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
   font-size: 13px;
   font-weight: 600;
   font-family: 'JetBrains Mono', Consolas, monospace;
@@ -454,9 +664,13 @@ onMounted(async () => {
   min-height: 60px;
 }
 .console-err {
+  display: flex;
+  align-items: center;
+  gap: 6px;
   color: #f87171;
   font-size: 13px;
   margin-bottom: 6px;
+  word-break: break-all;
 }
 .console-stdout {
   margin: 0;

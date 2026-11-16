@@ -19,7 +19,11 @@
     </div>
 
     <div v-if="announcements.length" class="card notice-bar">
-      <span class="notice-icon">📢</span>
+      <span class="notice-icon">
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M3 10 L3 14 L7 14 L13 18 L13 6 L7 10 Z" /><path d="M17 9 A5 5 0 0 1 17 15" />
+        </svg>
+      </span>
       <el-carousel height="28px" direction="vertical" :autoplay="true" interval="4500" indicator-position="none" arrow="never">
         <el-carousel-item v-for="a in announcements" :key="a.id">
           <span class="notice-title">【{{ a.title }}】</span>
@@ -234,7 +238,9 @@ onMounted(async () => {
   margin-bottom: 16px;
 }
 .notice-icon {
-  font-size: 18px;
+  display: inline-flex;
+  align-items: center;
+  color: #e6a23c;
 }
 .notice-bar :deep(.el-carousel) {
   flex: 1;
