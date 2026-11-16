@@ -1,7 +1,7 @@
 # CodeOJ 项目进度文档
 
-> 最后更新：2026-11-16 ｜ 维护：成员 B ｜ 更新纪律：每完成一个里程碑/修复一批 bug，更新本文档
-> 配套文档：[API.md](./API.md)（接口契约 v1.2）｜ [CONTRACT.md](./CONTRACT.md)（模块契约）｜ [COLLABORATION.md](./COLLABORATION.md)（分工+分支规则）｜ [HANDOFF-A.md](./HANDOFF-A.md)（A 侧交接）｜ [PROGRESS.md](./PROGRESS.md)（本文档）
+> 最后更新：2026-11-16 23:40 ｜ 维护：成员 B ｜ 更新纪律：每完成一个里程碑/修复一批 bug，更新本文档
+> 配套文档：[API.md](./API.md)（接口契约 v1.3）｜ [CONTRACT.md](./CONTRACT.md)（模块契约 v1.1）｜ [COLLABORATION.md](./COLLABORATION.md)（分工+分支规则，§3 已改为新手可跟做版）｜ [HANDOFF-A.md](./HANDOFF-A.md)（A 侧交接，新增 §0 上手第一步）｜ [PROGRESS.md](./PROGRESS.md)（本文档）
 
 ---
 
@@ -12,8 +12,8 @@
 | 项目 | CodeOJ —— 基于 Spring Boot + Vue3 + Docker 的在线代码评测与编程练习平台（专科毕业设计） |
 | 分工 | 方案 A（已固化）：成员 A = 评测链路（oj-judge real 引擎/judge-images）；成员 B = 业务与前端（oj-server/oj-web/联调/测试） |
 | 技术栈 | JDK17 / Spring Boot 3.2.5 / MyBatis-Plus / RabbitMQ / Redis / MySQL 8 / docker-java / Vue3+Vite+TS+Pinia+EP+Monaco / ECharts / SockJS+STOMP / Web Worker 沙箱 |
-| 仓库 | github.com/huayuehua15-netizen/codeoj ｜ 分支：**main**（发布）/ **dev**（集成）/ feat/*（开发） |
-| 交付状态 | **B 侧功能 100% 交付 + 已知 bug 清零 + UI 体系化完成**；A 侧 real 引擎待开工（材料就绪） |
+| 仓库 | github.com/huayuehua15-netizen/codeoj ｜ 分支：**main**（发布快照）/ **dev**（集成）/ **niuzj**（成员 B 个人分支）/ feat/*（成员 A） |
+| 交付状态 | **B 侧功能 100% 交付 + 复审 2 个 P0 / 14 个 P1 已修复 + 三大数据页专业化完成 + 演示数据重造**；A 侧 real 引擎待开工（材料就绪） |
 
 ---
 
@@ -44,8 +44,16 @@
 
 ### 交付复审 ✅（2026-11-16，B 侧全面审查 + 修复，见 §11）
 
+### M2.5 · 专业化打磨 ✅（2026-11-16 下午，见 §12）
+- 排行榜：同分排序修复、统计维度增强、顶部概览条（§12.1）
+- 统计页：从三个环形图升级为数据分析面板（§12.2）
+- 竞赛页：去掉 emoji 假图标与空洞卡片，改为状态分层布局（§12.3）
+- 演示数据重造：1053 条提交、38 人上榜、三场竞赛三种状态（§12.4）
+- 协作简化：`dev` / `main` 合并权统一收归成员 B；文档改为新手可跟做版（§12.5）
+
 ### 当前位置
-**B 侧二审完成：2 个 P0 + 14 个 P1 已修复**（详见 §11）。P0 = A 侧 real 引擎（HANDOFF-A.md 就绪）。
+**B 侧全部完成**：功能面 + 复审修复 + 三个核心数据页专业化 + 演示数据。
+P0 = A 侧 real 引擎（HANDOFF-A.md 就绪，`ENGINE_MODE=local` 目前是静态语义判定）。
 
 ---
 
@@ -101,20 +109,33 @@
 
 | 资产 | 状态 |
 |---|---|
-| 题库 | **28 题**（算法 20 + 前端 JS/Vue3 8），难度 简单 13/中等 9/困难 6，标签 12+ 种 |
-| 用户 | 31 个（30 名中文名学生 + teacher_admin） |
-| 提交 | 105+ 条混合状态（AC/WA/TLE/RE/CE），时间分布近 7 天 |
-| 排行榜 | 28 人有层次（AC 4→1），无重复 |
-| 课程 | 2 门（C 语言程序设计 / 数据结构与算法实验） |
-| 竞赛 | 1 场进行中（算法挑战赛，窗口 ~3h） |
-| 公告 | 1 条（实验一截止提醒） |
+| 题库 | **28 题**（算法 20 + 前端 JS/Vue3 8），难度 简单 11 / 中等 11 / 困难 6，标签 12+ 种 |
+| 用户 | **39 个**（38 名学生 + teacher_admin），全部密码可用 |
+| 提交 | **1053 条**：AC 350 / WA 612 / TLE 91，时间分布近 14 天（工作日 75~100 条/天、周末 50 条/天） |
+| 排行榜 | **38 人上榜**，解题数 22 → 1 平滑递减；同分按「首次达成时间」排序 |
+| 课程 | 3 门 |
+| 竞赛 | **3 场，三种状态齐全**：进行中（6 题）/ 未开始（4 题）/ 已结束（5 题） |
+| 公告 | 1 条 |
 
-**演示账号**：教师 `teacher_admin / admin123`；学生 `张伟 / 123456`、`周杰 / 123456`（有提交数据）
+**演示账号（2026-11-16 统一重置为 `123456`）**：
+
+| 用途 | 账号 | 密码 | 说明 |
+|---|---|---|---|
+| 教师/管理员 | `teacher_admin` | `123456` | role=1，可进管理端 |
+| 学生（榜首，数据最丰富） | `胡军` | `123456` | 22 题 / 55 次提交，统计页效果最好 |
+| 学生 | `张伟`、`周杰` | `123456` | 有提交数据 |
+| 你自己的账号 | `等到你抬起头时` | `123456` | ⚠️ 见下方注意事项 |
+
+> ⚠️ **密码注意**：造演示数据时批量 `UPDATE user SET password=BCrypt('123456') WHERE role=0`，
+> 把**你自己注册的账号密码也一并改了**，且 Edge 记住了旧密码会自动填充。
+> 登录时若报「用户名或密码错误」，**密码框 Ctrl+A 清空后手输 `123456`** 即可。
+> 教师账号 `teacher_admin` 同样已重置为 `123456`（原先的 `admin123` 已失效）。
+
 **服务**：前端 5173 / oj-server 8080 / oj-judge 8081 / MySQL 3306 / Redis 6379 / RabbitMQ 5672+15672
 
 ---
 
-## 5. Bug 修复台账（37 项，按发现来源）
+## 5. Bug 修复台账（按发现来源；本轮新增见 §11 / §12）
 
 ### 联调发现（环境/编码）
 | # | 问题 | 修复 |
@@ -186,21 +207,27 @@
 
 ---
 
-## 7. 分支与协作模型（已固化）
+## 7. 分支与协作模型（2026-11-16 简化，见 §12.5）
 
 ```
-GitHub 云端（权威） ←→ ① Desktop\code-king（B 开发副本，唯一真实源）
-                    ←→ ② Documents\GitHub\codeoj（GitHub Desktop 副本，仅查看/pull）
-feat/judge-engine (A) ──→ dev（集成联调）──→ main（B 单点把关发布）
+成员 A: feat/judge-engine ─┐
+                           ├─→ 推自己分支 + 群上说一声
+成员 B: niuzj ─────────────┘              │
+                                          ▼
+                    成员 B 统一合并 → dev（集成，随时可跑）
+                                          │ 验收通过
+                                          ▼
+                                        main（答辩快照）
 ```
 
-- **dev 合并规则**：谁的功能谁合并，合并后跑联调验证
-- **main 推送权**：B 单点把关，仅里程碑验收通过后推送
-- **A 交付方式**：推 feat/judge-engine → 通知 B → review → 合并 → 联调 → 验收 → 推 main
-- **副本纪律**：② 只 pull/查看，**不在其中改代码提交**（防分叉）
+- **规则**：`dev` 与 `main` **只由成员 B 合并**；成员 A 只推自己分支并知会
+- **理由**：合并权收在一人手上，`dev` 才能随时可跑
+- **门禁**：合并进 dev 前必须 `mvn clean install -DskipTests` 通过
+- **提交格式**：`[新增]/[修复]/[bug]/[重构]/[样式]/[文档]/[杂务] 做了什么`
+- **详细操作**：COLLABORATION.md §3 已重写为新手可跟做版（五步流程、冲突处理、命令速查）
+- **副本纪律**：`Documents\GitHub\codeoj` 只 pull/查看，不在其中改代码提交（防分叉）
 
 ---
-
 ## 8. 未完成项（按优先级）
 
 ### P0 · A 侧 real 判题引擎（成员 A）
@@ -233,23 +260,31 @@ feat/judge-engine (A) ──→ dev（集成联调）──→ main（B 单点�
 | Docker | Desktop per-user 安装（AppData\Local\Programs\DockerDesktop），WSL 2.6.1 MSI |
 | 镜像源 | DaoCloud：`docker.m.daocloud.io/library/xxx`（Docker Hub 直连被墙） |
 | RabbitMQ | codeoj / codeoj123，管理台 15672 |
-| MySQL | root / 123456，库 codeoj（10 张表：7 业务 + contest + contest_problem + announcement + favorite） |
+| MySQL | root / 123456，库 codeoj。**容器时区已设为 `+08:00`**（原为 UTC，与 JVM 差 8 小时） |
+| RabbitMQ 账号陷阱 | 代码默认 `guest/guest`，实际容器是 `codeoj/codeoj123`；两边不一致会 `ACCESS_REFUSED`。做法见 HANDOFF-A §0.3 |
 | 构建命令 | `mvn clean install -DskipTests`（改 pom 后必须 clean）|
+| 前端构建 | 本机沙箱会因 esbuild 报 `spawn EPERM`；把 `TEMP`/`TMP` 指到工作区内目录即可正常 build |
 | 启动顺序 | 容器 → oj-server → oj-judge → 前端 dev |
 | 双副本 | ① Desktop\code-king（开发）② Documents\GitHub\codeoj（GitHub Desktop，仅查看/pull） |
 
 ### ⚠️ 踩坑清单
 1. 改 pom 需 clean install（增量编译不重编，lombok/注解不生效假象）
-2. 重启服务前必须确认 8080 端口旧进程已死（netstat 反查 PID——曾连续三轮测到旧代码）
+2. 重启服务前必须确认 8080 端口旧进程已死（netstat 反查 PID——曾连续三轮测到旧代码；2026-11-16 又复现一次，旧进程 23:23 启动导致新修复没生效）
 3. curl 中文测试需 UTF-8（Git Bash 默认 GBK 会 50000）
 4. Bash 工具写源码被安全策略拒绝，一律走 Write/Edit
-5. 安全工具（Mimosa）对"进程执行用户代码"零容忍——判题执行实现需 HANDOFF-A 路径（用户手动建文件或 A 侧）
+5. 安全工具（Mimosa）对"进程执行用户代码"零容忍——判题执行实现需 HANDOFF-A 路径
 6. Element Plus 组件 actionability 误报多——自动化交互优先 evaluate 页面内点击
 7. 前后端各自 build 后重启服务，**不要带错 cwd**（mvn -pl 需在项目根）
+8. **PowerShell 追加中文会写成 GBK**：`Add-Content` / `Out-File` 按系统 ANSI 编码，混进 UTF-8 文件会乱码（`.gitignore` 踩过）。一律用 Write/Edit 工具，或 `UTF8Encoding($false)` 显式写
+9. **commit message 用 PowerShell 写会带 BOM**（`[文档]` 前混进不可见字节）。用 `[System.IO.File]::WriteAllText(..., New-Object System.Text.UTF8Encoding $false)`
+10. **MySQL 容器默认 UTC**：`serverTimezone=UTC` 只告诉驱动服务端时区，不会下发 `SET time_zone`。已在两个模块的连接串加 `sessionVariables=time_zone='+08:00'`，并把容器 global time_zone 设为 `+08:00`
+11. **浏览器自动填充旧密码**：批量重置演示账号密码后，Edge 记住的旧密码会自动填入，报「用户名或密码错误」。登录前 Ctrl+A 清空手输
+12. **GitHub 推送偶发 TLS/连接中断**：`git push` 失败重试即可（本轮最多重试 2 次成功），不是配置问题
+13. **文档文件是 CRLF**：用 `edit` 工具按字面匹配大段文本会失败，需按索引位置替换或先统一行尾
 
 ---
 
-## 10. 提交历史索引（main 分支关键节点）
+## 10. 提交历史索引（关键节点，`058b7c7` 起见 dev）
 
 | commit | 内容 |
 |---|---|
@@ -272,6 +307,16 @@ feat/judge-engine (A) ──→ dev（集成联调）──→ main（B 单点�
 | ff32957 | 用户名下拉可识别性 |
 | 95999f4 | PROGRESS.md 进度文档 |
 | f466f92 | 协作流程细化 + dev 分支 |
+| 058b7c7 | **[bug] WebSocket 推送全链路根本不投递**（本轮 49 文件审查修复批次，2 个 P0 + 14 个 P1） |
+| 36405ad | [文档] Git 协作规范与 A 侧交接改为新手可跟做版 |
+| 60635f5 | [文档] 提交规范统一为方括号格式 |
+| 2cfe134 | [文档] 明确 dev 与 main 只由成员 B 合并 |
+| 4aecc62 | [优化] 排行榜专业化改造：同分排序修复 + 统计维度增强 |
+| 26d7f92 | [优化] 统计页专业化改造：从三个环形图升级为数据分析面板 |
+| 72a9c2e | [优化] 竞赛页重做：去掉 emoji 假图标与空洞卡片 |
+
+> 说明：`058b7c7` 起在 main，`36405ad` 之后均在 **dev**（个人分支 `niuzj` 的提交已合入 dev）。
+> 按 §7 新规则，main 只在验收通过后由成员 B 推进。
 
 ---
 
@@ -359,3 +404,109 @@ oj-common 改动仍需双方同意」。本轮审查**有 1 处越界改动，�
 
 > 另：`oj-common` 本轮**零改动**（`LoginUser` 在 `oj-server` 内，不在公共区），不触发"双人同意"条款。
 
+
+---
+
+## 12. 专业化打磨（2026-11-16 下午）
+
+> 触发：B 侧反馈「看着简陋 / 一股 AI 味」。核查后结论是**功能量对专科毕设本就超标，
+> 问题在于数据没铺开、页面信息密度低、emoji 当图标**。本轮按"答辩能讲、经得起追问"
+> 的标准重做三个核心数据页，并重建演示数据。
+
+### 12.1 排行榜（commit `4aecc62`）
+
+**修掉一个真 bug**：6 人并列 4 题时，排名顺序是 `40,36,34,26,25,17`，即 **userId 字典序**，
+没有任何业务含义。老师问「都做 4 题凭什么他第一」无从回答。
+
+改为专业 OJ 规则：**解题数降序 → 首次达成该题数的时间升序 → userId 兜底**。
+实测 3 个并列 19 题的用户，首次 AC 时间 17:20 / 18:01 / 18:41，返回顺序完全一致。
+
+| 改动 | 内容 |
+|---|---|
+| 新增 | `LeaderboardStatsMapper`：批量聚合总提交 / AC 提交 / 最后活跃 / 首次 AC 时间 |
+| 修复 | `overview()` 原带 `WHERE status=2`，导致全站通过率**恒为 100%** |
+| 后端 | `LeaderboardVO` 增加 `acceptRate` / `totalSubmit` / `lastSubmitAt` 与全站 `summary` |
+| 前端 | 顶部概览条（上榜人数 / 最高解题数 / 全站提交 / 整体通过率） |
+| 前端 | 表格 3 列 → 5 列；通过率分级配色；进度条基准改为**全站最高**而非当前页第一条（翻页不再跳变） |
+| 前端 | 每页条数可选 10/20/50；新增 `relativeTime` 工具 |
+
+### 12.2 统计页（commit `26d7f92`）
+
+从「三个环形图 + 两个 ECharts」升级为四层数据分析面板：
+
+1. **顶部四卡**：总通过率 / 已解决题目 / 题目覆盖率 / 平均每解一题提交数
+2. **难度攻克卡片**：从只看通过率改为「已解 N / 共 M 题」覆盖度进度条
+3. **状态分布环形图**（新增）：WA 多 → 逻辑问题，TLE 多 → 算法复杂度问题，可直接得出结论
+4. **难度对比明细表** + 趋势图左右分栏
+
+后端 `StatisticsVO` 增加状态维度 `byStatus` 与汇总字段；新增
+`statusCountByUser` / `attemptedCountByUser` 聚合查询，难度维度补 `solvedCount` / `totalCount`。
+
+实测（胡军，22 题）：55 次提交、通过率 40.0%、三难度全覆盖、状态分布正确。
+
+### 12.3 竞赛页（commit `72a9c2e`）
+
+问题定位：两场竞赛**名称完全相同**、时间只差 1 分钟、都显示「已结束」；
+emoji（`⏰ 📋 🚀 ⏳`）当图标；`justify-content: space-between` 导致卡片中间 2000px 空白。
+
+| 改动 | 内容 |
+|---|---|
+| 列表页 | 进行中单独用深色强调卡（呼吸灯 + 秒级倒计时 + 柔光/网格纹理） |
+| 列表页 | 其余改为紧凑行式列表（状态徽标/标题/描述/时间/题数/倒计时/箭头），无空白 |
+| 列表页 | 页头计数 + 「全部 / 未开始 / 已结束」筛选 |
+| 两页 | emoji 全部替换为内联 SVG；详情页头部同步重做，题号徽标降为浅底主色 |
+| 数据 | 两场重复竞赛 → 三场真实竞赛（进行中 6 题 / 未开始 4 题 / 已结束 5 题），描述写真实内容 |
+
+**顺带修复**：MySQL 容器是 UTC、系统是 UTC+8，导致竞赛状态判错、倒计时错误。
+已把容器 `global time_zone` 设为 `+08:00`，两个模块连接串也加了 `sessionVariables`。
+
+### 12.4 演示数据重造
+
+| 项 | 原状 | 现在 |
+|---|---|---|
+| 提交 | 105 条，状态混杂但最高仅 4 题 | **1053 条**（AC 350 / WA 612 / TLE 91） |
+| 排行榜 | 28 人，解题数 4→1 | **38 人，22→1 平滑递减**（强手/中上/中等/入门/新手五档） |
+| 时间分布 | 全挤在一天 | 近 14 天，工作日 75~100 条/天、周末 50 条/天 |
+| 题目统计 | 与实际提交脱节 | 已 `UPDATE problem` 同步 submit_count / accepted_count |
+| Redis 榜 | 与 DB 不一致 | 已按 DB AC 数重建 |
+| 测试账号 | 6 个 smoke/ad 账号混在榜里 | 已清理 |
+
+> ⚠️ **副作用（已登记）**：批量 `UPDATE user SET password=BCrypt('123456') WHERE role=0`
+> 把用户自己注册的账号和 `teacher_admin` 密码都改了。全部账号现统一 `123456`，
+> 旧密码失效；Edge 自动填充旧密码会报「用户名或密码错误」，清空手输即可。见 §4。
+>
+> 另：竞赛时间窗是相对 `NOW()` 生成的，**过几小时「进行中」会自然变成「已结束」**。
+> 答辩前若需演示实时排名，执行：
+> ```sql
+> UPDATE contest SET start_time = DATE_SUB(NOW(), INTERVAL 50 MINUTE),
+>                    end_time   = DATE_ADD(NOW(), INTERVAL 130 MINUTE) WHERE id = 4;
+> ```
+
+### 12.5 协作流程简化
+
+| 改动 | 内容 |
+|---|---|
+| 分支规则 | `dev` / `main` **只由成员 B 合并**；成员 A 只推自己分支并知会（§7） |
+| 提交规范 | 统一为 `[新增]/[修复]/[bug]/[重构]/[样式]/[文档]/[杂务] 做了什么` |
+| COLLABORATION §3 | 从 18 行结论重写为 177 行可跟做版：五步流程、冲突处理、目录归属表、命令速查、三条救命提示 |
+| HANDOFF-A §0 | 新增 112 行上手引导：环境依赖、四步跑起来、curl 验证判题链路、故障对照表 |
+| 事实核查 | 补上 RabbitMQ 账号陷阱：README 命令建的是 `guest/guest`，实际环境用 `codeoj/codeoj123` |
+
+### 12.6 本轮验证
+
+```
+mvn clean package       BUILD SUCCESS（4 模块）
+npx vue-tsc --noEmit    exit 0
+npx vite build          ✓ built
+接口实测                排行榜 / 统计 / 竞赛三页数据全部正确
+构建产物                ProblemDetailView 3.27MB → 11.4KB（monaco 独立 vendor chunk）
+```
+
+### 12.7 仍未完成（更新 §11.5）
+
+| 级别 | 项 | 状态 |
+|---|---|---|
+| **P0（A 侧）** | real 判题引擎 | 仍是唯一大缺口，`ENGINE_MODE=local` 为静态语义判定，**非真实运行** |
+| P1 | 零单元测试 | `src/test` 仍不存在 |
+| P2 | Element Plus 全量注册 | `manualChunks` 已拆包，按需导入未做 |
+| P2 | 提交记录页 / 题目详情页 | 仍是纯表格与基础布局，尚未按本轮标准打磨 |
