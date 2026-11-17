@@ -82,12 +82,25 @@ if [ -f "oj-web/package.json" ]; then
     echo "           首次请先在 oj-web 目录执行 npm install"
   else
     OLD_PWD=$(pwd)
-    cd oj-web || fail
-    if ! npm run build; then
-      cd "$OLD_PWD" || true
+    # esbuild 在部分 Windows 环境下无法清理系统 TEMP（报 "Access is denied"），
+    # 把 TEMP 指到仓库内的 .tmp 可绕过；该目录已在 .gitignore 中。
+    BUILD_TMP="$REPO_ROOT/.tmp"
+    mkdir -p "$BUILD_TMP" 2>/dev/null || true
+    if [ -d "$BUILD_TMP" ]; then
+      TMP="$BUILD_TMP" TEMP="$BUILD_TMP" TMPDIR="$BUILD_TMP" \
+        sh -c 'cd oj-web && npm run build'
+    else
+      ( cd oj-web && npm run build )
+    fi
+    BUILD_RC=$?
+    cd "$OLD_PWD" || true
+    if [ "$BUILD_RC" -ne 0 ]; then
+      echo ""
+      echo "[pre-push] 提示：若错误是 esbuild 的 'Access is denied'（清理临时目录失败），"
+      echo "           那是 Windows 权限问题而非代码问题，可加 TEMP 覆盖后重试："
+      echo "           mkdir .tmp && TEMP=\$(pwd)/.tmp git push origin dev"
       fail
     fi
-    cd "$OLD_PWD" || true
     echo "[2/2] ✓ 前端构建通过"
   fi
 else
