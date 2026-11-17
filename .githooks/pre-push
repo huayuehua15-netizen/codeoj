@@ -1,0 +1,102 @@
+#!/bin/sh
+#
+# pre-push：推送 dev 前强制跑通构建
+#
+# 背景：本项目没有 CI，dev 必须随时能跑。放开"双方都能推 dev"之后，
+#       这条 hook 就是唯一挡住坏提交进 dev 的机制。
+#
+# 启用方式（每人克隆后跑一次）：
+#   git config core.hooksPath .githooks
+#
+# 临时跳过（仅在明确知道自己在干什么时）：
+#   git push --no-verify
+#   或 SKIP_BUILD_CHECK=1 git push
+#
+set -u
+
+SKIP_FLAG="${SKIP_BUILD_CHECK:-0}"
+if [ "$SKIP_FLAG" = "1" ]; then
+  echo "[pre-push] SKIP_BUILD_CHECK=1，已跳过构建检查"
+  exit 0
+fi
+
+# 只在推 dev 时检查；main 走人工验收，个人分支不拦
+CHECK_DEV=0
+while read -r local_ref local_sha remote_ref remote_sha; do
+  case "$remote_ref" in
+    refs/heads/dev) CHECK_DEV=1 ;;
+    refs/heads/main) echo "[pre-push] 注意：正在推 main（答辩快照），请确认已验收" ;;
+  esac
+done
+
+if [ "$CHECK_DEV" -ne 1 ]; then
+  exit 0
+fi
+
+REPO_ROOT=$(git rev-parse --show-toplevel)
+cd "$REPO_ROOT" || exit 1
+
+echo ""
+echo "=============================================="
+echo "[pre-push] 正在检查 dev 构建（推送前必须通过）"
+echo "=============================================="
+echo ""
+
+fail() {
+  echo ""
+  echo "=============================================="
+  echo "[pre-push] ✗ 构建失败，已阻止推送到 dev"
+  echo "=============================================="
+  echo ""
+  echo "请先修好再推。dev 必须随时能跑，否则另一个人拉到就跑不起来了。"
+  echo "确实需要紧急跳过：git push --no-verify"
+  exit 1
+}
+
+# 1) 后端
+echo "[1/2] mvn -q -DskipTests package ..."
+if [ -f "./mvnw" ]; then
+  MVN_CMD="./mvnw"
+elif command -v mvn >/dev/null 2>&1; then
+  MVN_CMD="mvn"
+else
+  echo "[pre-push] 警告：找不到 mvn/mvnw，跳过后端构建检查"
+  MVN_CMD=""
+fi
+
+if [ -n "$MVN_CMD" ]; then
+  if ! $MVN_CMD -q -DskipTests package; then
+    fail
+  fi
+  echo "[1/2] ✓ 后端构建通过"
+else
+  echo "[1/2] - 已跳过"
+fi
+
+# 2) 前端
+if [ -f "oj-web/package.json" ]; then
+  echo ""
+  echo "[2/2] 前端构建（oj-web）..."
+  if [ ! -d "oj-web/node_modules" ]; then
+    echo "[pre-push] 警告：oj-web/node_modules 不存在，跳过前端构建"
+    echo "           首次请先在 oj-web 目录执行 npm install"
+  else
+    OLD_PWD=$(pwd)
+    cd oj-web || fail
+    if ! npm run build; then
+      cd "$OLD_PWD" || true
+      fail
+    fi
+    cd "$OLD_PWD" || true
+    echo "[2/2] ✓ 前端构建通过"
+  fi
+else
+  echo "[2/2] - 无前端项目，已跳过"
+fi
+
+echo ""
+echo "=============================================="
+echo "[pre-push] ✓ 全部通过，允许推送到 dev"
+echo "=============================================="
+echo ""
+exit 0
