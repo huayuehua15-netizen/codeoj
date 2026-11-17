@@ -132,7 +132,7 @@ const canViewCode = computed(
   () => detail.value && (detail.value.userId === userStore.userId || userStore.isAdmin),
 )
 
-/** 按状态同族选图标：通过✓ / 错误✕ / 超限⏱ / 编译错 code / 等待↻ */
+/** 按状态同族选图标：通过 check / 错误 cross / 超限 clock / 编译错 code / 等待 wait */
 const iconKind = computed(() => {
   const s = detail.value?.status
   if (s === 2) return 'check'

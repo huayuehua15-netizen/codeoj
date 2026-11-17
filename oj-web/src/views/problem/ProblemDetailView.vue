@@ -15,13 +15,18 @@
           <span class="pid-badge">{{ problem.id }}</span>
           <h2 class="prob-title">{{ problem.title }}</h2>
           <span class="diff-chip" :class="`diff-${problem.difficulty}`">{{ difficultyInfo.label }}</span>
-          <el-button
+          <button
             v-if="userStore.isLoggedIn"
-            link :type="favorited ? 'warning' : 'primary'" size="small"
-            class="fav-btn" @click="toggleFav"
+            class="fav-btn" :class="{ active: favorited }"
+            type="button" @click="toggleFav"
           >
-            {{ favorited ? '★ 已收藏' : '☆ 收藏' }}
-          </el-button>
+            <svg viewBox="0 0 24 24" width="14" height="14"
+              :fill="favorited ? 'currentColor' : 'none'"
+              stroke="currentColor" stroke-width="2" stroke-linejoin="round">
+              <path d="M12 3.2 L14.7 8.7 L20.8 9.6 L16.4 13.9 L17.4 20 L12 17.2 L6.6 20 L7.6 13.9 L3.2 9.6 L9.3 8.7 Z" />
+            </svg>
+            {{ favorited ? '已收藏' : '收藏' }}
+          </button>
         </div>
 
         <!-- 限制与元信息：内联 SVG 图标 + 等宽数值 -->
@@ -48,7 +53,7 @@
 
         <MarkdownPreview :content="problem.description" />
 
-        <h3>样例</h3>
+        <h3 class="sec-title">样例</h3>
         <div v-for="(s, i) in problem.samples || []" :key="i" class="sample">
           <div class="sample-item">
             <div class="sample-head">
@@ -80,23 +85,32 @@
 
     <div class="right">
       <div class="card editor-card">
-        <div class="editor-toolbar">
-          <el-select v-model="language" style="width: 140px" @change="onLanguageChange">
-            <el-option v-for="lang in allowedLanguages" :key="lang.value" :label="lang.label" :value="lang.value" />
-          </el-select>
-          <div class="toolbar-actions">
-            <el-button v-if="language === 'js'" :disabled="running" @click="runConsole">
-              <svg class="btn-icon" viewBox="0 0 24 24" width="12" height="12" fill="currentColor">
-                <path d="M8 5 L19 12 L8 19 Z" />
+        <!-- 深色 IDE 风格工具条：与 Monaco 编辑器、控制台连成一体 -->
+        <div class="editor-shell">
+          <div class="editor-toolbar">
+            <span class="editor-label">
+              <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M8 6 L3 12 L8 18 M16 6 L21 12 L16 18" />
               </svg>
-              运行
-            </el-button>
-            <el-button type="primary" :loading="submitting" :disabled="!userStore.isLoggedIn" @click="handleSubmit">
-              {{ userStore.isLoggedIn ? '提交' : '登录后提交' }}
-            </el-button>
+              代码编辑
+            </span>
+            <el-select v-model="language" style="width: 130px" @change="onLanguageChange">
+              <el-option v-for="lang in allowedLanguages" :key="lang.value" :label="lang.label" :value="lang.value" />
+            </el-select>
+            <div class="toolbar-actions">
+              <el-button v-if="language === 'js'" :disabled="running" @click="runConsole">
+                <svg class="btn-icon" viewBox="0 0 24 24" width="12" height="12" fill="currentColor">
+                  <path d="M8 5 L19 12 L8 19 Z" />
+                </svg>
+                运行
+              </el-button>
+              <el-button type="primary" :loading="submitting" :disabled="!userStore.isLoggedIn" @click="handleSubmit">
+                {{ userStore.isLoggedIn ? '提交' : '登录后提交' }}
+              </el-button>
+            </div>
           </div>
+          <CodeEditor v-model="code" :language="language" />
         </div>
-        <CodeEditor v-model="code" :language="language" />
 
         <!-- 控制台（JS 题目：浏览器沙箱自测运行） -->
         <div v-if="language === 'js'" class="console-panel">
@@ -519,9 +533,44 @@ onMounted(async () => {
   color: #dc2626;
   border-color: #fecaca;
 }
+/* 收藏：星星胶囊按钮（已收藏态换琥珀色） */
 .fav-btn {
   margin-left: auto;
-  font-size: 13px;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  border: 1px solid var(--oj-border);
+  background: #fff;
+  color: #6b7280;
+  font-size: 12.5px;
+  padding: 5px 12px;
+  border-radius: 999px;
+  cursor: pointer;
+  transition: all 0.15s var(--oj-ease);
+  flex-shrink: 0;
+}
+.fav-btn:hover,
+.fav-btn.active {
+  color: #d97706;
+  border-color: #fcd34d;
+  background: #fffbeb;
+}
+.fav-btn.active {
+  font-weight: 600;
+}
+/* 章节标题：与题面 Markdown 标题同款强调竖条 */
+.card h3.sec-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 22px 0 12px;
+}
+.card h3.sec-title::before {
+  content: '';
+  width: 4px;
+  height: 16px;
+  border-radius: 2px;
+  background: var(--oj-primary);
 }
 .limits {
   display: flex;
@@ -615,15 +664,48 @@ onMounted(async () => {
   font-size: 13px;
   line-height: 1.6;
 }
+/* 编辑器：深色工具条 + Monaco 连成一体（IDE 观感） */
+.editor-shell {
+  border-radius: 10px;
+  overflow: hidden;
+  box-shadow: var(--oj-shadow-sm);
+}
 .editor-toolbar {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  margin-bottom: 10px;
+  gap: 10px;
+  background: #0f172a;
+  padding: 10px 12px;
 }
-.toolbar-actions {
+.editor-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: #94a3b8;
+  font-size: 12.5px;
+  font-weight: 600;
+  font-family: 'JetBrains Mono', Consolas, monospace;
+}
+.editor-toolbar .toolbar-actions {
+  margin-left: auto;
   display: flex;
   gap: 8px;
+}
+/* 深色条上的语言选择：半透明白底 + 浅色文字（兼容新旧两代 el-select 结构） */
+.editor-toolbar :deep(.el-select .el-select__wrapper),
+.editor-toolbar :deep(.el-select .el-input__wrapper) {
+  background: rgba(255, 255, 255, 0.08);
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.18) inset;
+  min-height: 30px;
+}
+.editor-toolbar :deep(.el-select .el-select__placeholder),
+.editor-toolbar :deep(.el-select .el-select__selected-item),
+.editor-toolbar :deep(.el-select .el-input__inner) {
+  color: #e2e8f0;
+}
+.editor-toolbar :deep(.el-select .el-select__suffix),
+.editor-toolbar :deep(.el-select .el-input__suffix) {
+  color: #94a3b8;
 }
 .btn-icon {
   margin-right: 4px;

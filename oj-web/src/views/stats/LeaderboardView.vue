@@ -39,7 +39,7 @@
       <el-table :data="items" v-loading="loading" :row-class-name="rankRowClass" class="lb-table">
         <el-table-column prop="rank" label="名次" width="88" align="center">
           <template #default="{ row }">
-            <span v-if="row.rank <= 3" class="medal">{{ medal(row.rank) }}</span>
+            <span v-if="row.rank <= 3" class="rank-badge" :class="`rank-${row.rank}`">{{ row.rank }}</span>
             <span v-else class="rank-num">{{ row.rank }}</span>
           </template>
         </el-table-column>
@@ -138,11 +138,6 @@ function reload() {
   load()
 }
 
-const MEDALS: Record<number, string> = { 1: '🥇', 2: '🥈', 3: '🥉' }
-function medal(rank: number) {
-  return MEDALS[rank] ?? String(rank)
-}
-
 /** 前三名用金/银/铜渐变，其余主题色 */
 function progressColor(rank: number) {
   if (rank === 1) return '#f59e0b'
@@ -215,8 +210,28 @@ onMounted(load)
   font-size: 12.5px;
   color: #909399;
 }
-.medal {
-  font-size: 18px;
+/* 前三名徽章：金银铜渐变方块（替代 emoji 奖牌） */
+.rank-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 10px;
+  color: #fff;
+  font-weight: 800;
+  font-size: 14px;
+  font-variant-numeric: tabular-nums;
+  box-shadow: var(--oj-shadow-sm);
+}
+.rank-badge.rank-1 {
+  background: linear-gradient(135deg, #fbbf24, #d97706);
+}
+.rank-badge.rank-2 {
+  background: linear-gradient(135deg, #cbd5e1, #64748b);
+}
+.rank-badge.rank-3 {
+  background: linear-gradient(135deg, #f0a96c, #c2681f);
 }
 .rank-num {
   color: #909399;
