@@ -49,7 +49,7 @@ mysql -h <数据库主机> -u <用户> -p codeoj < sql/migrations/20261116_judge
 
 新库直接使用当前 schema.sql，不能再重复运行该迁移。旧程序不能和新租约程序混跑，否则旧版仅按 status 条件更新仍可能越过新所有者校验。
 
-构建五个判题镜像，使用当前 runner.sh；随后构建并启动新服务。详细构建命令见仓库 README。保持 ENGINE_MODE=real，Docker 不可用时应显示系统错误，不应静默切换 mock/local。
+构建五个判题镜像，使用当前 runner.sh；随后构建并启动新服务。一键构建与自检：`cd judge-images && ./build.sh`（失败项会单独列出，可用 `./build.sh cpp java` 重跑）。判题镜像不进版本库，每台部署机器必须各自构建一次，否则真实判题全部落 `status=8`；原因、验证 SQL 与故障排查见 [JUDGE-IMAGES.md](./JUDGE-IMAGES.md)。保持 ENGINE_MODE=real，Docker 不可用时应显示系统错误，不应静默切换 mock/local。
 
 Compose 中 /judge/work 必须在宿主与 judge 服务中对应同一绝对路径，沙箱兄弟容器才能挂载正确目录。仅 judge 服务持有 Docker socket；用户沙箱不得挂载 socket。
 

@@ -23,7 +23,7 @@ code-oj/
 ├── oj-server/              # 业务服务（8080）：认证、题目、提交、排行、WebSocket 推送
 ├── oj-judge/               # 判题服务（8081）：消费队列、docker-java 调度沙箱
 ├── oj-web/                 # 前端：Vue3 + Vite + TS + Pinia + Element Plus + Monaco Editor
-├── judge-images/           # 判题镜像：c/cpp/java/python3/js 五语言 + runner.sh
+├── judge-images/           # 判题镜像：c/cpp/java/python3/js 五语言 + runner.sh + build.sh
 ├── deploy/                 # 部署：docker-compose、Nginx、多阶段 Dockerfile
 ├── sql/schema.sql          # 数据库初始化与种子数据
 └── README.md
@@ -53,6 +53,7 @@ code-oj/
 - ✅ 数据库 schema（表 4-1~4-5 + course/course_problem + 种子题目）
 - ✅ 前端全部页面骨架（题目列表/详情/编辑器/提交/记录/统计/排行/管理端）
 - ✅ 判题镜像与 runner.sh（/usr/bin/time 测量 + 双重超时 + 16MB 截断）
+- ✅ 判题镜像一键构建与自检脚本 `judge-images/build.sh`（构建 + 五语言探针自检 + 镜像源回退）
 - ✅ Docker Compose 一键编排与多阶段构建
 
 ## 第二阶段（实现）进度
@@ -88,18 +89,19 @@ mvn spring-boot:run -pl oj-judge
 # 4. 启动前端（Node 22+；使用锁文件安装）
 cd oj-web && npm ci && npm run dev   # http://localhost:5173
 
-# 5. 构建判题镜像（需要 Docker，Linux 部署环境）
+```bash
+# 5. 构建判题镜像（需要 Docker；在 judge-images/ 目录执行）
 cd judge-images
-docker build -f c/Dockerfile      -t codeoj/c:gcc13 .
-docker build -f cpp/Dockerfile    -t codeoj/cpp:gcc13 .
-docker build -f java/Dockerfile   -t codeoj/java:openjdk17 .
-docker build -f python/Dockerfile -t codeoj/python:3.12 .
-docker build -f node/Dockerfile   -t codeoj/node:20 .
+./build.sh                 # 构建五个镜像并逐个自检，含镜像源回退
+# 单独重建：./build.sh cpp java     只自检：./build.sh --verify-only
 ```
+
+> **判题镜像不会随仓库分发**，必须在每台部署机器上构建一次。跳过这一步，判题链路能启动、能收发消息，
+> 但所有真实提交都会失败（`status=8` 系统错误）。详见 [判题镜像构建与验证](docs/JUDGE-IMAGES.md)。
 
 ## 一键部署
 
-已有数据库先备份并停止所有旧 server/judge，执行一次 [租约迁移](sql/migrations/20261116_judge_leases.sql)，再启动新服务；全新数据库使用当前 schema，不重复迁移。判题镜像必须按上文五条命令先构建，Compose 的服务构建不会替代判题镜像构建。
+已有数据库先备份并停止所有旧 server/judge，执行一次 [租约迁移](sql/migrations/20261116_judge_leases.sql)，再启动新服务；全新数据库使用当前 schema，不重复迁移。判题镜像必须先按上文第 5 步执行 `judge-images/build.sh` 一步构建，Compose 的服务构建不会替代判题镜像构建。
 
 ```bash
 cd deploy

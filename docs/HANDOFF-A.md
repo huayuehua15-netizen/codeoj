@@ -133,7 +133,7 @@ curl http://localhost:8080/api/submissions/<id> -H "Authorization: Bearer <token
 |---|---|
 | `oj-judge/src/main/java/com/codeoj/judge/core/sandbox/DockerSandbox.java` | 沙箱执行（当前为骨架+参数清单注释）。实现点：① HostConfig 组装（参数见 §2.2）② createContainerCmd 参数列表传命令（**不经 shell**）③ 宿主看护定时器 killContainerCmd ④ execStartCmd 帧流解析（stdout/stderr 分离 + 16MB 截断）⑤ finally removeContainerCmd |
 | `oj-judge/src/main/java/com/codeoj/judge/core/JudgeEngine.java` 的 `realRun()` | 编译 → 逐用例沙箱执行 → `OutputComparator` 比对 → 汇总（CE/WA/TLE/MLE/RE 判定优先级见 CONTRACT §2） |
-| `judge-images/*` | 四镜像构建并验证（`docker build -f c/Dockerfile -t codeoj/c:gcc13 .` 等，上下文为 judge-images 目录） |
+| `judge-images/*` | 五镜像构建并验证：已提供 `judge-images/build.sh`（一键构建 + 五语言探针自检 + 镜像源回退），构建与验证方法见 [JUDGE-IMAGES.md](./JUDGE-IMAGES.md) |
 
 ### 2.2 沙箱参数（论文表 4-9，已固化设计）
 

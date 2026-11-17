@@ -51,7 +51,7 @@
 ### M4 · 测试与部署（对应论文第 6 章）
 
 - 共同：恶意代码样例库 10 例（论文表 6-2）、JMeter 并发（表 6-3 指标复测）
-- A：judge-images 四镜像构建、`docker compose up` 一键部署、`--scale oj-judge` 扩容验证
+- A：judge-images 五镜像构建（已提供 `judge-images/build.sh` 一键构建+自检，见 [JUDGE-IMAGES.md](./JUDGE-IMAGES.md)）、`docker compose up` 一键部署、`--scale oj-judge` 扩容验证
 - B：测试报告整理、截图与数据归档（论文图表素材）
 
 ## 3. Git 协作规范
