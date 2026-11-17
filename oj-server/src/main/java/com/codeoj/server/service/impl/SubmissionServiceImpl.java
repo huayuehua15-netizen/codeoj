@@ -23,15 +23,19 @@ import com.codeoj.server.vo.StatisticsVO;
 import com.codeoj.server.vo.SubmissionDetailVO;
 import com.codeoj.server.vo.SubmissionListItemVO;
 import com.codeoj.server.vo.SubmitVO;
+import com.codeoj.server.ws.PushEventPublisher;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionTemplate;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
@@ -53,7 +57,7 @@ public class SubmissionServiceImpl implements SubmissionService {
     private final RateLimiter rateLimiter;
     private final IdempotentLockService lockService;
     private final JudgeDispatcher judgeDispatcher;
-    private final com.codeoj.server.ws.PushEventPublisher pushEventPublisher;
+    private final PushEventPublisher pushEventPublisher;
     private final TransactionTemplate transactionTemplate;
 
     @Value("${oj.submit.max-code-bytes:65536}")
@@ -68,7 +72,7 @@ public class SubmissionServiceImpl implements SubmissionService {
                                  RateLimiter rateLimiter,
                                  IdempotentLockService lockService,
                                  JudgeDispatcher judgeDispatcher,
-                                 com.codeoj.server.ws.PushEventPublisher pushEventPublisher,
+                                 PushEventPublisher pushEventPublisher,
                                  TransactionTemplate transactionTemplate) {
         this.submissionMapper = submissionMapper;
         this.problemMapper = problemMapper;
@@ -92,14 +96,28 @@ public class SubmissionServiceImpl implements SubmissionService {
             throw new BizException(ResultCode.PROBLEM_UNAVAILABLE);
         }
         validate(p, dto);
-        // 用 TransactionTemplate 显式开启事务：原先 this.createQueued(...) 是自调用，
-        // Spring AOP 代理不生效，@Transactional 只是装饰。现在落库与提交在同一事务里，
-        // 消息发布严格在 commit 之后，避免"库未落盘、消息先到"消费者查无此单。
-        Long sid = transactionTemplate.execute(status -> createQueued(user.userId(), dto));
-        // 事务已提交，发布判题消息（仅提交 ID）
-        judgeDispatcher.publish(sid);
-        // 推送阶段一：JUDGE_QUEUED（论文 4.5 三阶段推送）
-        pushEventPublisher.publishQueued(user.userId(), sid);
+        // 保留 B 侧显式事务；同步回调注册在事务内，也兼容未来由外层事务调用 submit。
+        Long sid = transactionTemplate.execute(status -> {
+            long queuedId = createQueued(user.userId(), dto);
+            TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+                @Override
+                public void afterCommit() {
+                    try {
+                        // QUEUED 先于 MQ，避免快速判题时阶段推送乱序。
+                        pushEventPublisher.publishQueued(user.userId(), queuedId);
+                    } catch (Exception e) {
+                        log.warn("queued push failed, submission={}", queuedId, e);
+                    }
+                    try {
+                        // 独立事务预留发送窗口；失败仍由持久 QUEUING 记录补发。
+                        judgeDispatcher.publish(queuedId);
+                    } catch (Exception e) {
+                        log.warn("judge dispatch transaction deferred, submission={}", queuedId, e);
+                    }
+                }
+            });
+            return queuedId;
+        });
         return SubmitVO.of(sid, SubmissionStatus.QUEUING);
     }
 
@@ -116,7 +134,8 @@ public class SubmissionServiceImpl implements SubmissionService {
         s.setLanguage(dto.getLanguage());
         s.setCode(dto.getCode());
         s.setStatus(SubmissionStatus.QUEUING.getCode());
-        s.setCreatedAt(LocalDateTime.now());
+        s.setJudgeAttempts(0);
+        s.setCreatedAt(LocalDateTime.now(ZoneId.of("Asia/Shanghai")));
         submissionMapper.insert(s);
         log.info("submission queued, id={}, user={}, problem={}", s.getId(), userId, dto.getProblemId());
         return s.getId();

@@ -1,0 +1,77 @@
+# Independent fixture stack: docker compose -p codeoj-perf -f deploy/docker-compose.perf.yml up -d --build
+# Generate judge-tests/perf/.local-fixtures first. No shared DB/Redis/MQ/queue with the normal stack.
+name: codeoj-perf
+services:
+  mysql:
+    image: mysql:8.0
+    environment:
+      MYSQL_ROOT_PASSWORD: ${PERF_MYSQL_PASSWORD:-perf-local-only}
+      MYSQL_DATABASE: ${PERF_DATABASE:-codeoj_perf_run}
+      TZ: UTC
+    volumes:
+      - perf-mysql:/var/lib/mysql
+      - ../judge-tests/perf/.local-fixtures/perf-schema.sql:/docker-entrypoint-initdb.d/00-schema.sql:ro
+      - ../judge-tests/perf/.local-fixtures/perf-fixtures.sql:/docker-entrypoint-initdb.d/01-fixtures.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h localhost -p$$MYSQL_ROOT_PASSWORD"]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+  redis:
+    image: redis:7
+  rabbitmq:
+    image: rabbitmq:3.13-management
+    environment:
+      RABBITMQ_DEFAULT_USER: perf
+      RABBITMQ_DEFAULT_PASS: ${PERF_RABBITMQ_PASSWORD:-perf-local-only}
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 5s
+      timeout: 10s
+      retries: 30
+  oj-server:
+    build:
+      context: ..
+      dockerfile: deploy/oj-server/Dockerfile
+    environment:
+      MYSQL_HOST: mysql
+      MYSQL_DB: ${PERF_DATABASE:-codeoj_perf_run}
+      MYSQL_PASSWORD: ${PERF_MYSQL_PASSWORD:-perf-local-only}
+      REDIS_HOST: redis
+      RABBITMQ_HOST: rabbitmq
+      RABBITMQ_USER: perf
+      RABBITMQ_PASSWORD: ${PERF_RABBITMQ_PASSWORD:-perf-local-only}
+      JWT_SECRET: ${PERF_JWT_SECRET:?Set a separate perf-test- JWT secret used for fixture generation}
+    ports:
+      - "127.0.0.1:${PERF_API_PORT:-18080}:8080"
+    depends_on:
+      mysql:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+  oj-judge:
+    build:
+      context: ..
+      dockerfile: deploy/oj-judge/Dockerfile
+    environment:
+      MYSQL_HOST: mysql
+      MYSQL_DB: ${PERF_DATABASE:-codeoj_perf_run}
+      MYSQL_PASSWORD: ${PERF_MYSQL_PASSWORD:-perf-local-only}
+      REDIS_HOST: redis
+      RABBITMQ_HOST: rabbitmq
+      RABBITMQ_USER: perf
+      RABBITMQ_PASSWORD: ${PERF_RABBITMQ_PASSWORD:-perf-local-only}
+      ENGINE_MODE: real
+      JUDGE_CONCURRENCY: ${PERF_JUDGE_CONCURRENCY:-1}
+      MAX_PARALLEL_CONTAINERS: ${PERF_JUDGE_CONCURRENCY:-1}
+      OJ_JUDGE_WORK_DIR_ROOT: /judge/perf-work
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - /judge/perf-work:/judge/perf-work
+    depends_on:
+      mysql:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+volumes:
+  perf-mysql:

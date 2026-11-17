@@ -1,0 +1,131 @@
+{
+  "generatedAt": "2026-11-16T15:06:28.413088+00:00",
+  "results": [
+    {
+      "language": "c",
+      "submissionId": 970000017,
+      "ok": true,
+      "status": 2,
+      "timeUsedMs": 0,
+      "memoryUsedKb": 1892,
+      "cases": [
+        {
+          "caseIndex": 1,
+          "status": 2,
+          "statusDesc": "通过",
+          "timeUsedMs": 0,
+          "memoryUsedKb": 1772
+        },
+        {
+          "caseIndex": 2,
+          "status": 2,
+          "statusDesc": "通过",
+          "timeUsedMs": 0,
+          "memoryUsedKb": 1892
+        }
+      ],
+      "errorInfo": null
+    },
+    {
+      "language": "cpp",
+      "submissionId": 970000018,
+      "ok": true,
+      "status": 2,
+      "timeUsedMs": 0,
+      "memoryUsedKb": 3480,
+      "cases": [
+        {
+          "caseIndex": 1,
+          "status": 2,
+          "statusDesc": "通过",
+          "timeUsedMs": 0,
+          "memoryUsedKb": 3380
+        },
+        {
+          "caseIndex": 2,
+          "status": 2,
+          "statusDesc": "通过",
+          "timeUsedMs": 0,
+          "memoryUsedKb": 3480
+        }
+      ],
+      "errorInfo": null
+    },
+    {
+      "language": "java",
+      "submissionId": 970000019,
+      "ok": true,
+      "status": 2,
+      "timeUsedMs": 40,
+      "memoryUsedKb": 34212,
+      "cases": [
+        {
+          "caseIndex": 1,
+          "status": 2,
+          "statusDesc": "通过",
+          "timeUsedMs": 40,
+          "memoryUsedKb": 34164
+        },
+        {
+          "caseIndex": 2,
+          "status": 2,
+          "statusDesc": "通过",
+          "timeUsedMs": 40,
+          "memoryUsedKb": 34212
+        }
+      ],
+      "errorInfo": null
+    },
+    {
+      "language": "python3",
+      "submissionId": 970000032,
+      "ok": true,
+      "status": 2,
+      "timeUsedMs": 20,
+      "memoryUsedKb": 9436,
+      "cases": [
+        {
+          "caseIndex": 1,
+          "status": 2,
+          "statusDesc": "通过",
+          "timeUsedMs": 20,
+          "memoryUsedKb": 9436
+        },
+        {
+          "caseIndex": 2,
+          "status": 2,
+          "statusDesc": "通过",
+          "timeUsedMs": 10,
+          "memoryUsedKb": 9380
+        }
+      ],
+      "errorInfo": null
+    },
+    {
+      "language": "js",
+      "submissionId": 970000033,
+      "ok": true,
+      "status": 2,
+      "timeUsedMs": 30,
+      "memoryUsedKb": 39376,
+      "cases": [
+        {
+          "caseIndex": 1,
+          "status": 2,
+          "statusDesc": "通过",
+          "timeUsedMs": 30,
+          "memoryUsedKb": 39280
+        },
+        {
+          "caseIndex": 2,
+          "status": 2,
+          "statusDesc": "通过",
+          "timeUsedMs": 20,
+          "memoryUsedKb": 39376
+        }
+      ],
+      "errorInfo": null
+    }
+  ],
+  "ok": true
+}

@@ -151,7 +151,7 @@ const form = reactive({
   description: '',
   tags: [] as string[],
   samples: [] as { input: string; output: string }[],
-  languages: ['c', 'cpp', 'java', 'python3'] as string[],
+  languages: ['c', 'cpp', 'java', 'python3', 'js'] as string[],
   enabled: true,
 })
 
@@ -176,7 +176,7 @@ function openCreate() {
     description: '',
     tags: [],
     samples: [],
-    languages: ['c', 'cpp', 'java', 'python3'],
+    languages: ['c', 'cpp', 'java', 'python3', 'js'],
     enabled: true,
   })
   dialogVisible.value = true

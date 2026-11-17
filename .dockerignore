@@ -1,0 +1,11 @@
+.git
+.docs
+**/node_modules
+**/target
+**/dist
+**/__pycache__
+.idea
+.vscode
+judge-tests/.local-fixtures
+judge-tests/.local-*
+**/.local-fixtures

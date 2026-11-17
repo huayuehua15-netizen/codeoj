@@ -2,11 +2,7 @@ package com.codeoj.judge.core.compare;
 
 import org.springframework.stereotype.Component;
 
-import java.util.Arrays;
-
-/**
- * 输出比对（论文 5.4）：比对前先标准化——去除行尾空白并忽略末尾空行。
- */
+/** 去行尾空白、忽略末尾空行；保留首部空白。时间和空间复杂度均为 O(n)。 */
 @Component
 public class OutputComparator {
 
@@ -14,11 +10,26 @@ public class OutputComparator {
         return normalize(actual).equals(normalize(expected));
     }
 
-    /** 标准化（论文 5.4）：去行尾空白 + 忽略末尾空行 */
-    static String normalize(String s) {
-        return Arrays.stream(s.split("\n", -1))
-                .map(line -> line.replaceAll("[ \t]+$", ""))
-                .reduce("", (a, b) -> a + "\n" + b)
-                .strip();
+    static String normalize(String text) {
+        if (text == null) throw new IllegalArgumentException("output must not be null");
+        StringBuilder result = new StringBuilder(text.length());
+        int start = 0;
+        while (start < text.length()) {
+            int end = text.indexOf('\n', start);
+            if (end < 0) end = text.length();
+            int trimmed = end;
+            while (trimmed > start && trailingWhitespace(text.charAt(trimmed - 1))) trimmed--;
+            result.append(text, start, trimmed);
+            if (end < text.length()) result.append('\n');
+            start = end + 1;
+        }
+        while (!result.isEmpty() && result.charAt(result.length() - 1) == '\n') {
+            result.setLength(result.length() - 1);
+        }
+        return result.toString();
+    }
+
+    private static boolean trailingWhitespace(char c) {
+        return c == ' ' || c == '\t' || c == '\r' || c == '\f' || c == '\u000b';
     }
 }

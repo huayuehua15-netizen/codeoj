@@ -24,7 +24,7 @@ public class Submission {
     /** 题目 */
     private Long problemId;
 
-    /** c/cpp/java/python3 */
+    /** c/cpp/java/python3/js */
     private String language;
 
     /** 提交代码（≤64KB） */
@@ -44,6 +44,14 @@ public class Submission {
 
     /** 判题完成时间 */
     private LocalDateTime judgedAt;
+
+    /** The current execution owns this token only until its database lease expires. */
+    private String judgeToken;
+    private LocalDateTime judgeLeaseUntil;
+    private Integer judgeAttempts;
+
+    /** QUEUING rows are the durable dispatch record, retried after this time. */
+    private LocalDateTime nextDispatchAt;
 
     private LocalDateTime createdAt;
 

@@ -4,7 +4,7 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 
 /**
- * 提交语言（论文表 4-4 / 表 5-2）：c / cpp / java / python3 四种。
+ * 提交语言（论文表 4-4 / 表 5-2）：c / cpp / java / python3 / js 五种。
  */
 @Getter
 @AllArgsConstructor

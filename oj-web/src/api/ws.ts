@@ -35,9 +35,9 @@ export function connectWs() {
   const userStore = useUserStore()
   client = new Client({
     webSocketFactory: () => new SockJS('/ws') as WebSocket,
-    // 鉴权头走 STOMP CONNECT 原生头（不是 SockJS query 参数）
-    connectHeaders: {
-      Authorization: `Bearer ${userStore.token}`,
+    // 每次建立/重建连接时刷新 STOMP 原生鉴权头，避免重连使用旧 token。
+    beforeConnect: () => {
+      if (client) client.connectHeaders = { Authorization: `Bearer ${userStore.token}` }
     },
     reconnectDelay: 3000,
     onConnect: () => {

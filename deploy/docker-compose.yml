@@ -59,7 +59,9 @@ services:
       MYSQL_PASSWORD: ${MYSQL_ROOT_PASSWORD:-123456}
       REDIS_HOST: redis
       RABBITMQ_HOST: rabbitmq
-      JWT_SECRET: ${JWT_SECRET:-change-me-in-production}
+      RABBITMQ_USER: ${RABBITMQ_USER:-guest}
+      RABBITMQ_PASSWORD: ${RABBITMQ_PASSWORD:-guest}
+      JWT_SECRET: ${JWT_SECRET:-codeoj-dev-jwt-secret-0123456789abcdef0123456789abcdef}
     depends_on:
       mysql:
         condition: service_healthy
@@ -78,12 +80,18 @@ services:
       MYSQL_PASSWORD: ${MYSQL_ROOT_PASSWORD:-123456}
       REDIS_HOST: redis
       RABBITMQ_HOST: rabbitmq
+      RABBITMQ_USER: ${RABBITMQ_USER:-guest}
+      RABBITMQ_PASSWORD: ${RABBITMQ_PASSWORD:-guest}
+      ENGINE_MODE: ${ENGINE_MODE:-real}         # 生产默认真实沙箱判题；本地联调可设 mock
+      JUDGE_CONCURRENCY: ${JUDGE_CONCURRENCY:-4} # 实例内并发消费线程数
+      MAX_PARALLEL_CONTAINERS: ${MAX_PARALLEL_CONTAINERS:-4} # 实例内并行沙箱容器上限（与宿主机内存匹配）
     depends_on:
       mysql:
         condition: service_healthy
       rabbitmq:
         condition: service_healthy
     # 判题服务需要访问宿主 Docker 引擎调度沙箱容器（论文 4.7：docker.sock 仅判题服务持有）
+    # 工作目录必须宿主绑定：沙箱容器以 /judge/work/{sid} 挂载，需与判题服务共享同一宿主路径
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
       - /judge/work:/judge/work
@@ -98,6 +106,9 @@ services:
     container_name: oj-web
     ports:
       - "80:80"
+    # 挂载站点配置目录：改动后仅需重启容器，无需重建镜像
+    volumes:
+      - ./nginx:/etc/nginx/conf.d:ro
     depends_on:
       - oj-server
     networks: [oj-net]

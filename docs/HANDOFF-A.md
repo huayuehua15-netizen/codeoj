@@ -1,5 +1,7 @@
 # A 侧开发交接说明（评测链路）
 
+> 2026-11-16 A 修复补充：真实评测已经实现，当前交接与升级见 [JUDGE-HARDENING.md](./JUDGE-HARDENING.md)；下文保留 B 的上手说明与历史基线。旧库须执行租约迁移，默认运行 real。前端构建使用 Node 22+。
+
 > 给成员 A 的起点文档。你的战场：**oj-judge、judge-images、判题相关部署**。
 > oj-server / oj-web / docs 已由成员 B 交付并实测——**不要动**（oj-common 改动需双方同意）。
 > 配套：[CONTRACT.md](./CONTRACT.md)（模块契约）、[API.md](./API.md)（前后端契约）。
@@ -165,7 +167,7 @@ ENGINE_MODE=real   # 环境变量或 application.yml；mock/local 保留可随�
 
 | 用例 | 预期 |
 |---|---|
-| 四语言正确代码 | AC，耗时/内存有真实值 |
+| 五语言正确代码 | AC，耗时/内存有真实值 |
 | 语法错误 | CE + 编译器报错 |
 | 输出错误 | WA + 首个失败用例 |
 | 死循环（时限 1s） | TLE，耗时 ≈ 时限，容器被清理 |

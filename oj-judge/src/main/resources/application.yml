@@ -33,7 +33,7 @@ spring:
         # 公平分发 + 手动 ACK（论文 4.6：prefetch=1 保证任务按实际处理能力分配并形成背压）
         acknowledge-mode: manual
         prefetch: 1
-        concurrency: 4   # 实例内第一层并发控制（论文 5.4）
+        concurrency: ${JUDGE_CONCURRENCY:4}   # 实例内第一层并发控制（论文 5.4）
 
   jackson:
     time-zone: Asia/Shanghai
@@ -41,19 +41,17 @@ spring:
 # 判题沙箱配置（论文表 4-9 / 5.4 docker run 参数）
 oj:
   judge:
-    # 判题引擎模式：local=静态语义判定（校验程序入口与输出语句，拦截无效提交；
-    #   真实编译运行版实现已设计完毕，受部署环境安全写入策略限制暂以静态版运行）；
-    # mock=全判 AC（仅链路联调）；real=Docker 沙箱判题（M2，生产，真实判定）
-    engine-mode: ${ENGINE_MODE:local}
+    # real=真实沙箱；mock=显式联调；local不提供真实判题结果
+    engine-mode: ${ENGINE_MODE:real}
     # 实例内信号量：并行运行的容器数上限（防止 Docker 引擎过载）
-    max-parallel-containers: 4
-    # 沙箱宿主机工作目录根（按提交编号隔离）
-    work-dir-root: /judge/work
+    max-parallel-containers: ${MAX_PARALLEL_CONTAINERS:4}
+    # 沙箱宿主机工作目录根（按执行批次和用例隔离）
+    work-dir-root: ${JUDGE_WORK_DIR:/judge/work}
     # runner 脚本容器内路径
     runner-path: /judge/runner.sh
-    # 容器运行用户
+    # 用户程序运行身份；可信runner supervisor单独降权
     container-user: "1000:1000"
-    # 单用例容器硬上限（宿主看护，容器总时长超过上限直接 docker kill）
+    # 宿主看护下限；实际硬时限同时覆盖该题墙钟时限和启动余量
     container-hard-timeout-ms: 15000
     # 输出上限：超过 16MB 判运行错误（论文 5.4）
     output-limit-bytes: 16777216

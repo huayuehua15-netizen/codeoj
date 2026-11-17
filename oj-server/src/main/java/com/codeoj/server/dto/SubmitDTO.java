@@ -15,7 +15,7 @@ public class SubmitDTO {
     @NotNull
     private Long problemId;
 
-    /** c/cpp/java/python3 */
+    /** c/cpp/java/python3/js */
     @NotBlank
     private String language;
 

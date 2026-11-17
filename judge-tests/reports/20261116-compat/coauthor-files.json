@@ -1,0 +1,211 @@
+{
+  "baseDev": "72a9c2e82eb5610b810f2c739b206be57e23d9ef",
+  "originMain": "058b7c7ff90a7ec89396f9db3eead48ab53e05cf",
+  "originDev": "72a9c2e82eb5610b810f2c739b206be57e23d9ef",
+  "upstreamChangedFiles": 58,
+  "sharedFilesReviewed": [
+    ".gitignore",
+    "docs/API.md",
+    "docs/CONTRACT.md",
+    "docs/HANDOFF-A.md",
+    "docs/PROGRESS.md",
+    "oj-judge/src/main/resources/application.yml",
+    "oj-server/src/main/java/com/codeoj/server/config/WebSocketConfig.java",
+    "oj-server/src/main/java/com/codeoj/server/mapper/SubmissionMapper.java",
+    "oj-server/src/main/java/com/codeoj/server/service/impl/SubmissionServiceImpl.java",
+    "oj-web/src/api/ws.ts",
+    "sql/schema.sql"
+  ],
+  "preservedFiles": [
+    {
+      "file": "docs/COLLABORATION.md",
+      "identicalToDev": true
+    },
+    {
+      "file": "oj-server/src/main/java/com/codeoj/server/config/JacksonConfig.java",
+      "identicalToDev": true
+    },
+    {
+      "file": "oj-server/src/main/java/com/codeoj/server/config/RabbitMqConfig.java",
+      "identicalToDev": true
+    },
+    {
+      "file": "oj-server/src/main/java/com/codeoj/server/controller/AdminUserController.java",
+      "identicalToDev": true
+    },
+    {
+      "file": "oj-server/src/main/java/com/codeoj/server/controller/AnnouncementController.java",
+      "identicalToDev": true
+    },
+    {
+      "file": "oj-server/src/main/java/com/codeoj/server/controller/FavoriteController.java",
+      "identicalToDev": true
+    },
+    {
+      "file": "oj-server/src/main/java/com/codeoj/server/controller/ProblemController.java",
+      "identicalToDev": true
+    },
+    {
+      "file": "oj-server/src/main/java/com/codeoj/server/controller/TestCaseController.java",
+      "identicalToDev": true
+    },
+    {
+      "file": "oj-server/src/main/java/com/codeoj/server/dto/ContestFormDTO.java",
+      "identicalToDev": true
+    },
+    {
+      "file": "oj-server/src/main/java/com/codeoj/server/mapper/LeaderboardStatsMapper.java",
+      "identicalToDev": true
+    },
+    {
+      "file": "oj-server/src/main/java/com/codeoj/server/security/JwtAuthFilter.java",
+      "identicalToDev": true
+    },
+    {
+      "file": "oj-server/src/main/java/com/codeoj/server/security/LoginUser.java",
+      "identicalToDev": true
+    },
+    {
+      "file": "oj-server/src/main/java/com/codeoj/server/service/ProblemService.java",
+      "identicalToDev": true
+    },
+    {
+      "file": "oj-server/src/main/java/com/codeoj/server/service/TestCaseService.java",
+      "identicalToDev": true
+    },
+    {
+      "file": "oj-server/src/main/java/com/codeoj/server/service/impl/AuthServiceImpl.java",
+      "identicalToDev": true
+    },
+    {
+      "file": "oj-server/src/main/java/com/codeoj/server/service/impl/LeaderboardServiceImpl.java",
+      "identicalToDev": true
+    },
+    {
+      "file": "oj-server/src/main/java/com/codeoj/server/service/impl/ProblemServiceImpl.java",
+      "identicalToDev": true
+    },
+    {
+      "file": "oj-server/src/main/java/com/codeoj/server/service/impl/TestCaseServiceImpl.java",
+      "identicalToDev": true
+    },
+    {
+      "file": "oj-server/src/main/java/com/codeoj/server/vo/JudgeCaseVO.java",
+      "identicalToDev": true
+    },
+    {
+      "file": "oj-server/src/main/java/com/codeoj/server/vo/LeaderboardVO.java",
+      "identicalToDev": true
+    },
+    {
+      "file": "oj-server/src/main/java/com/codeoj/server/vo/ProblemListItemVO.java",
+      "identicalToDev": true
+    },
+    {
+      "file": "oj-server/src/main/java/com/codeoj/server/vo/StatisticsVO.java",
+      "identicalToDev": true
+    },
+    {
+      "file": "oj-server/src/main/java/com/codeoj/server/vo/SubmitVO.java",
+      "identicalToDev": true
+    },
+    {
+      "file": "oj-server/src/main/resources/application.yml",
+      "identicalToDev": true
+    },
+    {
+      "file": "oj-web/src/api/http.ts",
+      "identicalToDev": true
+    },
+    {
+      "file": "oj-web/src/api/leaderboard.ts",
+      "identicalToDev": true
+    },
+    {
+      "file": "oj-web/src/api/submission.ts",
+      "identicalToDev": true
+    },
+    {
+      "file": "oj-web/src/components/CodeEditor.vue",
+      "identicalToDev": true
+    },
+    {
+      "file": "oj-web/src/components/MarkdownPreview.vue",
+      "identicalToDev": true
+    },
+    {
+      "file": "oj-web/src/layouts/MainLayout.vue",
+      "identicalToDev": true
+    },
+    {
+      "file": "oj-web/src/monacoWorker.ts",
+      "identicalToDev": true
+    },
+    {
+      "file": "oj-web/src/stores/user.ts",
+      "identicalToDev": true
+    },
+    {
+      "file": "oj-web/src/utils/datetime.ts",
+      "identicalToDev": true
+    },
+    {
+      "file": "oj-web/src/views/admin/ContestAdminView.vue",
+      "identicalToDev": true
+    },
+    {
+      "file": "oj-web/src/views/admin/CourseAdminView.vue",
+      "identicalToDev": true
+    },
+    {
+      "file": "oj-web/src/views/admin/ProblemAdminView.vue",
+      "identicalToDev": true
+    },
+    {
+      "file": "oj-web/src/views/admin/TestCaseAdminView.vue",
+      "identicalToDev": true
+    },
+    {
+      "file": "oj-web/src/views/admin/UserAdminView.vue",
+      "identicalToDev": true
+    },
+    {
+      "file": "oj-web/src/views/auth/ProfileView.vue",
+      "identicalToDev": true
+    },
+    {
+      "file": "oj-web/src/views/contest/ContestDetailView.vue",
+      "identicalToDev": true
+    },
+    {
+      "file": "oj-web/src/views/contest/ContestListView.vue",
+      "identicalToDev": true
+    },
+    {
+      "file": "oj-web/src/views/problem/ProblemDetailView.vue",
+      "identicalToDev": true
+    },
+    {
+      "file": "oj-web/src/views/stats/LeaderboardView.vue",
+      "identicalToDev": true
+    },
+    {
+      "file": "oj-web/src/views/stats/StatisticsView.vue",
+      "identicalToDev": true
+    },
+    {
+      "file": "oj-web/src/views/submission/SubmissionListView.vue",
+      "identicalToDev": true
+    },
+    {
+      "file": "oj-web/vite.config.ts",
+      "identicalToDev": true
+    },
+    {
+      "file": "sql/migration-20261116-indexes.sql",
+      "identicalToDev": true
+    }
+  ],
+  "ok": true,
+  "noUnresolvedConflicts": true
+}

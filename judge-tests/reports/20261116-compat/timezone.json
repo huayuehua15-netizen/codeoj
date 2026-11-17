@@ -1,0 +1,64 @@
+{
+  "kind": "mysql-shanghai-business-and-utc-leases",
+  "startedAt": "2026-11-16T15:23:58.445205+00:00",
+  "container": "codex-ojfix-1116a-mysql",
+  "passed": true,
+  "usesTemporaryTablesOnly": true,
+  "checks": [
+    {
+      "check": "utc_dispatch_default_in_shanghai_session",
+      "passed": true
+    },
+    {
+      "check": "immediate_dispatch_not_delayed_eight_hours",
+      "passed": true
+    },
+    {
+      "check": "claim_succeeds",
+      "passed": true
+    },
+    {
+      "check": "utc_lease_120_seconds",
+      "passed": true,
+      "secondsRemaining": 119
+    },
+    {
+      "check": "renew_succeeds",
+      "passed": true
+    },
+    {
+      "check": "final_result_commits",
+      "passed": true
+    },
+    {
+      "check": "business_result_matches_shanghai_created_time",
+      "passed": true,
+      "judgedAt": "2026-11-16 23:23:58.000000",
+      "createdAt": "2026-11-16 23:23:58.000000"
+    },
+    {
+      "check": "expired_lease_cannot_be_renewed",
+      "passed": true
+    },
+    {
+      "check": "expired_lease_requeued_with_shanghai_session",
+      "passed": true
+    },
+    {
+      "check": "expired_owner_cannot_overwrite_new_attempt",
+      "passed": true
+    },
+    {
+      "check": "all_a_and_b_indexes_preserved",
+      "passed": true,
+      "indexes": [
+        "idx_submission_dispatch",
+        "idx_submission_lease",
+        "idx_submission_problem_created",
+        "idx_submission_user_created",
+        "idx_submission_user_id"
+      ]
+    }
+  ],
+  "finishedAt": "2026-11-16T15:23:58.758158+00:00"
+}

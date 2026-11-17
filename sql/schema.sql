@@ -4,7 +4,7 @@
 -- 设计原则（论文 4.4）：
 --   1. 代码、测试用例等大文本使用 LONGTEXT 单表存储，避免行迁移；
 --   2. 高频统计字段（提交数、通过数）在题目表中冗余，避免实时聚合查询；
---   3. 所有时间字段统一 UTC 存储、展示层转换。
+--   3. 业务 DATETIME 按 Asia/Shanghai；内部租约和补发时间使用 UTC 数据库时钟。
 -- =====================================================================
 -- 强制本会话连接字符集为 utf8mb4：docker-entrypoint 导入时客户端默认
 -- 字符集可能为 latin1，缺此句会导致中文被双重编码（mojibake）
@@ -13,6 +13,10 @@ SET NAMES utf8mb4;
 CREATE DATABASE IF NOT EXISTS codeoj
   DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 USE codeoj;
+
+-- 显式声明连接字符集：容器初始化时 mysql 客户端默认字符集可能是 latin1，
+-- 不加会把 UTF-8 种子数据按 latin1 读入（双重编码乱码）
+SET NAMES utf8mb4;
 
 -- ---------------------------------------------------------------------
 -- 表 4-1  user 用户表
@@ -74,18 +78,24 @@ CREATE TABLE IF NOT EXISTS `submission` (
   `id`             BIGINT      NOT NULL AUTO_INCREMENT COMMENT '提交 ID',
   `user_id`        BIGINT      NOT NULL COMMENT '提交用户',
   `problem_id`     BIGINT      NOT NULL COMMENT '题目',
-  `language`       VARCHAR(20) NOT NULL COMMENT 'c/cpp/java/python3',
+  `language`       VARCHAR(20) NOT NULL COMMENT 'c/cpp/java/python3/js',
   `code`           LONGTEXT    NOT NULL COMMENT '提交代码（≤64KB）',
   `status`         TINYINT     NOT NULL DEFAULT 0 COMMENT '0排队 1判题中 2AC 3WA 4TLE 5MLE 6RE 7CE 8SE',
   `time_used_ms`   INT         DEFAULT NULL COMMENT '最大用例耗时（毫秒）',
   `memory_used_kb` INT         DEFAULT NULL COMMENT '最大用例内存（KB）',
   `error_info`     TEXT        COMMENT '编译/运行错误摘要',
-  `judged_at`      DATETIME    DEFAULT NULL COMMENT '判题完成时间',
-  `created_at`     DATETIME    DEFAULT CURRENT_TIMESTAMP COMMENT '提交时间',
+  `judged_at`      DATETIME    DEFAULT NULL COMMENT '判题完成时间 Asia/Shanghai',
+  `judge_token`    VARCHAR(64) DEFAULT NULL COMMENT '当前评测租约所有者',
+  `judge_lease_until` DATETIME(6) DEFAULT NULL COMMENT '租约到期时间 UTC',
+  `judge_attempts` INT NOT NULL DEFAULT 0 COMMENT '已领取评测次数',
+  `next_dispatch_at` DATETIME(6) NOT NULL DEFAULT (UTC_TIMESTAMP(6)) COMMENT '持久待发送记录下次重试时间 UTC',
+  `created_at`     DATETIME    DEFAULT CURRENT_TIMESTAMP COMMENT '提交时间 Asia/Shanghai',
   PRIMARY KEY (`id`),
   KEY `idx_submission_user` (`user_id`),
   KEY `idx_submission_problem` (`problem_id`),
   KEY `idx_submission_status` (`status`),
+  KEY `idx_submission_dispatch` (`status`, `next_dispatch_at`),
+  KEY `idx_submission_lease` (`status`, `judge_lease_until`),
   KEY `idx_submission_judged_at` (`judged_at`),
   -- 提交记录页：WHERE user_id=? [AND problem_id=?] [AND status=?] ORDER BY id DESC
   -- 复合索引让排序也走索引，避免"过滤+filesort"；单列 user_id 索引只能覆盖前半段
@@ -188,7 +198,7 @@ VALUES
    '## 题目描述\n\n输入两个整数 a 和 b，输出它们的和。\n\n## 输入格式\n\n一行两个整数，以空格分隔。\n\n## 输出格式\n\n一行一个整数，即 a+b 的值。\n\n## 数据范围\n\n0 ≤ a, b ≤ 10^9',
    '[{"input": "1 2", "output": "3"}, {"input": "10 20", "output": "30"}]',
    1, 1000, 256,
-   '["c", "cpp", "java", "python3"]',
+   '["c", "cpp", "java", "python3", "js"]',
    0, 0, 1);
 
 INSERT INTO `test_case` (`problem_id`, `input`, `expected_output`, `score`, `is_sample`)

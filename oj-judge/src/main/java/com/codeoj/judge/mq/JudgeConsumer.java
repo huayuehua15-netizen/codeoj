@@ -1,11 +1,10 @@
 package com.codeoj.judge.mq;
 
 import com.codeoj.common.constant.MqConstants;
-import com.codeoj.common.mq.JudgePushEvent;
+import com.codeoj.common.entity.Submission;
 import com.codeoj.common.enums.SubmissionStatus;
-import com.codeoj.judge.core.JudgeResult;
-import com.codeoj.judge.core.JudgeTask;
-import com.codeoj.judge.core.TaskLoader;
+import com.codeoj.common.mq.JudgePushEvent;
+import com.codeoj.judge.core.*;
 import com.codeoj.judge.core.guard.SemaphoreGuard;
 import com.codeoj.judge.core.result.ResultWriter;
 import com.codeoj.judge.event.ResultEventPublisher;
@@ -15,36 +14,30 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.amqp.core.Message;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
-
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.util.List;
+import java.util.UUID;
 
-/**
- * 判题任务消费者（论文 5.4）：手动确认模式领取任务，先以条件更新将提交置为判题中
- * （影响行数为零说明重复投递，直接确认跳过），随后拉取代码与用例，按语言选择编译与运行方案，
- * 逐用例创建沙箱容器执行，比对输出，最后回写结果、更新排行榜并发送推送事件。
- * prefetch=1 与并发度 4 构成实例内第一层并发控制。
- */
 @Component
 public class JudgeConsumer {
-
     private static final Logger log = LoggerFactory.getLogger(JudgeConsumer.class);
-
     private final SubmissionMapper submissionMapper;
     private final TaskLoader taskLoader;
-    private final com.codeoj.judge.core.JudgeEngine engine;
+    private final JudgeEngine engine;
     private final SemaphoreGuard semaphoreGuard;
     private final ResultWriter resultWriter;
     private final LeaderboardUpdater leaderboardUpdater;
     private final ResultEventPublisher pushEventPublisher;
+    private final JudgeLeaseService leases;
+    private final int maxAttempts;
 
-    public JudgeConsumer(SubmissionMapper submissionMapper,
-                         TaskLoader taskLoader,
-                         com.codeoj.judge.core.JudgeEngine engine,
-                         SemaphoreGuard semaphoreGuard,
-                         ResultWriter resultWriter,
-                         LeaderboardUpdater leaderboardUpdater,
-                         ResultEventPublisher pushEventPublisher) {
+    public JudgeConsumer(SubmissionMapper submissionMapper, TaskLoader taskLoader, JudgeEngine engine,
+                         SemaphoreGuard semaphoreGuard, ResultWriter resultWriter,
+                         LeaderboardUpdater leaderboardUpdater, ResultEventPublisher pushEventPublisher,
+                         JudgeLeaseService leases, @Value("${oj.judge.max-attempts:3}") int maxAttempts) {
         this.submissionMapper = submissionMapper;
         this.taskLoader = taskLoader;
         this.engine = engine;
@@ -52,50 +45,91 @@ public class JudgeConsumer {
         this.resultWriter = resultWriter;
         this.leaderboardUpdater = leaderboardUpdater;
         this.pushEventPublisher = pushEventPublisher;
+        this.leases = leases;
+        this.maxAttempts = Math.max(1, maxAttempts);
     }
 
-    @RabbitListener(queues = MqConstants.JUDGE_QUEUE, ackMode = "MANUAL", concurrency = "4")
+    // Concurrency comes from spring.rabbitmq.listener.simple.concurrency / JUDGE_CONCURRENCY.
+    @RabbitListener(queues = MqConstants.JUDGE_QUEUE, ackMode = "MANUAL")
     public void onMessage(Message msg, Channel channel) throws IOException {
-        // 消息体为纯文本 submissionId；防御性剥离 JSON 引号（兼容历史消息格式）
-        long sid = Long.parseLong(new String(msg.getBody()).replace("\"", "").trim());
+        long tag = msg.getMessageProperties().getDeliveryTag();
+        long sid;
+        try { sid = parseSubmissionId(msg.getBody()); }
+        catch (NumberFormatException e) {
+            log.warn("invalid judge message, dead-lettering");
+            channel.basicNack(tag, false, false);
+            return;
+        }
+        String token = UUID.randomUUID().toString();
+        boolean claimed = false;
+        Submission submission = null;
         try {
-            // 幂等：WHERE status=0，影响行数为零说明重复投递，直接确认跳过（论文 5.4）
-            if (submissionMapper.markJudging(sid) == 0) {
-                channel.basicAck(msg.getMessageProperties().getDeliveryTag(), false);
+            claimed = submissionMapper.markJudging(sid, token, leases.leaseSeconds()) > 0;
+            if (!claimed) {
+                // Live owner or terminal result exists; expired owners are recovered by the DB scan.
+                channel.basicAck(tag, false);
                 return;
             }
-            JudgeTask loaded = taskLoader.load(sid);
-            // 推送阶段二：JUDGING（论文 4.5 三阶段推送，经事件队列由 oj-server 转推）
-            pushEventPublisher.publishJudging(sid, loaded.getUserId(), loaded.getProblemId());
-            JudgeTask task = loaded;
-            JudgeResult result = semaphoreGuard.run(() -> {
-                try {
-                    return engine.run(task);                          // 信号量内执行
-                } catch (Exception e) {
-                    throw new RuntimeException(e);
+            try (AutoCloseable heartbeat = leases.keepAlive(sid, token)) {
+                submission = submissionMapper.selectById(sid);
+                JudgeResult result;
+                if (submission != null && submission.getJudgeAttempts() != null
+                        && submission.getJudgeAttempts() > maxAttempts) {
+                    result = systemError("评测服务多次中断，重试次数已用尽");
+                } else {
+                    JudgeTask task = taskLoader.load(sid);
+                    task.setExecutionToken(token);
+                    bestEffort(() -> pushEventPublisher.publishJudging(sid, task.getUserId(), task.getProblemId()));
+                    result = semaphoreGuard.run(() -> {
+                        try { return engine.run(task); }
+                        catch (Exception e) { throw new RuntimeException(e); }
+                    });
                 }
-            });
-            boolean written = resultWriter.save(sid, result);         // 条件更新 + 明细 + 统计
-            if (written && result.isAccepted()) {
-                leaderboardUpdater.incr(task.getUserId());            // AC 时更新排行（论文 5.6）
+                if (resultWriter.save(sid, token, result)) publishCommitted(submission, sid, result);
             }
-            pushEventPublisher.publishFinished(JudgePushEvent.builder()
-                    .submissionId(sid)
-                    .userId(task.getUserId())
-                    .problemId(task.getProblemId())
-                    .status(result.getStatus())
-                    .timeUsedMs(result.getTimeUsedMs())
-                    .memoryUsedKb(result.getMemoryUsedKb())
-                    .passedCases(result.getPassedCases())
-                    .totalCases(result.getTotalCases())
-                    .errorInfo(result.getErrorInfo())
-                    .build());
-            channel.basicAck(msg.getMessageProperties().getDeliveryTag(), false);
+            channel.basicAck(tag, false);
         } catch (Exception e) {
-            log.error("judge failed, submission={}", sid, e);
-            // 重投或进死信（论文 4.6：持续失败的消息进入死信队列告警）
-            channel.basicNack(msg.getMessageProperties().getDeliveryTag(), false,
-                    !msg.getMessageProperties().isRedelivered());
+            log.error("judge attempt failed, submission={}", sid, e);
+            try {
+                if (claimed) {
+                    if (msg.getMessageProperties().isRedelivered()) {
+                        JudgeResult failed = systemError("评测服务异常，重试后仍未完成");
+                        if (resultWriter.save(sid, token, failed)) publishCommitted(submission, sid, failed);
+                    } else {
+                        // Release this token before redelivery; do not ACK a failed attempt as a duplicate.
+                        submissionMapper.releaseClaim(sid, token);
+                    }
+                }
+            } catch (Exception recoveryFailure) {
+                log.error("judge recovery deferred to lease expiry, submission={}", sid, recoveryFailure);
+            }
+            channel.basicNack(tag, false, !msg.getMessageProperties().isRedelivered());
         }
+    }
+
+    private void publishCommitted(Submission submission, long sid, JudgeResult result) {
+        if (submission == null) return;
+        if (result.isAccepted()) bestEffort(() -> leaderboardUpdater.refresh(submission.getUserId()));
+        bestEffort(() -> pushEventPublisher.publishFinished(JudgePushEvent.builder()
+                .submissionId(sid).userId(submission.getUserId()).problemId(submission.getProblemId())
+                .status(result.getStatus()).timeUsedMs(result.getTimeUsedMs()).memoryUsedKb(result.getMemoryUsedKb())
+                .passedCases(result.getPassedCases()).totalCases(result.getTotalCases()).errorInfo(result.getErrorInfo())
+                .build()));
+    }
+    private void bestEffort(Runnable action) {
+        try { action.run(); }
+        catch (Exception e) { log.warn("judge side effect deferred; DB remains authoritative", e); }
+    }
+    private JudgeResult systemError(String message) {
+        return JudgeResult.builder().status(SubmissionStatus.SYSTEM_ERROR).passedCases(0).totalCases(0)
+                .errorInfo(message).cases(List.of()).build();
+    }
+    static long parseSubmissionId(byte[] body) {
+        String value = new String(body, StandardCharsets.UTF_8).trim();
+        if (value.length() >= 2 && value.startsWith("\"") && value.endsWith("\""))
+            value = value.substring(1, value.length() - 1);
+        long id = Long.parseLong(value);
+        if (id <= 0) throw new NumberFormatException("submission id must be positive");
+        return id;
     }
 }

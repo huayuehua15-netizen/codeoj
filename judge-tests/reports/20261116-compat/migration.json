@@ -1,0 +1,11 @@
+{
+  "ok": true,
+  "legacySchemaUpgrade": {
+    "preservedCode": "print(3)",
+    "businessRowCount": 1,
+    "immediatelyDispatchable": true
+  },
+  "aAndBIndexCount": 5,
+  "utcDefaultCorrectionExecutedTwice": true,
+  "source": "Original local schema in separate isolated test database"
+}

@@ -16,4 +16,4 @@ RUN mvn -q package -DskipTests -pl oj-common,oj-server -am
 
 FROM eclipse-temurin:17-jre
 COPY --from=build /app/oj-server/target/oj-server.jar /app.jar
-ENTRYPOINT ["java", "-jar", "/app.jar"]
+ENTRYPOINT ["java", "-Duser.timezone=Asia/Shanghai", "-jar", "/app.jar"]

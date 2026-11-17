@@ -29,4 +29,13 @@ public class JavaStrategy implements LanguageStrategy {
     public String[] runCommand(int memoryLimitMb) {
         return new String[]{"java", "-Xss8m", "-Xmx" + memoryLimitMb + "m", "Main"};
     }
+
+    /**
+     * JVM 堆外内存（元空间/线程栈/类加载器）超出 -Xmx 时会被 cgroup 误杀，
+     * 容器限制需额外预留 128MB（论文 5.4 内存测量口径）。
+     */
+    @Override
+    public int memoryOverheadMb() {
+        return 128;
+    }
 }

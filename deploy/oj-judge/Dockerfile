@@ -16,4 +16,4 @@ RUN mvn -q package -DskipTests -pl oj-common,oj-judge -am
 
 FROM eclipse-temurin:17-jre
 COPY --from=build /app/oj-judge/target/oj-judge.jar /app.jar
-ENTRYPOINT ["java", "-jar", "/app.jar"]
+ENTRYPOINT ["java", "-Duser.timezone=Asia/Shanghai", "-jar", "/app.jar"]
