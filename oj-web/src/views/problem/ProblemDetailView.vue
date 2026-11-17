@@ -369,6 +369,9 @@ async function load() {
 }
 
 async function handleSubmit() {
+  stopPolling()
+  currentSubmissionId.value = undefined
+  result.value = undefined
   submitting.value = true
   judgeState.value = 'SUBMITTING'
   try {
@@ -393,7 +396,7 @@ async function handleSubmit() {
 
 // WebSocket 订阅（论文 5.5）：三阶段 QUEUED/JUDGING/FINISHED 幂等推进状态机
 const unsubscribe = onJudgePush((payload) => {
-  if (payload.data.submissionId !== currentSubmissionId.value) return
+  if (payload.data.submissionId !== currentSubmissionId.value || judgeState.value === 'FINISHED') return
   if (payload.type === 'JUDGE_QUEUED') {
     if (judgeState.value === 'SUBMITTING') judgeState.value = 'QUEUED'
   } else if (payload.type === 'JUDGING') {
@@ -408,25 +411,32 @@ const unsubscribe = onJudgePush((payload) => {
 // HTTP 兜底轮询：连接断开重连后以提交编号回查结果（论文 5.5）
 let pollTimer: ReturnType<typeof setInterval> | null = null
 let pollStartedAt = 0
+let pollGeneration = 0
+let pollBusy = false
 /** 轮询总时长上限：判题排队久或实例掉线时不无限轮询 */
-const POLL_TIMEOUT_MS = 60_000
+const POLL_TIMEOUT_MS = 180_000
 
 function startPolling() {
   stopPolling()
+  const generation = pollGeneration
   pollStartedAt = Date.now()
   pollTimer = setInterval(async () => {
+    if (generation !== pollGeneration || pollBusy) return
     if (!currentSubmissionId.value) {
       stopPolling()
       return
     }
     if (Date.now() - pollStartedAt > POLL_TIMEOUT_MS) {
-      stopPolling()
-      judgeState.value = 'IDLE'
-      ElMessage.warning('判题超时，请稍后到「提交记录」中查看结果')
+      abortJudge()
+      ElMessage.warning('仍在排队或处理中，请稍后到「提交记录」中查看结果')
       return
     }
+    const submissionId = currentSubmissionId.value
+    pollBusy = true
     try {
-      const detail = await getSubmission(currentSubmissionId.value)
+      const detail = await getSubmission(submissionId)
+      // 用户可能已停止等待、提交新代码，或先收到 WS 终态。
+      if (generation !== pollGeneration || submissionId !== currentSubmissionId.value) return
       if (detail.status >= 2) {
         judgeState.value = 'FINISHED'
         result.value = { submissionId: detail.id, status: detail.status }
@@ -435,14 +445,18 @@ function startPolling() {
         judgeState.value = 'JUDGING'
       }
     } catch {
+      if (generation !== pollGeneration || submissionId !== currentSubmissionId.value) return
       // 单次失败即停（40100/40400/网络抖动），避免每 2s 刷一次错误提示
-      stopPolling()
-      judgeState.value = 'IDLE'
+      abortJudge()
+    } finally {
+      if (generation === pollGeneration) pollBusy = false
     }
   }, 2000)
 }
 
 function stopPolling() {
+  pollGeneration++
+  pollBusy = false
   if (pollTimer) {
     clearInterval(pollTimer)
     pollTimer = null

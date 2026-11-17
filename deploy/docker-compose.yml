@@ -15,7 +15,7 @@ services:
       - ../sql/schema.sql:/docker-entrypoint-initdb.d/schema.sql:ro
     command: --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
     healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-p${MYSQL_ROOT_PASSWORD:-123456}"]
+      test: ["CMD-SHELL", "MYSQL_PWD=$$MYSQL_ROOT_PASSWORD mysql --protocol=TCP -h127.0.0.1 -uroot --silent --skip-column-names -e 'SELECT 1'"]
       interval: 5s
       timeout: 5s
       retries: 20
@@ -25,6 +25,11 @@ services:
     image: redis:7
     container_name: oj-redis
     command: redis-server --appendonly yes
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
     volumes:
       - redis-data:/data
     networks: [oj-net]
@@ -65,6 +70,8 @@ services:
     depends_on:
       mysql:
         condition: service_healthy
+      redis:
+        condition: service_healthy
       rabbitmq:
         condition: service_healthy
     networks: [oj-net]
@@ -87,6 +94,8 @@ services:
       MAX_PARALLEL_CONTAINERS: ${MAX_PARALLEL_CONTAINERS:-4} # 实例内并行沙箱容器上限（与宿主机内存匹配）
     depends_on:
       mysql:
+        condition: service_healthy
+      redis:
         condition: service_healthy
       rabbitmq:
         condition: service_healthy

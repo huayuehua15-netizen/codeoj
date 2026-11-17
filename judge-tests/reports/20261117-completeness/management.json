@@ -1,0 +1,102 @@
+{
+  "ok": true,
+  "results": [
+    {
+      "check": "create_problem",
+      "ok": true,
+      "httpStatus": 200,
+      "businessCode": 0
+    },
+    {
+      "check": "create_problem",
+      "ok": true,
+      "httpStatus": 200,
+      "businessCode": 0
+    },
+    {
+      "check": "create_course_with_ordered_problems",
+      "ok": true,
+      "httpStatus": 200,
+      "businessCode": 0
+    },
+    {
+      "check": "duplicate_course_selection_rejected",
+      "ok": true,
+      "httpStatus": 200,
+      "businessCode": 40000
+    },
+    {
+      "check": "nonexistent_course_problem_rejected",
+      "ok": true,
+      "httpStatus": 200,
+      "businessCode": 40000
+    },
+    {
+      "check": "course_still_readable",
+      "ok": true,
+      "httpStatus": 200,
+      "businessCode": 0
+    },
+    {
+      "check": "course_reference_prevents_problem_deletion",
+      "ok": true,
+      "httpStatus": 200,
+      "businessCode": 40000
+    },
+    {
+      "check": "create_contest",
+      "ok": true,
+      "httpStatus": 200,
+      "businessCode": 0
+    },
+    {
+      "check": "duplicate_contest_selection_rejected",
+      "ok": true,
+      "httpStatus": 200,
+      "businessCode": 40000
+    },
+    {
+      "check": "contest_missing_problem_rejected",
+      "ok": true,
+      "httpStatus": 200,
+      "businessCode": 40000
+    },
+    {
+      "check": "contest_reference_prevents_problem_deletion",
+      "ok": true,
+      "httpStatus": 200,
+      "businessCode": 40000
+    },
+    {
+      "check": "missing_case_list_rejected",
+      "ok": true,
+      "httpStatus": 200,
+      "businessCode": 40000
+    },
+    {
+      "check": "null_case_element_rejected",
+      "ok": true,
+      "httpStatus": 200,
+      "businessCode": 40000
+    },
+    {
+      "check": "empty_input_output_are_valid",
+      "ok": true,
+      "httpStatus": 200,
+      "businessCode": 0
+    },
+    {
+      "check": "orphan_case_import_rejected",
+      "ok": true,
+      "httpStatus": 200,
+      "businessCode": 40400
+    },
+    {
+      "check": "missing_course_returns_not_found",
+      "ok": true,
+      "httpStatus": 200,
+      "businessCode": 40400
+    }
+  ],
+  "cleanupErrors": []
+}

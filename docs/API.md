@@ -1,6 +1,6 @@
 # CodeOJ 接口文档（前后端对接契约）
 
-> 版本：v1.0（骨架阶段定稿）｜ 与 `oj-server` Controller 代码严格一致
+> 版本：v1.5（2026-11-17）｜ 保留原接口，补齐统计、管理校验与删除约束
 > 适用：前端（oj-web）按此文档先行开发，后端按此文档补全实现。
 > 标注 ⚠️ 的接口：骨架已定契约，业务实现于第二阶段完成（前端可先按 mock 开发）。
 
@@ -224,6 +224,8 @@ Query 参数：
 
 响应 `data: null`。
 
+若题目已有提交历史，或被课程/竞赛引用，返回 `40000`，请使用编辑接口下架。仅无引用题目可删除，避免破坏历史记录与排名。
+
 ---
 
 ## 3. 测试用例模块 `/api/problems/{problemId}/testcases`（管理员）
@@ -242,6 +244,8 @@ Query 参数：
 ```
 
 响应 `data`：成功导入的用例数量（Integer）。
+
+`cases` 必填且为 1–200 个非 null 用例，分值须非负；输入、期望输出允许空字符串。导入或查询不存在题目的用例返回 `40400`。
 
 ### 3.2 用例列表 `GET /api/problems/{problemId}/testcases`
 
@@ -336,18 +340,25 @@ Query 参数：`problemId`、`status`（0-8）、`begin`/`end`（ISO 时间范�
 }
 ```
 
-### 4.4 个人通过率统计 `GET /api/submissions/statistics`（登录）⚠️ 实现中
+### 4.4 个人通过率统计 `GET /api/submissions/statistics`（登录）
 
 响应 `data`（StatisticsVO，按难度分组，论文 5.6）：
 
 ```json
 {
   "byDifficulty": [
-    { "difficulty": 1, "difficultyLabel": "简单", "submit": 8, "accepted": 6 },
-    { "difficulty": 2, "difficultyLabel": "中等", "submit": 3, "accepted": 1 }
+    { "difficulty": 1, "difficultyLabel": "简单", "submit": 8, "accepted": 6, "acceptRate": 75.0, "solvedCount": 3, "totalCount": 10 },
+    { "difficulty": 2, "difficultyLabel": "中等", "submit": 3, "accepted": 1, "acceptRate": 33.3, "solvedCount": 1, "totalCount": 5 }
+  ],
+  "byStatus": [
+    { "status": 2, "statusDesc": "通过", "count": 7, "percent": 63.6 },
+    { "status": 3, "statusDesc": "答案错误", "count": 4, "percent": 36.4 }
   ],
   "totalSubmit": 11,
-  "totalAccepted": 7
+  "totalAccepted": 7,
+  "acceptRate": 63.6,
+  "solvedCount": 4,
+  "attemptedCount": 6
 }
 ```
 
@@ -357,9 +368,9 @@ Query 参数：`problemId`、`status`（0-8）、`begin`/`end`（ISO 时间范�
 
 ### 5.1 排行榜分页 `GET /api/leaderboard`（公开）
 
-Query 参数：`page`（默认 1）、`size`（默认 20）。
+Query 参数：`page`（默认 1，最小 1）、`size`（默认 20，限制在 1–100）。
 
-数据源：Redis ZSet `oj:leaderboard:ac`（score=AC 题数）倒序（论文 5.6）。
+数据源：Redis ZSet `oj:leaderboard:ac`（score=去重 AC 题数）；同分按首次达到该解题数的时间、用户 ID 排序。概览取全站数据，不随翻页变化。
 
 响应 `data`（LeaderboardVO）：
 
@@ -367,13 +378,13 @@ Query 参数：`page`（默认 1）、`size`（默认 20）。
 {
   "total": 25,
   "items": [
-    { "userId": 3, "username": "lisi", "nickname": "李四", "acCount": 12, "rank": 1 },
-    { "userId": 1, "username": "zhangsan", "nickname": "张三", "acCount": 7, "rank": 2 }
-  ]
+    { "userId": 3, "username": "lisi", "acCount": 12, "rank": 1, "totalSubmit": 30, "acceptedSubmit": 20, "acceptRate": 66.7, "lastSubmitAt": "2026-11-17 15:00:00" }
+  ],
+  "summary": { "solverCount": 25, "maxAcCount": 12, "totalSubmit": 200, "overallAcceptRate": 60.0 }
 }
 ```
 
-> 骨架阶段 nickname/username 可能暂为 null（用户表补齐逻辑第二阶段），前端需容错显示 `用户 {userId}`。
+> 已删除用户的历史记录仍可能只显示编号；接口不再提供 nickname 字段。
 
 ---
 
@@ -398,7 +409,9 @@ Query 参数：`page`（默认 1）、`size`（默认 20）。
 | DELETE | `/api/admin/courses/{id}` | 删除课程 |
 | GET | `/api/admin/courses` | 课程列表 |
 | GET | `/api/admin/courses/{id}/problems` | 课程内题目（按 sortOrder） |
-| GET | `/api/admin/courses/{id}/completion` ⚠️ | 班级完成情况（每题提交人数/通过人数） |
+| GET | `/api/admin/courses/{id}/completion` | 班级完成情况（每题提交人数/通过人数） |
+
+课程与竞赛的 `problemIds` 允许空题组，非空时必须是互不重复、存在的正整数题目编号，否则返回 `40000`。无效编辑不会替换原题组；不存在课程的题组查询返回 `40400`。
 
 ---
 
@@ -542,3 +555,4 @@ new Client({
 | 2026-11-15 | v1.2 | 竞赛模式（8.1）、用户管理（8.2）、公告（8.3）、题目标签与收藏（8.4） | 成员 B |
 | 2026-11-16 | v1.3 | **审查修复批次**：① 4.1 `SubmitVO.status` 明确为数字码（原输出枚举名）；② 2.1 列表接口明确不返回 description/samples/languages（后端已按此瘦身），管理端编辑须走 2.2；③ 7.1 WS 鉴权改为 STOMP CONNECT 帧 `Authorization` 头（原「无独立 token 校验」不可投递，属文档与实现双缺失）；④ 收藏接口未登录返回 40100；⑤ 全局时间序列化统一 `yyyy-MM-dd HH:mm:ss`（`spring.jackson.date-format` 对 `LocalDateTime` 无效，需注册序列化器）；⑥ 补登记 `GET /api/submissions/trend` | 成员 B |
 | 2026-11-16 | v1.4 | 保留 v1.3 接口及 LoginUser Principal；补充 STOMP 黑名单/数据库状态鉴权、订阅白名单与 SEND 限制。提交事务及时间字段保持 B 契约，内部租约/补发采用 UTC | A 评测修复，待 B 评审 |
+| 2026-11-17 | v1.5 | 补齐当前统计/排行榜响应；课程/竞赛题组与用例导入校验；有历史或引用的题目禁止物理删除；无效分页处理 | 项目完整性改善，待评审 |

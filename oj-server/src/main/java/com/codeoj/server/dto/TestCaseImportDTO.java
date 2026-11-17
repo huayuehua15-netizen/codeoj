@@ -2,6 +2,7 @@ package com.codeoj.server.dto;
 
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.Size;
 import lombok.Data;
 
@@ -14,8 +15,9 @@ import java.util.List;
 public class TestCaseImportDTO {
 
     @Valid
+    @NotNull
     @Size(min = 1, max = 200, message = "单次导入 1-200 组用例")
-    private List<Item> cases;
+    private List<@NotNull Item> cases;
 
     /**
      * 单组用例。input/expectedOutput 均允许空串（无输入题目、空输出题目是合法场景）。
@@ -31,6 +33,7 @@ public class TestCaseImportDTO {
 
         /** 分值（计分制），默认 0 */
         @NotNull
+        @Min(0)
         private Integer score;
 
         /** 是否样例（样例可在题面展示） */

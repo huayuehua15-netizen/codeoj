@@ -26,7 +26,7 @@ import java.util.stream.Collectors;
  * 排行榜服务实现（论文 5.6）。
  *
  * <p><b>数据源</b>：Redis ZSet {@code oj:leaderboard:ac}（score = AC 题数）为解题数权威来源，
- * 写侧由 oj-judge 在 AC 时 ZINCRBY；展示用统计（总提交/通过率/最后活跃）与
+ * 写侧由 oj-judge 投影数据库去重通过题数；展示用统计（总提交/通过率/最后活跃）与
  * <b>同分排序依据</b>从数据库聚合。
  *
  * <p><b>排名规则</b>：解题数降序 → 首次达成该解题数的时间升序 → userId 升序。
@@ -52,6 +52,8 @@ public class LeaderboardServiceImpl implements LeaderboardService {
 
     @Override
     public LeaderboardVO page(long page, long size) {
+        page = Math.max(1, page);
+        size = Math.min(100, Math.max(1, size));
         Long zsetSize = redis.opsForZSet().size(RedisKeys.LEADERBOARD_AC);
         long total = zsetSize == null ? 0 : zsetSize;
 
@@ -59,7 +61,7 @@ public class LeaderboardServiceImpl implements LeaderboardService {
         if (total > 0) {
             items = buildPage(page, size, total);
         }
-        return new LeaderboardVO(total, items, buildSummary(items));
+        return new LeaderboardVO(total, items, buildSummary());
     }
 
     /**
@@ -135,7 +137,7 @@ public class LeaderboardServiceImpl implements LeaderboardService {
                 .thenComparing(Ranked::userId));
 
         // 切片 + 回填名次
-        int from = (int) Math.min((page - 1) * size, ranked.size());
+        int from = page - 1 > ranked.size() / size ? ranked.size() : (int) ((page - 1) * size);
         int to = (int) Math.min(from + size, ranked.size());
         List<LeaderboardVO.Item> pageItems = new ArrayList<>();
         for (int i = from; i < to; i++) {
@@ -147,7 +149,7 @@ public class LeaderboardServiceImpl implements LeaderboardService {
     }
 
     /** 顶部统计条：人数 / 最高解题数 / 全站提交 / 全站通过率 */
-    private LeaderboardVO.Summary buildSummary(List<LeaderboardVO.Item> currentPage) {
+    private LeaderboardVO.Summary buildSummary() {
         LeaderboardStatsMapper.OverviewRow ov = statsMapper.overview();
         long solverCount = ov != null && ov.getSolverCount() != null ? ov.getSolverCount() : 0;
         long totalSubmit = ov != null && ov.getTotalSubmit() != null ? ov.getTotalSubmit() : 0;
@@ -155,15 +157,13 @@ public class LeaderboardServiceImpl implements LeaderboardService {
         double rate = totalSubmit == 0 ? 0
                 : Math.round(accepted * 1000.0 / totalSubmit) / 10.0;
 
-        // 最高解题数取 ZSet 头部分数（第一页时已是排序后的第一项，避免多一次全量扫描）
-        long maxAc = currentPage.isEmpty() ? 0 : currentPage.get(0).getAcCount();
-        if (maxAc == 0) {
-            Set<ZSetOperations.TypedTuple<String>> top =
-                    redis.opsForZSet().reverseRangeWithScores(RedisKeys.LEADERBOARD_AC, 0, 0);
-            if (top != null && !top.isEmpty()) {
-                Double s = top.iterator().next().getScore();
-                maxAc = s == null ? 0 : s.longValue();
-            }
+        // 全站概览与页码无关；第二页首项不是全站最高分。
+        long maxAc = 0;
+        Set<ZSetOperations.TypedTuple<String>> top =
+                redis.opsForZSet().reverseRangeWithScores(RedisKeys.LEADERBOARD_AC, 0, 0);
+        if (top != null && !top.isEmpty()) {
+            Double s = top.iterator().next().getScore();
+            maxAc = s == null ? 0 : s.longValue();
         }
         return new LeaderboardVO.Summary(solverCount, maxAc, totalSubmit, rate);
     }

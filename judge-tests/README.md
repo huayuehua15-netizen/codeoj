@@ -56,6 +56,8 @@ PROBLEM_ID=1 BASE_URL=http://localhost:18080/api bash security-e2e-test.sh
 
 ## 说明与已知边界
 
+管理端完整性也可在独立测试栈回归：`TEST_ADMIN_TOKEN=... python3 smoke-management.py --isolated-test-environment --output management.json`。脚本新建专用题目/课程/竞赛，检查无效题组、用例参数和引用删除保护，只清理本次创建的资源，禁止对业务环境执行。
+
 1. 直测验证资源与隔离，接口测试验证提交及终态映射。它们均不验证 MQ 重复投递、恢复、排行榜或 WS 收包，这些需要单独测试。
 2. supervisor 保持 root 并仅有 SETUID/SETGID，用 `setpriv` 将用户程序和 timeout 降为 1000:1000。统计文件在独立 root tmpfs；编译工作目录可写、逐用例运行目录只读。`time_ms` 为程序墙钟时间，`cpu_ms` 仅辅助诊断。
 3. 恶意样例仅在独立环境执行，准备步骤见 [独立复测](perf/README.md)。固定测试题须允许对应语言，网络/提权样例的自报告输出须与测试题期望不同。

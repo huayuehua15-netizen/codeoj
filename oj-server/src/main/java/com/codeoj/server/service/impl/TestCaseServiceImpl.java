@@ -6,6 +6,7 @@ import com.codeoj.common.exception.BizException;
 import com.codeoj.common.result.ResultCode;
 import com.codeoj.server.dto.TestCaseImportDTO;
 import com.codeoj.server.mapper.TestCaseMapper;
+import com.codeoj.server.mapper.ProblemMapper;
 import com.codeoj.server.service.TestCaseService;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -19,14 +20,17 @@ import java.util.List;
 public class TestCaseServiceImpl implements TestCaseService {
 
     private final TestCaseMapper testCaseMapper;
+    private final ProblemMapper problemMapper;
 
-    public TestCaseServiceImpl(TestCaseMapper testCaseMapper) {
+    public TestCaseServiceImpl(TestCaseMapper testCaseMapper, ProblemMapper problemMapper) {
         this.testCaseMapper = testCaseMapper;
+        this.problemMapper = problemMapper;
     }
 
     @Override
     @Transactional
     public int batchImport(Long problemId, TestCaseImportDTO dto) {
+        requireProblem(problemId);
         int imported = 0;
         for (TestCaseImportDTO.Item item : dto.getCases()) {
             TestCase tc = new TestCase();
@@ -43,6 +47,7 @@ public class TestCaseServiceImpl implements TestCaseService {
 
     @Override
     public List<TestCase> listByProblem(Long problemId) {
+        requireProblem(problemId);
         return testCaseMapper.selectList(new LambdaQueryWrapper<TestCase>()
                 .eq(TestCase::getProblemId, problemId)
                 .orderByAsc(TestCase::getId));
@@ -61,5 +66,9 @@ public class TestCaseServiceImpl implements TestCaseService {
             throw new BizException(ResultCode.NOT_FOUND);
         }
         testCaseMapper.deleteById(caseId);
+    }
+
+    private void requireProblem(Long problemId) {
+        if (problemMapper.selectById(problemId) == null) throw new BizException(ResultCode.NOT_FOUND);
     }
 }

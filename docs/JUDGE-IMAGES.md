@@ -123,12 +123,12 @@ tag 不一致时判题会报 `No such image`，全部落到 `status=8`。
 1. 启动 `oj-judge` 且 `ENGINE_MODE=real`（`local`/未知模式一律 `SYSTEM_ERROR`，`mock` 只供联调）
 2. 确认 `oj.judge.work-dir-root`（默认 `/judge/work`）在**宿主**与判题服务容器内是同一绝对路径，否则沙箱兄弟容器挂载到错误目录
 3. 用真实账号提交一道题，确认结果是 `AC` 而不是 `status=8`
-4. 查数据库确认 `judged_at - created_at` 是**真实判题耗时**，而不是 0 或恰好 86400 秒（这是演示数据的特征）
+4. 按这次真实提交的编号，核对 API 终态、用例明细与资源统计；秒级时间戳相等不能据此判断演示数据
 
 验证 SQL：
 
 ```sql
--- 最近真实判题记录；若 judged_at 与 created_at 完全相等，说明是演示数据不是真实判题
+-- 最近判题记录：字段只精确到秒，真实短程序也可能同秒提交与完成。
 SELECT id, status, created_at, judged_at, TIMESTAMPDIFF(SECOND, created_at, judged_at) AS sec
 FROM submission ORDER BY id DESC LIMIT 10;
 

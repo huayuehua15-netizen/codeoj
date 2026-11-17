@@ -120,6 +120,9 @@ public class ProblemServiceImpl implements ProblemService {
     @Transactional
     public void delete(Long id) {
         getById(id);
+        if (problemMapper.hasReferences(id)) {
+            throw new BizException(ResultCode.BAD_REQUEST.getCode(), "题目已有提交或被课程/竞赛引用，请改为下架");
+        }
         // 级联清理：题目删了用例还在，会留下永久孤儿数据（且旧用例可能被新题 ID 复用时误用）
         testCaseMapper.delete(new LambdaQueryWrapper<TestCase>()
                 .eq(TestCase::getProblemId, id));

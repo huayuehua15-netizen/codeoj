@@ -60,11 +60,11 @@ code-oj/
 
 | 模块 | 状态 | 说明 |
 |---|---|---|
-| oj-judge | 实现与加固已落盘，待集成验收 | 五语言真实判题、沙箱可信统计、程序墙钟时限、用例工作目录隔离及恢复逻辑；以最新测试证据确认可运行版本 |
-| oj-server / oj-web | B 侧代码已合并 | 已实现业务与前端功能见 [进度文档](docs/PROGRESS.md)，真实评测仍需与 A 侧联调 |
-| 部署与测试 | 修复后待复测 | 历史四语言记录与当前验证状态分开保存；旧压测将中位数误标为平均值，不能沿用达标结论。见 [验证记录](judge-tests/联调报告.md)、[独立复测步骤](judge-tests/perf/README.md) |
+| oj-judge | 五语言真实链路已验证 | 沙箱、租约恢复与隔离已有回归及真实 AC 证据；[镜像构建自检](docs/JUDGE-IMAGES.md) 支持新环境复现 |
+| oj-server / oj-web | 已集成业务与页面 | 包含课程、竞赛、统计、排行榜和管理端；已补题组/用例完整性与历史删除保护 |
+| 部署与测试 | 本地回归通过，持续完善验收 | Java 70 项、Python 19 项及真实接口验证通过；完整恶意样例与大并发仍需单独复测。新增 CI 配置，云端运行以提交后结果为准 |
 
-当前修复包含持久 QUEUING 补发、租约过期恢复与 token 写回校验、去重解题数榜单、程序墙钟耗时和按执行尝试/用例隔离。完整协议与数据库升级要求见 [CONTRACT v1.1](docs/CONTRACT.md)，交接清单见 [HANDOFF-A](docs/HANDOFF-A.md)。新增回归已执行，真实环境结果以对应验证记录为准。
+当前修复包含持久 QUEUING 补发、租约过期恢复与 token 写回校验、去重解题数榜单、程序墙钟耗时和按执行尝试/用例隔离。完整协议与数据库升级要求见 [CONTRACT v1.2](docs/CONTRACT.md)，交接清单见 [HANDOFF-A](docs/HANDOFF-A.md)。2026-11-17 完善记录见 [交付检查](docs/DELIVERY-CHECKLIST.md)。
 
 默认 `ENGINE_MODE=real`。显式 `mock` 只供联调并标注未执行代码；`local` 和未知模式返回系统错误。镜像或 Docker 缺失时拒绝产生通过结果。
 
@@ -105,12 +105,26 @@ cd judge-images
 
 ```bash
 cd deploy
+cp .env.example .env    # 首次准备部署配置，再编辑密码与 JWT_SECRET
 docker compose up -d --build
 # 判题扩容
 docker compose up -d --scale oj-judge=4
 ```
 
 `JUDGE_CONCURRENCY` 与 `MAX_PARALLEL_CONTAINERS` 默认均为 4，分别限制消费线程和容器信号量，稳态并发受两者较小值限制。调整后核查实际线程与容器峰值，再采集吞吐；不要沿用旧报告的槽位推算。`/judge/work` 在宿主机与判题服务中必须对应同一路径。
+
+首次启动会等待 MySQL TCP 认证、Redis 和 MQ 就绪。旧库升级还需按现有索引状态执行 `sql/migration-20261116-indexes.sql`；若曾执行早期租约迁移，使用 `sql/migrations/20261116_dispatch_utc_default.sql` 修正默认值，不重复添加字段。镜像自检和真实提交不能由演示数据替代。
+
+## 构建与回归
+
+```bash
+mvn -B verify
+python3 -m unittest discover -s judge-tests/tests -v
+python3 -m unittest discover -s tools/tests -v  # Linux/Git Bash 环境下检查 hook
+cd oj-web && npm ci && npm run build          # Node22+
+```
+
+`.github/workflows/ci.yml` 在推送和 PR 时执行后端测试、Python 工具检查及前端构建；本地通过 `git config core.hooksPath .githooks` 启用推送检查。推 dev 时要求工作区干净、构建提交与待推提交一致；缺工具或失败会拒绝推送。配置文件随本次修改交付，尚未替团队推送或设置 GitHub 分支保护。
 
 ## 管理员账号
 

@@ -16,6 +16,7 @@ import com.codeoj.server.mapper.ProblemMapper;
 import com.codeoj.server.mapper.SubmissionMapper;
 import com.codeoj.server.mapper.UserMapper;
 import com.codeoj.server.service.ContestService;
+import com.codeoj.server.service.ProblemSelectionValidator;
 import com.codeoj.server.vo.ContestDetailVO;
 import com.codeoj.server.vo.ContestRankVO;
 import com.codeoj.server.vo.ContestVO;
@@ -46,18 +47,21 @@ public class ContestServiceImpl implements ContestService {
     private final ContestProblemMapper contestProblemMapper;
     private final ProblemMapper problemMapper;
     private final SubmissionMapper submissionMapper;
+    private final ProblemSelectionValidator problemSelection;
     private final com.codeoj.server.mapper.UserMapper userMapper;
 
     public ContestServiceImpl(ContestMapper contestMapper,
                               ContestProblemMapper contestProblemMapper,
                               ProblemMapper problemMapper,
                               SubmissionMapper submissionMapper,
-                              com.codeoj.server.mapper.UserMapper userMapper) {
+                              com.codeoj.server.mapper.UserMapper userMapper,
+                              ProblemSelectionValidator problemSelection) {
         this.contestMapper = contestMapper;
         this.contestProblemMapper = contestProblemMapper;
         this.problemMapper = problemMapper;
         this.submissionMapper = submissionMapper;
         this.userMapper = userMapper;
+        this.problemSelection = problemSelection;
     }
 
     @Override
@@ -95,6 +99,7 @@ public class ContestServiceImpl implements ContestService {
     }
 
     private void validateTime(ContestFormDTO dto) {
+        problemSelection.validate(dto.getProblemIds());
         if (!dto.getStartTime().isBefore(dto.getEndTime())) {
             throw new BizException(ResultCode.BAD_REQUEST.getCode(), "开始时间必须早于结束时间");
         }

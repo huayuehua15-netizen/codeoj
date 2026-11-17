@@ -6,6 +6,7 @@ import com.codeoj.server.dto.CourseFormDTO;
 import com.codeoj.server.mapper.CourseMapper;
 import com.codeoj.server.mapper.CourseProblemMapper;
 import com.codeoj.server.service.CourseService;
+import com.codeoj.server.service.ProblemSelectionValidator;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -13,22 +14,26 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 /**
- * 课程实验服务实现（骨架）。
+ * 课程实验服务：校验完整题组后在事务中保存课程与关联。
  */
 @Service
 public class CourseServiceImpl implements CourseService {
 
     private final CourseMapper courseMapper;
     private final CourseProblemMapper courseProblemMapper;
+    private final ProblemSelectionValidator problemSelection;
 
-    public CourseServiceImpl(CourseMapper courseMapper, CourseProblemMapper courseProblemMapper) {
+    public CourseServiceImpl(CourseMapper courseMapper, CourseProblemMapper courseProblemMapper,
+                             ProblemSelectionValidator problemSelection) {
         this.courseMapper = courseMapper;
         this.courseProblemMapper = courseProblemMapper;
+        this.problemSelection = problemSelection;
     }
 
     @Override
     @Transactional
     public Long create(Long teacherId, CourseFormDTO dto) {
+        problemSelection.validate(dto.getProblemIds());
         Course course = new Course();
         course.setName(dto.getName());
         course.setDescription(dto.getDescription());
@@ -44,6 +49,7 @@ public class CourseServiceImpl implements CourseService {
     @Transactional
     public void update(Long id, CourseFormDTO dto) {
         Course course = getById(id);
+        problemSelection.validate(dto.getProblemIds());
         course.setName(dto.getName());
         course.setDescription(dto.getDescription());
         course.setUpdatedAt(LocalDateTime.now());
@@ -54,7 +60,6 @@ public class CourseServiceImpl implements CourseService {
     }
 
     private void bindProblems(Long courseId, List<Long> problemIds) {
-        // TODO 第二阶段：校验题目存在性
         if (problemIds == null) {
             return;
         }
@@ -68,6 +73,7 @@ public class CourseServiceImpl implements CourseService {
     }
 
     @Override
+    @Transactional
     public void delete(Long id) {
         getById(id);
         courseMapper.deleteById(id);
@@ -92,6 +98,7 @@ public class CourseServiceImpl implements CourseService {
 
     @Override
     public List<CourseProblem> problems(Long courseId) {
+        getById(courseId);
         return courseProblemMapper.selectList(new com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper<CourseProblem>()
                 .eq(CourseProblem::getCourseId, courseId)
                 .orderByAsc(CourseProblem::getSortOrder));

@@ -1,0 +1,18 @@
+{
+  "date": "2026-11-17",
+  "base": "ecdc1499f02191e5e358ee7f3e7df3a4d89cd945",
+  "javaTests": 70,
+  "javaFailures": 0,
+  "pythonToolTests": 10,
+  "pythonHookTests": 9,
+  "managementChecks": 16,
+  "historyRankingChecks": 3,
+  "fiveLanguagesAccepted": true,
+  "websocketIsolationPassed": true,
+  "imagesVerifyOnlyPassed": 5,
+  "frontendWindows": "Node22.21.1, npm run build, Vite6.4.6",
+  "frontendLinux": "Node22, npm ci and npm run build",
+  "knownNpmAuditFindings": 0,
+  "cloudCiExecuted": false,
+  "fullLoadTestExecuted": false
+}

@@ -22,9 +22,10 @@ fi
 
 # 只在推 dev 时检查；main 走人工验收，个人分支不拦
 CHECK_DEV=0
+CHECK_SHA=""
 while read -r local_ref local_sha remote_ref remote_sha; do
   case "$remote_ref" in
-    refs/heads/dev) CHECK_DEV=1 ;;
+    refs/heads/dev) CHECK_DEV=1; CHECK_SHA="$local_sha" ;;
     refs/heads/main) echo "[pre-push] 注意：正在推 main（答辩快照），请确认已验收" ;;
   esac
 done
@@ -53,34 +54,46 @@ fail() {
   exit 1
 }
 
+# 构建的工作区必须就是即将推送的提交，避免未提交文件或其他 HEAD 掩盖失败。
+if [ "$CHECK_SHA" != "$(git rev-parse HEAD)" ]; then
+  echo "[pre-push] 请先切到本次要推送的 dev 提交，再运行推送"
+  fail
+fi
+if [ -n "$(git status --porcelain)" ]; then
+  echo "[pre-push] 工作区含未提交内容，请先提交或保存后再推 dev"
+  fail
+fi
+
 # 1) 后端
-echo "[1/2] mvn -q -DskipTests package ..."
+echo "[1/2] mvn -q verify（包含测试）..."
 if [ -f "./mvnw" ]; then
   MVN_CMD="./mvnw"
 elif command -v mvn >/dev/null 2>&1; then
   MVN_CMD="mvn"
 else
-  echo "[pre-push] 警告：找不到 mvn/mvnw，跳过后端构建检查"
-  MVN_CMD=""
+  echo "[pre-push] 找不到 mvn/mvnw，请安装 JDK17 和 Maven3.9+"
+  fail
 fi
 
-if [ -n "$MVN_CMD" ]; then
-  if ! $MVN_CMD -q -DskipTests package; then
-    fail
-  fi
-  echo "[1/2] ✓ 后端构建通过"
-else
-  echo "[1/2] - 已跳过"
+if ! $MVN_CMD -q verify; then
+  fail
 fi
+echo "[1/2] ✓ 后端构建通过"
 
 # 2) 前端
 if [ -f "oj-web/package.json" ]; then
   echo ""
   echo "[2/2] 前端构建（oj-web）..."
-  if [ ! -d "oj-web/node_modules" ]; then
-    echo "[pre-push] 警告：oj-web/node_modules 不存在，跳过前端构建"
-    echo "           首次请先在 oj-web 目录执行 npm install"
-  else
+  if ! command -v node >/dev/null 2>&1 || ! command -v npm >/dev/null 2>&1; then
+    echo "[pre-push] 需要 Node22+ 和 npm，不能跳过前端检查"
+    fail
+  fi
+  if ! node -e 'if (Number(process.versions.node.split(".")[0]) < 22) process.exit(1)'; then
+    echo "[pre-push] 需要 Node22+，请升级 Node 后重试"
+    fail
+  fi
+  # 每次按锁文件安装，避免旧 node_modules 掩盖依赖升级后的失败。
+  (cd oj-web && npm ci) || fail
     OLD_PWD=$(pwd)
     # esbuild 在部分 Windows 环境下无法清理系统 TEMP（报 "Access is denied"），
     # 把 TEMP 指到仓库内的 .tmp 可绕过；该目录已在 .gitignore 中。
@@ -102,9 +115,9 @@ if [ -f "oj-web/package.json" ]; then
       fail
     fi
     echo "[2/2] ✓ 前端构建通过"
-  fi
 else
-  echo "[2/2] - 无前端项目，已跳过"
+  echo "[pre-push] 缺少 oj-web/package.json，请检查待推送的项目文件"
+  fail
 fi
 
 echo ""

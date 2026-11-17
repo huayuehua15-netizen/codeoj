@@ -1,0 +1,35 @@
+{
+  "kind": "sockjs-stomp-normal-program-integration",
+  "startedAt": "2026-11-17T07:27:32.400546+00:00",
+  "passed": true,
+  "api": "http://localhost:18080/api",
+  "problemId": 100,
+  "ownerUserId": "1000002",
+  "otherUserId": "1000003",
+  "missingTokenRejected": true,
+  "rawQueueRejected": true,
+  "submissionId": 6,
+  "ownerEvents": [
+    {
+      "type": "JUDGE_QUEUED",
+      "submissionId": 6,
+      "status": null
+    },
+    {
+      "type": "JUDGING",
+      "submissionId": 6,
+      "status": null
+    },
+    {
+      "type": "JUDGE_FINISHED",
+      "submissionId": 6,
+      "status": 2
+    }
+  ],
+  "otherUserMatchingEvents": 0,
+  "otherUserSocketStayedOpen": true,
+  "databaseStatus": 2,
+  "judgingReceived": true,
+  "acceptedReceived": true,
+  "finishedAt": "2026-11-17T07:27:35.859389+00:00"
+}

@@ -2,7 +2,7 @@ import { defineConfig } from 'vite'
 import vue from '@vitejs/plugin-vue'
 import { fileURLToPath, URL } from 'node:url'
 
-// 前端构建配置（论文 5.1：Vite 5）
+// 前端构建配置（Vue3 / Vite，保留既有分包策略）
 export default defineConfig({
   plugins: [vue()],
   // sockjs-client 引用 Node 的 global 全局量，浏览器端需映射到 globalThis

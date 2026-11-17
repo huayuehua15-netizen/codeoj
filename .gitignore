@@ -23,6 +23,9 @@ Thumbs.db
 
 # ===== Maven wrapper 临时 =====
 *.original
+.env
+.env.*
+!.env.example
 
 # 审查/构建临时产物
 .tmp/

@@ -1,0 +1,40 @@
+{
+  "ok": true,
+  "checks": [
+    {
+      "check": "second_page_global_maximum",
+      "ok": true,
+      "page": {
+        "total": 3,
+        "items": [
+          {
+            "userId": 1000001,
+            "username": "verify_a",
+            "acCount": 1,
+            "rank": 2,
+            "totalSubmit": 5,
+            "acceptedSubmit": 5,
+            "acceptRate": 100.0,
+            "lastSubmitAt": "2026-11-17 15:27:31"
+          }
+        ],
+        "summary": {
+          "solverCount": 3,
+          "maxAcCount": 2,
+          "totalSubmit": 8,
+          "overallAcceptRate": 100.0
+        }
+      }
+    },
+    {
+      "check": "submission_history_prevents_deletion",
+      "ok": true,
+      "code": 40000
+    },
+    {
+      "check": "huge_page_does_not_overflow",
+      "ok": true
+    }
+  ],
+  "fixtureNote": "Synthetic read-side ranking fixtures in isolated test database; not judge performance evidence."
+}
