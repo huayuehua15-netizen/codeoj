@@ -1,0 +1,133 @@
+#!/bin/sh
+#
+# commit-msg：校验提交信息格式
+#
+# 背景：本仓库历史提交混用过 `feat(scope): 描述` 与 `[类型] 描述` 两种格式，
+#       且出现过 PowerShell 写文件带 BOM 导致提交信息首字符是 \ufeff 的事故。
+#       人都靠不住，所以让钩子拦。
+#
+# 启用方式（每人克隆后跑一次，与 pre-push 共用同一个 core.hooksPath）：
+#   git config core.hooksPath .githooks
+#
+# 临时跳过（仅在明确知道自己在干什么时）：
+#   git commit --no-verify
+#
+set -u
+
+MSG_FILE="$1"
+
+if [ ! -f "$MSG_FILE" ]; then
+  exit 0
+fi
+
+# 读首行
+FIRST_LINE=$(head -n 1 "$MSG_FILE")
+
+# 空提交信息（比如 merge 用了默认信息）交给 git 自己处理
+if [ -z "$FIRST_LINE" ]; then
+  exit 0
+fi
+
+# 合并提交放行：git merge 自动生成的 "Merge branch ..." 不需要套格式
+case "$FIRST_LINE" in
+  Merge*|"Revert "*)
+    exit 0
+    ;;
+esac
+
+fail() {
+  echo "" >&2
+  echo "==============================================" >&2
+  echo "[commit-msg] ✗ 提交信息格式不合规，已拒绝" >&2
+  echo "==============================================" >&2
+  echo "" >&2
+  echo "你写的：$FIRST_LINE" >&2
+  echo "" >&2
+  echo "要求格式：[类型] 做了什么" >&2
+  echo "" >&2
+  echo "可用类型：" >&2
+  echo "  [新增] [修复] [优化] [重构] [样式] [文档]" >&2
+  echo "  [判题] [部署] [测试] [数据] [协同] [杂务]" >&2
+  echo "" >&2
+  echo "例子：" >&2
+  echo "  [新增] 判题镜像一键构建与自检脚本" >&2
+  echo "  [修复] 收藏接口匿名访问返回 50000 改为 40100" >&2
+  echo "  [文档] 补充提交规范中缺失的类型" >&2
+  echo "" >&2
+  echo "详见 docs/COLLABORATION.md「提交信息格式」一节。" >&2
+  echo "确实需要跳过：git commit --no-verify" >&2
+  echo "" >&2
+  exit 1
+}
+
+# 1) 检测 BOM（UTF-8 BOM = EF BB BF）
+#    PowerShell 5.1 的 Out-File -Encoding UTF8 会带 BOM，
+#    结果首行变成 "\ufefffeat: ..."，在 GitHub 上显示为 `﻿feat: ...`
+#    必须先于格式检查，否则只会报"格式不对"，使用者根本想不到是 BOM。
+BOM=$(head -c 3 "$MSG_FILE" | od -An -tx1 | tr -d ' \n')
+if [ "$BOM" = "efbbbf" ]; then
+  echo "" >&2
+  echo "==============================================" >&2
+  echo "[commit-msg] ✗ 提交信息开头有 UTF-8 BOM，已拒绝" >&2
+  echo "==============================================" >&2
+  echo "" >&2
+  echo "BOM（字节 EF BB BF）是看不见的，但会让首字符变成 \\ufeff，" >&2
+  echo "在 GitHub 上看起来像 \`﻿[新增] ...\` — 前面多了个空白方块。" >&2
+  echo "" >&2
+  echo "常见原因：用 PowerShell 的 Out-File -Encoding UTF8 写提交信息。" >&2
+  echo "  PowerShell 5.1 的 UTF8 默认带 BOM；PowerShell 7 请用 utf8NoBOM。" >&2
+  echo "" >&2
+  echo "最简单的办法：不用文件，直接 git commit -m \"[新增] 做了什么\"" >&2
+  echo "" >&2
+  exit 1
+fi
+
+# 2) 必须以 [类型] 开头，且类型在白名单内
+case "$FIRST_LINE" in
+  \[*\]*)
+    TYPE=$(printf '%s' "$FIRST_LINE" | sed -n 's/^\(\[[^]]*\]\).*/\1/p')
+    ;;
+  *)
+    fail
+    ;;
+esac
+
+case "$TYPE" in
+  "[新增]"|"[修复]"|"[优化]"|"[重构]"|"[样式]"|"[文档]"| \
+  "[判题]"|"[部署]"|"[测试]"|"[数据]"|"[协同]"|"[杂务]"|"[bug]")
+    ;;
+  *)
+    echo "" >&2
+    echo "[commit-msg] ✗ 未知的类型 $TYPE" >&2
+    echo "" >&2
+    echo "可用： [新增] [修复] [优化] [重构] [样式] [文档]" >&2
+    echo "       [判题] [部署] [测试] [数据] [协同] [杂务]" >&2
+    echo "" >&2
+    echo "注意：[bug] 虽能通过，但规范已统一用 [修复]，新提交请优先用 [修复]。" >&2
+    echo "" >&2
+    exit 1
+    ;;
+esac
+
+# 3) 类型后面必须有实质内容（防止 "[新增]" 光秃秃）
+DESC=$(printf '%s' "$FIRST_LINE" | sed 's/^\[[^]]*\][[:space:]]*//')
+if [ -z "$DESC" ] || [ ${#DESC} -lt 4 ]; then
+  echo "" >&2
+  echo "[commit-msg] ✗ 只有类型没有说明，或者说明太短（少于 4 字）" >&2
+  echo "  你写的：$FIRST_LINE" >&2
+  echo "  应该写成：[新增] 具体做了什么" >&2
+  echo "" >&2
+  exit 1
+fi
+
+# 4) 首行不要超过 72 个字符的显示宽度（中文按 2 算）
+#    这里简化：按字节数折算，中文 UTF-8 占 3 字节
+BYTES=$(printf '%s' "$FIRST_LINE" | wc -c | tr -d ' ')
+if [ "$BYTES" -gt 210 ]; then
+  echo "" >&2
+  echo "[commit-msg] ⚠ 提交信息首行偏长（约 $((BYTES / 3)) 个中文字符）" >&2
+  echo "  建议控制在 70 字以内，详细说明放到第二行开始。" >&2
+  echo "  （这是警告，不阻止提交）" >&2
+fi
+
+exit 0
