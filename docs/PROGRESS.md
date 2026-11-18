@@ -13,7 +13,7 @@
 | 分工 | 方案 A（已固化）：成员 A = 评测链路（oj-judge real 引擎/judge-images）；成员 B = 业务与前端（oj-server/oj-web/联调/测试） |
 | 技术栈 | JDK17 / Spring Boot 3.2.5 / MyBatis-Plus / RabbitMQ / Redis / MySQL 8 / docker-java / Vue3+Vite+TS+Pinia+EP+Monaco / ECharts / SockJS+STOMP / Web Worker 沙箱 |
 | 仓库 | github.com/huayuehua15-netizen/codeoj ｜ 分支：**main**（发布快照）/ **dev**（集成）/ **niuzj**（成员 B 个人分支）/ feat/*（成员 A） |
-| 交付状态 | **B 侧功能 100% 交付 + 复审修复 + 三大数据页专业化 + 提交链路三页 UI 专业化 + judge_case 演示明细**；A 侧 real 引擎待开工（材料就绪） |
+| 交付状态 | A 侧 C/C++/Java/Python3/JavaScript 的 real 评测已实现，五语言已通过实际判题。B 侧业务与前端已完成联调。以下旧里程碑保留当时状态，评测现状见 §14 和 [当前评测契约](./CONTRACT.md)。 |
 
 ---
 
@@ -601,6 +601,8 @@ SQL 一致性              WA/TLE 失败行校验 0 缺失、0 越界
 | 全仓扫描 | emoji 清零（`oj-web/src` 仅剩注释符号与文案排版箭头 `→`，非图标） |
 
 ## 14. A 评测链路本地修复与兼容复核（2026-11-16，待 B 评审合并）
+
+2026-11-18 复测补充：修复确认后重复补发、Docker 瞬时故障终结、超时误判和语言低内存配置。新提交固定判题用例与资源限制，详情区分总用例数与已执行数。五语言真实判题、旧库迁移和 100/300/500 用户单次突发均已验证，分档数据与完整验收范围见 [评测链路验证记录](../judge-tests/联调报告.md)。
 
 此前章节保留 B 的原始交付记录。A 已实现五语言真实沙箱、可信统计与工作目录隔离、租约恢复和持久补发；已完成的验证见 judge-tests/联调报告.md。当前本地基于 dev `72a9c2e` 完成兼容复核，保留 B 新增的统计、排行榜、竞赛、WS 和时区能力；61 项 Java 回归、前端构建、五语言/WS、11 项时钟和 8 项业务接口检查通过。CONTRACT 升级 v1.2，跨成员改动集中登记于 docs/JUDGE-COMPATIBILITY.md。dev/main 仍仅由 B 合并。
 

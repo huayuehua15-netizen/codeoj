@@ -39,22 +39,25 @@
       </div>
 
       <!-- 用例级结果（论文 5.7：用例序号、状态、耗时、内存） -->
-      <div v-if="detail.cases && detail.cases.length" class="card">
+      <div v-if="caseTotal != null || executedCount > 0" class="card">
         <div class="head">
           <h2>用例结果</h2>
           <div class="case-summary">
             <span class="case-sum-text">
-              通过 <b class="pass-num">{{ passCount }}</b> / {{ detail.cases.length }} 个用例
+              通过 <b class="pass-num">{{ passCount }}</b>
+              <template v-if="caseTotal != null"> / {{ caseTotal }}</template> 组 · 已执行 {{ executedCount }} 组
+              <template v-if="caseTotal == null">（总数未记录）</template>
             </span>
             <el-progress
+              v-if="caseTotal"
               :percentage="passPercent"
               :stroke-width="8"
-              :color="passCount === detail.cases.length ? '#16a34a' : '#e6a23c'"
+              :color="passCount === caseTotal ? '#16a34a' : '#e6a23c'"
               class="case-bar"
             />
           </div>
         </div>
-        <el-table :data="detail.cases" class="case-table">
+        <el-table v-if="executedCount" :data="detail.cases" class="case-table">
           <el-table-column prop="caseIndex" label="#" width="70">
             <template #default="{ row }">
               <span class="mono dim">#{{ row.caseIndex }}</span>
@@ -144,8 +147,11 @@ const iconKind = computed(() => {
 
 const passCount = computed(() => (detail.value?.cases || []).filter((c) => c.status === 2).length)
 
+const executedCount = computed(() => detail.value?.cases?.length ?? 0)
+const caseTotal = computed(() => detail.value?.totalCases ??
+  (detail.value?.status === 2 && executedCount.value > 0 ? executedCount.value : null))
 const passPercent = computed(() => {
-  const total = detail.value?.cases?.length || 0
+  const total = caseTotal.value
   return total ? Math.round((passCount.value / total) * 100) : 0
 })
 

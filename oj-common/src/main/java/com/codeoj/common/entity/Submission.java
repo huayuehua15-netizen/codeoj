@@ -53,6 +53,10 @@ public class Submission {
     /** QUEUING rows are the durable dispatch record, retried after this time. */
     private LocalDateTime nextDispatchAt;
 
+    /** 旧提交没有快照，仍可按原方式读取。 */
+    private String judgeSnapshotKey;
+    private Integer totalCases;
+
     private LocalDateTime createdAt;
 
     @TableField(exist = false)

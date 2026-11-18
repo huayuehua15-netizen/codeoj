@@ -38,7 +38,7 @@ public class LeasePersistenceTest {
                 + ";MODE=MySQL;DB_CLOSE_DELAY=-1;INIT=SET TIME ZONE '+08:00'");
         jdbc = new JdbcTemplate(ds);
         jdbc.execute("CREATE ALIAS UTC_TIMESTAMP FOR 'com.codeoj.judge.mq.LeasePersistenceTest.utcTimestamp'");
-        jdbc.execute("CREATE TABLE submission(id BIGINT PRIMARY KEY, user_id BIGINT, problem_id BIGINT, language VARCHAR, code VARCHAR, status INT, time_used_ms INT, memory_used_kb INT, error_info VARCHAR, judged_at TIMESTAMP, created_at TIMESTAMP, judge_token VARCHAR, judge_lease_until TIMESTAMP(6), judge_attempts INT DEFAULT 0, next_dispatch_at TIMESTAMP(6) DEFAULT (UTC_TIMESTAMP(6)))");
+        jdbc.execute("CREATE TABLE submission(id BIGINT PRIMARY KEY, user_id BIGINT, problem_id BIGINT, language VARCHAR, code VARCHAR, status INT, time_used_ms INT, memory_used_kb INT, error_info VARCHAR, judged_at TIMESTAMP, created_at TIMESTAMP, judge_token VARCHAR, judge_lease_until TIMESTAMP(6), judge_attempts INT DEFAULT 0, next_dispatch_at TIMESTAMP(6) DEFAULT (UTC_TIMESTAMP(6)), dispatch_token VARCHAR, dispatched_at TIMESTAMP(6), judge_snapshot_key VARCHAR, total_cases INT)");
         jdbc.execute("CREATE TABLE judge_case(id BIGINT AUTO_INCREMENT PRIMARY KEY, submission_id BIGINT, case_index INT, status INT CHECK(status=2), time_used_ms INT, memory_used_kb INT)");
         jdbc.execute("CREATE TABLE problem(id BIGINT PRIMARY KEY, submit_count INT, accepted_count INT)");
         jdbc.update("INSERT INTO problem VALUES(3,0,0)");
@@ -83,9 +83,20 @@ public class LeasePersistenceTest {
     }
     @Test void dispatchReservationExpiresAndOtherScannersCannotPublishDuringWindow() {
         assertTrue(mapper.findDispatchable(200).contains(7L));
-        assertEquals(1, mapper.reserveDispatch(7L,120));
-        assertEquals(0, mapper.reserveDispatch(7L,120));
+        assertEquals(1, mapper.reserveDispatch(7L,"first",120));
+        assertEquals(0, mapper.reserveDispatch(7L,"second",120));
         assertTrue(mapper.findDispatchable(200).isEmpty());
+        jdbc.update("UPDATE submission SET next_dispatch_at=TIMESTAMPADD(SECOND,-1,UTC_TIMESTAMP(6)) WHERE id=7");
+        assertTrue(mapper.findDispatchable(200).contains(7L));
+        assertEquals(1, mapper.reserveDispatch(7L, "second", 120));
+        assertEquals(0, mapper.confirmDispatch(7L, "first"));
+        assertEquals(1, mapper.confirmDispatch(7L, "second"));
+        jdbc.update("UPDATE submission SET next_dispatch_at=TIMESTAMPADD(SECOND,-1,UTC_TIMESTAMP(6)) WHERE id=7");
+        assertTrue(mapper.findDispatchable(200).isEmpty(), "confirmed work may wait indefinitely without another send");
+        assertEquals(0, mapper.reserveDispatch(7L, "third", 120));
+        assertEquals(1, mapper.markJudging(7L, "owner", 120));
+        assertEquals(1, mapper.deferClaim(7L, "owner", 5));
+        assertEquals(0, mapper.confirmDispatch(7L, "second"), "prior delivery cannot acknowledge a new attempt");
         jdbc.update("UPDATE submission SET next_dispatch_at=TIMESTAMPADD(SECOND,-1,UTC_TIMESTAMP(6)) WHERE id=7");
         assertTrue(mapper.findDispatchable(200).contains(7L));
     }
@@ -99,7 +110,7 @@ public class LeasePersistenceTest {
     @Test void shanghaiSessionKeepsDispatchAndLeaseInUtcButBusinessResultInShanghai() {
         // A fresh row is immediately dispatchable even though NOW() is eight hours ahead of UTC.
         assertTrue(mapper.findDispatchable(200).contains(7L));
-        assertEquals(1, mapper.reserveDispatch(7L, 120));
+        assertEquals(1, mapper.reserveDispatch(7L, "dispatch", 120));
         LocalDateTime before = utcTimestamp();
         assertEquals(1, mapper.markJudging(7L, "clock-owner", 120));
         LocalDateTime lease = jdbc.queryForObject("SELECT judge_lease_until FROM submission WHERE id=7",
@@ -114,6 +125,14 @@ public class LeasePersistenceTest {
         long businessOffset = Duration.between(before, judged).getSeconds();
         assertTrue(businessOffset >= 28799 && businessOffset <= 28801,
                 "judged_at must match Shanghai business dates, not UTC lease dates");
+    }
+    @Test void infrastructureFailurePreservesKnownCaseTotalWithoutInventingResults() {
+        jdbc.update("UPDATE submission SET total_cases=5 WHERE id=7");
+        assertEquals(1, mapper.markJudging(7L, "owner", 120));
+        JudgeResult failed = JudgeResult.builder().status(SubmissionStatus.SYSTEM_ERROR).build();
+        assertTrue(writer.save(7L, "owner", failed));
+        assertEquals(5, jdbc.queryForObject("SELECT total_cases FROM submission WHERE id=7", Integer.class));
+        assertEquals(0, jdbc.queryForObject("SELECT COUNT(*) FROM judge_case", Integer.class));
     }
     private JudgeResult result(SubmissionStatus status) {
         return JudgeResult.builder().status(status).cases(List.of(CaseResult.builder()

@@ -5,6 +5,8 @@ import com.codeoj.judge.config.JudgeProperties;
 import com.github.dockerjava.api.DockerClient;
 import com.github.dockerjava.api.async.ResultCallback;
 import com.github.dockerjava.api.command.InspectContainerResponse;
+import com.github.dockerjava.api.exception.BadRequestException;
+import com.github.dockerjava.api.exception.NotFoundException;
 import com.github.dockerjava.api.model.*;
 import jakarta.annotation.PreDestroy;
 import org.slf4j.Logger;
@@ -64,8 +66,10 @@ public class DockerSandbox {
                     .withHostConfig(buildHostConfig(hostWorkDir, containerMemoryMb, compile)).exec().getId();
             final String id = containerId;
             killTask = watchdog.schedule(() -> {
-                hardKilled.set(true);
-                try { dockerClient.killContainerCmd(id).exec(); }
+                try {
+                    dockerClient.killContainerCmd(id).exec();
+                    hardKilled.set(true);
+                }
                 catch (Exception exception) { log.debug("watchdog kill failed: {}", exception.getMessage()); }
             }, hardTimeout, TimeUnit.MILLISECONDS);
             dockerClient.startContainerCmd(containerId).exec();
@@ -74,6 +78,7 @@ public class DockerSandbox {
                 dockerClient.waitContainerCmd(containerId).exec(waiter);
                 if (!waiter.await(hardTimeout + 5000)) throw new IllegalStateException("wait container timeout");
                 if (waiter.failure != null) throw new IllegalStateException("wait container failed", waiter.failure);
+                killTask.cancel(false);
                 // A fast process may exit before attach is established, leaving its upgraded
                 // HTTP stream open. Read the finite, complete log after the container exits.
                 dockerClient.logContainerCmd(containerId).withStdOut(true).withStdErr(true)
@@ -102,9 +107,18 @@ public class DockerSandbox {
                     .stdout(collector.stdout.toString(StandardCharsets.UTF_8)).stderr(stat.programStderr())
                     .wallTimeMs(hardKilled.get() ? (int) Math.min(Integer.MAX_VALUE, timeoutMs) : stat.wallTimeMs())
                     .cpuTimeMs(stat.cpuTimeMs()).peakMemoryKb(stat.peakMemoryKb()).errorInfo(error).build();
+        } catch (NotFoundException exception) {
+            if (containerId != null) throw new RetryableSandboxException(exception);
+            log.error("sandbox image missing, submission={}, image={}", submissionId, image, exception);
+            return systemError("找不到判题镜像，请联系管理员");
+        } catch (BadRequestException exception) {
+            log.error("invalid sandbox configuration, submission={}", submissionId, exception);
+            return systemError("沙箱配置无效，请联系管理员");
+        } catch (InterruptedException exception) {
+            Thread.currentThread().interrupt();
+            throw new RetryableSandboxException(exception);
         } catch (Exception exception) {
-            log.error("sandbox failed, submission={}", submissionId, exception);
-            return systemError("沙箱调度或执行失败，请检查镜像和 Docker 服务");
+            throw new RetryableSandboxException(exception);
         } finally {
             if (killTask != null) killTask.cancel(false);
             if (containerId != null) {

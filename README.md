@@ -121,6 +121,8 @@ docker compose up -d --scale oj-judge=4
 
 若沿用早期只有七张表的数据库，备份并停止旧服务后，还需在目标数据库执行 [业务结构补齐迁移](sql/migrations/20261117_legacy_business_schema.sql)。它补齐 `user.status`、`problem.tags`、竞赛/公告/收藏表，并兼容旧 `nickname` 必填列；保留已有数据且可重复执行。直接导入 `schema.sql` 不会给已存在的表增加缺失字段。
 
+启用投递确认与用例快照的新版本还需对已有库执行一次 [评测可靠性迁移](sql/migrations/20261118_judge_dispatch_snapshot.sql)。迁移后重建并启动 server、judge 和五个判题镜像。全新库已有相关字段与表。
+
 ## 构建与回归
 
 ```bash

@@ -4,6 +4,7 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.codeoj.common.entity.Problem;
 import com.codeoj.common.entity.Submission;
 import com.codeoj.common.entity.TestCase;
+import com.codeoj.common.model.JudgeSnapshot;
 import com.codeoj.judge.mapper.ProblemMapper;
 import com.codeoj.judge.mapper.SubmissionMapper;
 import com.codeoj.judge.mapper.TestCaseMapper;
@@ -36,38 +37,41 @@ public class TaskLoader {
         if (submission == null) {
             throw new IllegalStateException("submission not found: " + submissionId);
         }
-        Problem problem = problemMapper.selectById(submission.getProblemId());
-        if (problem == null) {
-            throw new IllegalStateException("problem not found: " + submission.getProblemId());
-        }
-        List<TestCase> testCases = testCaseMapper.selectList(new LambdaQueryWrapper<TestCase>()
-                .eq(TestCase::getProblemId, submission.getProblemId())
-                .orderByAsc(TestCase::getId));
-        if (testCases == null || testCases.isEmpty()) {
-            throw new IllegalStateException("problem has no test cases: " + submission.getProblemId());
-        }
-
+        JudgeSnapshot snapshot = submission.getJudgeSnapshotKey() == null
+                ? loadLegacySnapshot(submission.getProblemId()) : loadStoredSnapshot(submission.getJudgeSnapshotKey());
         List<JudgeTask.CaseInput> cases = new ArrayList<>();
-        for (int i = 0; i < testCases.size(); i++) {
-            cases.add(JudgeTask.CaseInput.builder()
-                    .index(i + 1)   // 用例序号从 1 开始（论文表 4-5 / API 约定）
-                    .input(testCases.get(i).getInput())
-                    .expectedOutput(testCases.get(i).getExpectedOutput())
-                    .build());
+        for (int i = 0; i < snapshot.cases().size(); i++) {
+            JudgeSnapshot.OneCase testCase = snapshot.cases().get(i);
+            cases.add(JudgeTask.CaseInput.builder().index(i + 1)
+                    .input(testCase.input()).expectedOutput(testCase.expectedOutput()).build());
         }
-
-        JudgeTask task = JudgeTask.builder()
+        return JudgeTask.builder()
                 .submissionId(submission.getId())
                 .userId(submission.getUserId())
                 .problemId(submission.getProblemId())
                 .language(submission.getLanguage())
                 .code(submission.getCode())
-                .timeLimitMs(problem.getTimeLimitMs())
-                .memoryLimitMb(problem.getMemoryLimitMb())
+                .timeLimitMs(snapshot.timeLimitMs())
+                .memoryLimitMb(snapshot.memoryLimitMb())
                 .cases(cases)
                 .build();
-        String error = JudgeEngine.validate(task);
-        if (error != null) throw new IllegalStateException(error);
-        return task;
+    }
+
+    private JudgeSnapshot loadStoredSnapshot(String key) {
+        String payload = submissionMapper.findJudgeSnapshot(key);
+        if (payload == null) throw new IllegalStateException("judge snapshot missing");
+        return JudgeSnapshot.decode(payload);
+    }
+
+    private JudgeSnapshot loadLegacySnapshot(long problemId) {
+        Problem problem = problemMapper.selectById(problemId);
+        if (problem == null) {
+            throw new IllegalStateException("problem not found: " + problemId);
+        }
+        List<TestCase> testCases = testCaseMapper.selectList(new LambdaQueryWrapper<TestCase>()
+                .eq(TestCase::getProblemId, problemId)
+                .orderByAsc(TestCase::getId).last("LIMIT " + (JudgeSnapshot.MAX_CASES + 1)));
+        return new JudgeSnapshot(problem.getTimeLimitMs(), problem.getMemoryLimitMb(),
+                testCases.stream().map(tc -> new JudgeSnapshot.OneCase(tc.getInput(), tc.getExpectedOutput())).toList());
     }
 }

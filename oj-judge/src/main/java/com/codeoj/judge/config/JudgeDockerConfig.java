@@ -27,7 +27,8 @@ public class JudgeDockerConfig {
                 .sslConfig(config.getSSLConfig())
                 .maxConnections(16)
                 .connectionTimeout(Duration.ofSeconds(10))
-                .responseTimeout(Duration.ofSeconds(60))
+                // waitContainer must cover the 60 s program limit and runner teardown margin.
+                .responseTimeout(Duration.ofSeconds(90))
                 .build();
         return DockerClientImpl.getInstance(config, httpClient);
     }

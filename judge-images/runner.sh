@@ -32,7 +32,14 @@ ERR_FILE="$TRUSTED/stderr"
 # 内层 timeout 同样降权，能够对同 UID 的程序发信号，无需给 supervisor CAP_KILL。
 /usr/bin/time -f '%e %U %S %M' -o "$STAT_FILE" \
   setpriv --reuid="${PROGRAM_USER%:*}" --regid="${PROGRAM_USER#*:}" --clear-groups --no-new-privs \
-  timeout -k 1s "$TIMEOUT_S" "$@" < "$INPUT" > "$OUT_FILE" 2> "$ERR_FILE"
+  timeout -k 1s "$TIMEOUT_S" \
+  /bin/bash -c '
+    "$@"
+    code=$?
+    # 124 belongs to timeout; an application returning 124 is an ordinary failure.
+    if [ "$code" -eq 124 ]; then exit 125; fi
+    exit "$code"
+  ' codeoj-program "$@" < "$INPUT" > "$OUT_FILE" 2> "$ERR_FILE"
 EXIT_CODE=$?
 [ -s "$STAT_FILE" ] || exit 70
 read -r WALL_S U_S S_S MAX_RSS_KB < <(tail -n 1 "$STAT_FILE")

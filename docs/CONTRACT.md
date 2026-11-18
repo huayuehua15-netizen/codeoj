@@ -1,6 +1,6 @@
 # CodeOJ 模块对接契约
 
-> 版本：v1.2 ｜ 更新日期：2026-11-16
+> 版本：v1.3 ｜ 更新日期：2026-11-18
 > 适用当前 A 评测链路修复分支。oj-server 与 oj-judge 通过数据库、RabbitMQ、Redis 协作，共享实体和 SQL 契约由 oj-common 提供。部署升级步骤见第 8 节。
 
 ## 1. MQ 协议
@@ -20,7 +20,9 @@ MQ 名称、提交编号消息体、结果事件字段与 v1.0 保持兼容。
 
 消费端兼容历史 JSON 引号字符串，如 `"100"`；非法编号直接 NACK、不重投、进入死信。手动 ACK、prefetch=1 保持不变。并发从 `spring.rabbitmq.listener.simple.concurrency` / `JUDGE_CONCURRENCY` 读取，默认 4，监听器不再用注解固定为 4。
 
-生产端在提交事务提交后先尽力推送 QUEUED，再发送判题消息。发送失败不能把已经接受的提交变成 HTTP 失败；持久 QUEUING 记录负责后续补发，见第 4 节。publisher-confirm 仍可启用，但恢复不依赖单次发送成功日志或 confirm 回调。
+生产端在提交事务提交后先尽力推送 QUEUED，再发送判题消息。两端发布任务均启用 publisher confirm 和 mandatory return。数据库只记录经 broker 确认且有路由的投递，已确认但仍在排队的任务不因等待时间长而重复发送。确认丢失时，发送窗口到期后允许重试，消费者继续用租约防止重复判题。
+
+新提交在接受事务内绑定题目资源限制和当时按 ID 排序的隐藏用例快照，后续重试使用同一份数据。旧提交缺少快照时兼容读取现有题目和用例。Docker 临时调度、连接或日志读取错误进入有上限的延迟重试；缺失镜像等配置错误返回 SYSTEM_ERROR。
 
 ### 1.2 判题事件 oj-judge → oj-server
 
@@ -86,6 +88,10 @@ submission 新增字段：
 | `judge_lease_until` | 数据库 UTC 时钟计算的到期时间，DATETIME(6) |
 | `judge_attempts` | 累计领取次数，恢复不会清零 |
 | `next_dispatch_at` | QUEUING 记录下次可补发时间 |
+| `dispatch_token` | 只允许当前发送窗口保存 broker 确认 |
+| `dispatched_at` | 当前入队经 broker 确认的 UTC 时间，空值允许到期补发 |
+| `judge_snapshot_key` | 指向内部判题快照，旧提交为空 |
+| `total_cases` | 该次判题计划执行的总用例数，与实际明细行数分开 |
 
 领取仅允许 status=0，原子设置 status=1、token、到期时间并增加 attempts。默认租期 120 秒，独立线程约每 40 秒续租；续租必须同时匹配 status=1、token 和未过期租约。数据库使用 `UTC_TIMESTAMP(6)`，不以各实例本机时钟判断所有权。
 
@@ -108,14 +114,16 @@ WHERE id = :id AND status = 1
 submission 的 QUEUING 行本身就是持久待发送记录，无需依赖进程内重试列表。
 
 1. `SubmissionServiceImpl.submit` 在真实事务中保存 QUEUING，事务回滚不推送、不发送 MQ。
-2. afterCommit 先尝试 QUEUED 推送，再调用 `JudgeDispatcher.publish`。dispatcher 使用 REQUIRES_NEW 事务预留发送窗口，避免在已提交事务资源中写入却未提交。
-3. 启动及周期恢复扫描先恢复过期租约，再查询到期 QUEUING 记录，按 `next_dispatch_at, id` 排序，每轮最多 200 条。
-4. 补发前通过条件更新预留 120 秒发送窗口，多个扫描实例只有一个能取得该窗口。发送失败、broker 拒绝或发送进程中断后，记录到期再次具备补发资格。
-5. 默认扫描间隔 15 秒，可用 `oj.judge.recovery-interval-ms` 配置。消息允许重复，数据库领取和 token 校验保证安全；发送窗口限制长队列下的重复补发频率。
+2. afterCommit 先尝试 QUEUED 推送，再将 `JudgeDispatcher.publish` 交给有容量限制的独立线程池。首发在独立事务中预留窗口和等待确认，HTTP 提交线程无需等待 broker。当线程池繁忙时，已保存的 QUEUING 记录由周期扫描接手。
+3. 启动及周期恢复扫描先恢复过期租约，再查找尚未经 broker 确认且已到期的 QUEUING 记录，按 `next_dispatch_at, id` 排序，每轮最多 200 条。
+4. 发送前通过条件更新预留 120 秒窗口并生成发送 token。broker 确认且未退回时写入 `dispatched_at`。确认超时或发送进程中断后，窗口到期允许重试。消息被明确拒绝或退回后等待 15 秒。
+5. 默认扫描间隔 15 秒，可用 `oj.judge.recovery-interval-ms` 配置。普通 broker 重启依靠持久化消息保留已确认任务。若发生队列被清除或数据卷丢失，恢复 broker 后对受影响的已确认排队记录清除 `dispatched_at` 并设为到期重新投递。领取和 token 校验仍能处理不确定确认产生的重复消息。
 
 恢复扫描只能重置 `judge_lease_until <= UTC_TIMESTAMP(6)` 的 JUDGING；兼容迁移后的无租约历史 JUDGING。新增或重启一个实例不能重置其他实例的健康租约。
 
 首次处理异常时，消费者先按 token 释放领取，再 `basicNack(requeue=true)`；重投仍失败时，尝试按当前租约写 SYSTEM_ERROR，再 `basicNack(requeue=false)` 进入死信。若恢复写库也失败，保留租约等待过期扫描，不凭一次失败就删除数据库记录。重复宕机默认最多执行 3 次，超过该领取次数后直接终结 SYSTEM_ERROR；参数为 `oj.judge.max-attempts`。
+
+Docker 临时故障走数据库延迟重试：按租约把任务退回 QUEUING，延迟以 5 秒为起点，保存成功后 ACK 原消息。达到领取次数上限后写入 SYSTEM_ERROR。程序自身的错误及已确认的环境配置错误不走该重试。
 
 | 故障 | 恢复机制 |
 |---|---|
@@ -175,7 +183,7 @@ AC 数据库事务提交后，judge 查询该用户 `COUNT(DISTINCT problem_id)`
 | `python3` | `codeoj/python:3.12` | 无 | `python3 main.py` |
 | `js` | `codeoj/node:20` | 无 | `node --max-old-space-size={mem} main.js` |
 
-题目必须有 1～1000 个有效用例，时限为 1～60000 ms，内存为 16～1024 MB；无用例、缺失输入/期望输出或越界配置返回 SYSTEM_ERROR。空输入和空期望输出本身合法。
+题目必须有 1～1000 个有效用例，时限为 1～60000 ms，内存为 16～1024 MB。Java、JavaScript 的内存下限为 64 MB。新提交保存资源限制与有序的用例快照，按内容去重，同一提交各次执行均使用原快照。序列化快照超过 32 MiB 或用例超过 1000 组时拒绝受理。空输入和空期望输出合法，缺少有效用例时判 SYSTEM_ERROR。
 
 ### 6.2 supervisor 与程序身份
 
@@ -233,8 +241,9 @@ oj-judge 数据库写入范围仍为 submission 的状态/租约/发送窗口、
 1. 备份数据库，停止所有旧 oj-server 与 oj-judge 实例，避免旧版仅按 status 写回跨越新租约边界。
 2. 已有数据库执行一次 `sql/migrations/20261116_judge_leases.sql`，新增四字段与恢复索引。该脚本不是重复执行脚本。
 3. 全新数据库直接导入当前 `sql/schema.sql`，不要再重复运行迁移。
-4. 重建五个判题镜像和服务镜像，再启动新版本；确认 ENGINE_MODE=real、共享宿主工作目录与 Docker socket 挂载正确。
-5. 核查任务领取、异常恢复、同题重复 AC、WebSocket 与只读用例回归。真实 Docker 验证和性能结论以本次验证记录为准，不沿用旧分支的“全部通过”结论。
+4. 已有库在旧迁移完成后执行一次 `sql/migrations/20261118_judge_dispatch_snapshot.sql`，新增投递确认、快照以及用例总数。旧记录没有总数时按历史数据兼容展示。
+5. 重建五个判题镜像和服务镜像，再启动新版本。runner 更新后会区分程序主动返回 124 与计时器超时。确认 ENGINE_MODE=real、共享宿主工作目录与 Docker socket 挂载正确。
+6. 核查任务领取、异常恢复、同题重复 AC、WebSocket 与只读用例回归。真实 Docker 验证和性能结论以本次验证记录为准。
 
 ## 9. 变更登记
 
@@ -243,5 +252,6 @@ oj-judge 数据库写入范围仍为 submission 的状态/租约/发送窗口、
 | 2026-11-13 | v1.0 | 骨架协议定稿 |
 | 2026-11-16 | v1.1 | 成员 B：WebSocket LoginUser Principal 与 CONNECT 鉴权约定 |
 | 2026-11-16 | v1.2 | 租约与 token 写回校验；持久 QUEUING 周期补发；共享 SQL；去重榜单；墙钟时间；可信 supervisor；执行/用例隔离；real 默认及拒绝伪判；数据库迁移 |
+| 2026-11-18 | v1.3 | 记录投递确认、Docker 瞬时故障延迟重试、用例快照和总数、语言内存下限及超时判定修正 |
 
 业务时间 created_at/judged_at 沿用成员 B 的 Asia/Shanghai DATETIME、序列化及查询契约；内部 judge_lease_until/next_dispatch_at 统一 UTC 数据库时钟。next_dispatch_at 默认表达式显式 UTC，不能改为按上海会话生成的 CURRENT_TIMESTAMP。CONNECT 使用 LoginUser 身份，校验签名、黑名单及数据库用户状态，只允许 /user/queue/judge 订阅，拒绝客户端 SEND。

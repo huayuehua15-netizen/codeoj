@@ -89,12 +89,16 @@ CREATE TABLE IF NOT EXISTS `submission` (
   `judge_lease_until` DATETIME(6) DEFAULT NULL COMMENT '租约到期时间 UTC',
   `judge_attempts` INT NOT NULL DEFAULT 0 COMMENT '已领取评测次数',
   `next_dispatch_at` DATETIME(6) NOT NULL DEFAULT (UTC_TIMESTAMP(6)) COMMENT '持久待发送记录下次重试时间 UTC',
+  `dispatch_token` CHAR(36) DEFAULT NULL COMMENT '当前发送窗口所有者',
+  `dispatched_at` DATETIME(6) DEFAULT NULL COMMENT '当前消息经 broker 确认的 UTC 时间',
+  `judge_snapshot_key` CHAR(64) CHARACTER SET ascii COLLATE ascii_bin DEFAULT NULL COMMENT '判题快照 SHA-256',
+  `total_cases` INT DEFAULT NULL COMMENT '计划执行的用例总数',
   `created_at`     DATETIME    DEFAULT CURRENT_TIMESTAMP COMMENT '提交时间 Asia/Shanghai',
   PRIMARY KEY (`id`),
   KEY `idx_submission_user` (`user_id`),
   KEY `idx_submission_problem` (`problem_id`),
   KEY `idx_submission_status` (`status`),
-  KEY `idx_submission_dispatch` (`status`, `next_dispatch_at`),
+  KEY `idx_submission_dispatch` (`status`, `dispatched_at`, `next_dispatch_at`),
   KEY `idx_submission_lease` (`status`, `judge_lease_until`),
   KEY `idx_submission_judged_at` (`judged_at`),
   -- 提交记录页：WHERE user_id=? [AND problem_id=?] [AND status=?] ORDER BY id DESC
@@ -105,6 +109,12 @@ CREATE TABLE IF NOT EXISTS `submission` (
   -- 个人统计/趋势：user_id + created_at 范围聚合
   KEY `idx_submission_user_created` (`user_id`, `created_at`)
 ) ENGINE = InnoDB COMMENT = '提交记录表';
+
+CREATE TABLE IF NOT EXISTS `judge_problem_snapshot` (
+  `snapshot_key` CHAR(64) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,
+  `payload` LONGBLOB NOT NULL,
+  PRIMARY KEY (`snapshot_key`)
+) ENGINE = InnoDB COMMENT = '按内容去重的内部判题快照';
 
 -- ---------------------------------------------------------------------
 -- 表 4-5  judge_case 判题明细表

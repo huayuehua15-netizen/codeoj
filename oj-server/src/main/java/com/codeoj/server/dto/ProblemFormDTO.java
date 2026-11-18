@@ -1,6 +1,8 @@
 package com.codeoj.server.dto;
 
 import com.codeoj.common.entity.Problem;
+import com.codeoj.common.enums.Language;
+import jakarta.validation.constraints.AssertTrue;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
@@ -49,4 +51,13 @@ public class ProblemFormDTO {
 
     /** 是否上架 */
     private Boolean enabled = true;
+
+    @AssertTrue(message = "Java 和 JavaScript 题目的内存限制不得低于 64 MB")
+    public boolean isLanguageMemoryValid() {
+        if (memoryLimitMb == null || languages == null) return true;
+        for (Language language : Language.values()) {
+            if (languages.contains(language.getCode()) && memoryLimitMb < language.getMinimumMemoryMb()) return false;
+        }
+        return true;
+    }
 }

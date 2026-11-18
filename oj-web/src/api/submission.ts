@@ -15,6 +15,7 @@ export interface SubmissionDetail {
   errorInfo?: string
   judgedAt?: string
   createdAt?: string
+  totalCases?: number | null
   cases?: { caseIndex: number; status: number; statusDesc: string; timeUsedMs?: number; memoryUsedKb?: number }[]
 }
 

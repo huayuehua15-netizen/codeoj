@@ -7,6 +7,7 @@ import com.codeoj.common.mq.JudgePushEvent;
 import com.codeoj.judge.core.*;
 import com.codeoj.judge.core.guard.SemaphoreGuard;
 import com.codeoj.judge.core.result.ResultWriter;
+import com.codeoj.judge.core.sandbox.RetryableSandboxException;
 import com.codeoj.judge.event.ResultEventPublisher;
 import com.codeoj.judge.mapper.SubmissionMapper;
 import com.rabbitmq.client.Channel;
@@ -80,10 +81,23 @@ public class JudgeConsumer {
                     JudgeTask task = taskLoader.load(sid);
                     task.setExecutionToken(token);
                     bestEffort(() -> pushEventPublisher.publishJudging(sid, task.getUserId(), task.getProblemId()));
-                    result = semaphoreGuard.run(() -> {
-                        try { return engine.run(task); }
-                        catch (Exception e) { throw new RuntimeException(e); }
-                    });
+                    try {
+                        result = semaphoreGuard.run(() -> engine.run(task));
+                    } catch (RetryableSandboxException e) {
+                        int attempts = submission == null || submission.getJudgeAttempts() == null
+                                ? 1 : submission.getJudgeAttempts();
+                        if (attempts < maxAttempts) {
+                            log.warn("temporary sandbox failure, submission={}, attempt={}", sid, attempts, e);
+                            submissionMapper.deferClaim(sid, token, Math.min(60, 5 * Math.max(1, attempts)));
+                            // The database owns the delayed retry. Ack only after the claim update.
+                            channel.basicAck(tag, false);
+                            return;
+                        }
+                        log.error("sandbox retries exhausted, submission={}, attempt={}", sid, attempts, e);
+                        result = JudgeResult.builder().status(SubmissionStatus.SYSTEM_ERROR)
+                                .passedCases(0).totalCases(task.getCases() == null ? 0 : task.getCases().size())
+                                .errorInfo("沙箱服务暂不可用，重试次数已用尽").cases(List.of()).build();
+                    }
                 }
                 if (resultWriter.save(sid, token, result)) publishCommitted(submission, sid, result);
             }

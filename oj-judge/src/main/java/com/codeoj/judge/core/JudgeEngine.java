@@ -1,6 +1,8 @@
 package com.codeoj.judge.core;
 
 import com.codeoj.common.enums.SubmissionStatus;
+import com.codeoj.common.enums.Language;
+import com.codeoj.common.model.JudgeSnapshot;
 import com.codeoj.judge.config.JudgeProperties;
 import com.codeoj.judge.core.compare.OutputComparator;
 import com.codeoj.judge.core.sandbox.DockerSandbox;
@@ -25,7 +27,6 @@ import java.util.concurrent.TimeUnit;
 public class JudgeEngine {
     private static final Logger log = LoggerFactory.getLogger(JudgeEngine.class);
     private static final int COMPILE_MEMORY_MB = 512;
-    private static final int MAX_CASES = 1000;
     private final DockerSandbox sandbox;
     private final OutputComparator comparator;
     private final JudgeProperties props;
@@ -60,11 +61,16 @@ public class JudgeEngine {
     static String validate(JudgeTask task) {
         if (task == null || task.getSubmissionId() == null) return "判题任务缺少提交编号";
         if (task.getCases() == null || task.getCases().isEmpty()) return "题目没有可用测试用例";
-        if (task.getCases().size() > MAX_CASES) return "题目用例数超过 1000 上限";
+        if (task.getCases().size() > JudgeSnapshot.MAX_CASES) return "题目用例数超过 1000 上限";
         if (task.getTimeLimitMs() == null || task.getTimeLimitMs() <= 0 || task.getTimeLimitMs() > 60000)
             return "题目时间限制应在 1 到 60000 毫秒之间";
         if (task.getMemoryLimitMb() == null || task.getMemoryLimitMb() < 16 || task.getMemoryLimitMb() > 1024)
             return "题目内存限制应在 16 到 1024 MB 之间";
+        Language language;
+        try { language = Language.of(task.getLanguage()); }
+        catch (IllegalArgumentException e) { return "不支持的语言"; }
+        if (task.getMemoryLimitMb() < language.getMinimumMemoryMb())
+            return language.getLabel() + " 的最低题目内存限制为 " + language.getMinimumMemoryMb() + " MB";
         if (task.getCode() == null) return "提交代码缺失";
         for (JudgeTask.CaseInput input : task.getCases()) {
             if (input == null || input.getInput() == null || input.getExpectedOutput() == null)

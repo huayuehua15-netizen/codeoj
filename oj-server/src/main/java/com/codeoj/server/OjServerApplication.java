@@ -3,6 +3,7 @@ package com.codeoj.server;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.scheduling.annotation.EnableScheduling;
+import org.springframework.scheduling.annotation.EnableAsync;
 
 /**
  * oj-server 业务服务启动类：提供全部业务 REST 接口，并作为判题消息生产者（论文 4.2）。
@@ -10,6 +11,7 @@ import org.springframework.scheduling.annotation.EnableScheduling;
  */
 @SpringBootApplication
 @EnableScheduling
+@EnableAsync
 public class OjServerApplication {
 
     public static void main(String[] args) {

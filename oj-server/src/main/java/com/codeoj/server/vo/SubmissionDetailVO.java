@@ -1,6 +1,5 @@
 package com.codeoj.server.vo;
 
-import com.codeoj.common.entity.Submission;
 import lombok.Data;
 
 import java.time.LocalDateTime;
@@ -26,6 +25,8 @@ public class SubmissionDetailVO {
     private String errorInfo;
     private LocalDateTime judgedAt;
     private LocalDateTime createdAt;
+    /** 计划执行总数，旧失败结果可能没有这个值。 */
+    private Integer totalCases;
 
     /** 用例级判题明细 */
     private List<JudgeCaseVO> cases;

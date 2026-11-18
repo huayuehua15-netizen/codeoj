@@ -13,6 +13,7 @@ import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.amqp.support.converter.SimpleMessageConverter;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 
 /**
  * RabbitMQ 拓扑声明（论文 4.6/5.4）：
@@ -24,6 +25,16 @@ import org.springframework.context.annotation.Configuration;
 public class RabbitMqConfig {
 
     private static final Logger log = LoggerFactory.getLogger(RabbitMqConfig.class);
+
+    @Bean
+    public ThreadPoolTaskExecutor judgeDispatchExecutor() {
+        ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
+        executor.setThreadNamePrefix("judge-dispatch-");
+        executor.setCorePoolSize(2);
+        executor.setMaxPoolSize(4);
+        executor.setQueueCapacity(128);
+        return executor;
+    }
 
     /**
      * 判题任务发送模板：消息体为纯文本 submissionId（CONTRACT.md §1.1）。
@@ -44,7 +55,7 @@ public class RabbitMqConfig {
         // 投递确认：失败时留痕，便于配合 StartupScanner 兜底重投
         template.setConfirmCallback((correlationData, ack, cause) -> {
             if (!ack) {
-                log.error("judge message nack by broker, submissionId={}, cause={}",
+                log.error("judge message nack by broker, correlationId={}, cause={}",
                         correlationData == null ? null : correlationData.getId(), cause);
             }
         });

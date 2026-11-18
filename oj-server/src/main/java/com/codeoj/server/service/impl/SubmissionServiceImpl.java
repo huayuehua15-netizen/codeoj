@@ -5,14 +5,18 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.codeoj.common.entity.JudgeCase;
 import com.codeoj.common.entity.Problem;
 import com.codeoj.common.entity.Submission;
+import com.codeoj.common.entity.TestCase;
 import com.codeoj.common.enums.Difficulty;
+import com.codeoj.common.enums.Language;
 import com.codeoj.common.enums.SubmissionStatus;
 import com.codeoj.common.exception.BizException;
+import com.codeoj.common.model.JudgeSnapshot;
 import com.codeoj.common.result.ResultCode;
 import com.codeoj.server.dto.SubmitDTO;
 import com.codeoj.server.mapper.JudgeCaseMapper;
 import com.codeoj.server.mapper.ProblemMapper;
 import com.codeoj.server.mapper.SubmissionMapper;
+import com.codeoj.server.mapper.TestCaseMapper;
 import com.codeoj.server.mq.JudgeDispatcher;
 import com.codeoj.server.security.LoginUser;
 import com.codeoj.server.service.IdempotentLockService;
@@ -34,9 +38,12 @@ import org.springframework.transaction.support.TransactionSynchronization;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.Comparator;
+import java.util.HexFormat;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -54,6 +61,7 @@ public class SubmissionServiceImpl implements SubmissionService {
     private final SubmissionMapper submissionMapper;
     private final ProblemMapper problemMapper;
     private final JudgeCaseMapper judgeCaseMapper;
+    private final TestCaseMapper testCaseMapper;
     private final RateLimiter rateLimiter;
     private final IdempotentLockService lockService;
     private final JudgeDispatcher judgeDispatcher;
@@ -69,6 +77,7 @@ public class SubmissionServiceImpl implements SubmissionService {
     public SubmissionServiceImpl(SubmissionMapper submissionMapper,
                                  ProblemMapper problemMapper,
                                  JudgeCaseMapper judgeCaseMapper,
+                                 TestCaseMapper testCaseMapper,
                                  RateLimiter rateLimiter,
                                  IdempotentLockService lockService,
                                  JudgeDispatcher judgeDispatcher,
@@ -77,6 +86,7 @@ public class SubmissionServiceImpl implements SubmissionService {
         this.submissionMapper = submissionMapper;
         this.problemMapper = problemMapper;
         this.judgeCaseMapper = judgeCaseMapper;
+        this.testCaseMapper = testCaseMapper;
         this.rateLimiter = rateLimiter;
         this.lockService = lockService;
         this.judgeDispatcher = judgeDispatcher;
@@ -90,12 +100,6 @@ public class SubmissionServiceImpl implements SubmissionService {
         if (!lockService.tryLock("oj:lock:submit:" + user.userId() + ":" + dto.getProblemId(), 2)) {
             throw new BizException(42901, "提交过于频繁，请稍后再试");
         }
-        // 不存在/未上架则抛 40002（论文 5.3）
-        Problem p = problemMapper.selectById(dto.getProblemId());
-        if (p == null || !Boolean.TRUE.equals(p.getEnabled())) {
-            throw new BizException(ResultCode.PROBLEM_UNAVAILABLE);
-        }
-        validate(p, dto);
         // 保留 B 侧显式事务；同步回调注册在事务内，也兼容未来由外层事务调用 submit。
         Long sid = transactionTemplate.execute(status -> {
             long queuedId = createQueued(user.userId(), dto);
@@ -128,6 +132,20 @@ public class SubmissionServiceImpl implements SubmissionService {
     @Transactional
     @Override
     public Long createQueued(Long userId, SubmitDTO dto) {
+        // 在同一 MySQL 事务的读视图里读取资源配置和测试用例，并与提交一同持久化。
+        Problem problem = problemMapper.selectById(dto.getProblemId());
+        if (problem == null || !Boolean.TRUE.equals(problem.getEnabled())) {
+            throw new BizException(ResultCode.PROBLEM_UNAVAILABLE);
+        }
+        validate(problem, dto);
+        List<TestCase> cases = testCaseMapper.listJudgeCases(dto.getProblemId(), JudgeSnapshot.MAX_CASES + 1);
+        if (cases.size() > JudgeSnapshot.MAX_CASES) {
+            throw new BizException(ResultCode.SUBMIT_INVALID.getCode(), "题目用例数超过 1000 上限，请联系管理员");
+        }
+        JudgeSnapshot snapshot = new JudgeSnapshot(problem.getTimeLimitMs(), problem.getMemoryLimitMb(),
+                cases.stream().map(tc -> new JudgeSnapshot.OneCase(tc.getInput(), tc.getExpectedOutput())).toList());
+        String snapshotKey = storeSnapshot(snapshot);
+
         Submission s = new Submission();
         s.setUserId(userId);
         s.setProblemId(dto.getProblemId());
@@ -135,16 +153,40 @@ public class SubmissionServiceImpl implements SubmissionService {
         s.setCode(dto.getCode());
         s.setStatus(SubmissionStatus.QUEUING.getCode());
         s.setJudgeAttempts(0);
+        s.setJudgeSnapshotKey(snapshotKey);
+        s.setTotalCases(cases.size());
         s.setCreatedAt(LocalDateTime.now(ZoneId.of("Asia/Shanghai")));
         submissionMapper.insert(s);
         log.info("submission queued, id={}, user={}, problem={}", s.getId(), userId, dto.getProblemId());
         return s.getId();
     }
 
+    private String storeSnapshot(JudgeSnapshot snapshot) {
+        byte[] payload = snapshot.encode();
+        if (payload.length > JudgeSnapshot.MAX_PAYLOAD_BYTES) {
+            throw new BizException(ResultCode.SUBMIT_INVALID.getCode(), "题目用例数据超过 32 MB 上限，请联系管理员");
+        }
+        try {
+            String key = HexFormat.of().formatHex(MessageDigest.getInstance("SHA-256").digest(payload));
+            if (!submissionMapper.hasJudgeSnapshot(key)) {
+                submissionMapper.insertJudgeSnapshot(key, payload);
+            }
+            return key;
+        } catch (NoSuchAlgorithmException e) {
+            throw new IllegalStateException("Missing SHA-256", e);
+        }
+    }
+
     @Override
     public void validate(Problem problem, SubmitDTO dto) {
         if (problem.getLanguages() == null || !problem.getLanguages().contains(dto.getLanguage())) {
             throw new BizException(ResultCode.SUBMIT_INVALID.getCode(), "该题目不允许使用此语言提交");
+        }
+        Language language = Language.of(dto.getLanguage());
+        if (problem.getMemoryLimitMb() == null || problem.getMemoryLimitMb() < language.getMinimumMemoryMb()) {
+            throw new BizException(ResultCode.SUBMIT_INVALID.getCode(),
+                    "此题内存配置不足，" + language.getLabel() + " 至少需要 "
+                            + language.getMinimumMemoryMb() + " MB，请联系管理员");
         }
         if (dto.getCode().getBytes(StandardCharsets.UTF_8).length > maxCodeBytes) {
             throw new BizException(ResultCode.SUBMIT_INVALID.getCode(), "代码不得超过 64KB");
@@ -183,6 +225,7 @@ public class SubmissionServiceImpl implements SubmissionService {
                 .eq(JudgeCase::getSubmissionId, id)
                 .orderByAsc(JudgeCase::getCaseIndex));
         vo.setCases(judgeCases.stream().map(JudgeCaseVO::of).toList());
+        vo.setTotalCases(s.getTotalCases());
         return vo;
     }
 

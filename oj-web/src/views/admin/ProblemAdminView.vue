@@ -54,7 +54,10 @@
             </el-select>
           </el-form-item>
           <el-form-item label="时间限制"><el-input-number v-model="form.timeLimitMs" :min="100" :step="100" /></el-form-item>
-          <el-form-item label="内存限制"><el-input-number v-model="form.memoryLimitMb" :min="16" :step="16" /></el-form-item>
+          <el-form-item label="内存限制">
+            <el-input-number v-model="form.memoryLimitMb" :min="16" :max="1024" :step="16" />
+            <span style="margin-left: 8px">至少 {{ minimumMemoryMb }} MB</span>
+          </el-form-item>
           <el-form-item label="描述">
             <div class="md-editor">
               <div class="md-pane">
@@ -124,7 +127,7 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, reactive, ref } from 'vue'
+import { computed, onMounted, reactive, ref } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { pageProblems, getProblem, createProblem, updateProblem, deleteProblem, type Problem } from '@/api/problem'
 import MarkdownPreview from '@/components/MarkdownPreview.vue'
@@ -154,6 +157,8 @@ const form = reactive({
   languages: ['c', 'cpp', 'java', 'python3', 'js'] as string[],
   enabled: true,
 })
+const minimumMemoryMb = computed(() =>
+  form.languages.some((language) => language === 'java' || language === 'js') ? 64 : 16)
 
 async function load() {
   loading.value = true
@@ -221,8 +226,8 @@ async function save() {
     ElMessage.warning('时间限制必须大于 0')
     return
   }
-  if (!form.memoryLimitMb || form.memoryLimitMb <= 0) {
-    ElMessage.warning('内存限制必须大于 0')
+  if (!form.memoryLimitMb || form.memoryLimitMb < minimumMemoryMb.value) {
+    ElMessage.warning(`所选语言要求至少 ${minimumMemoryMb.value} MB 内存`)
     return
   }
   if (!form.difficulty) {

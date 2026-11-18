@@ -48,7 +48,8 @@ public class ResultWriter {
                 result.getStatus().getCode(),
                 result.getTimeUsedMs(),
                 result.getMemoryUsedKb(),
-                result.getErrorInfo());
+                result.getErrorInfo(),
+                result.getTotalCases());
 
         if (updated == 0) {
             log.info("terminal or stale judge lease, skip result: submission={}", submissionId);

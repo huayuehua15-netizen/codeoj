@@ -6,6 +6,7 @@ import com.codeoj.judge.config.JudgeProperties;
 import com.codeoj.judge.core.*;
 import com.codeoj.judge.core.guard.SemaphoreGuard;
 import com.codeoj.judge.core.result.ResultWriter;
+import com.codeoj.judge.core.sandbox.RetryableSandboxException;
 import com.codeoj.judge.event.ResultEventPublisher;
 import com.codeoj.judge.mapper.SubmissionMapper;
 import com.rabbitmq.client.Channel;
@@ -94,6 +95,25 @@ class JudgeConsumerReliabilityTest {
         consumer.onMessage(message(false), channel);
         verify(engine, never()).run(any());
         verify(writer).save(eq(7L), anyString(), argThat(r -> r.getStatus() == SubmissionStatus.SYSTEM_ERROR));
+    }
+    @Test void temporaryDockerFailurePersistsRetryBeforeAckWithoutFinalizing() throws Exception {
+        when(engine.run(any())).thenThrow(new RetryableSandboxException(new java.io.IOException("docker offline")));
+        when(mapper.deferClaim(eq(7L), anyString(), eq(5))).thenReturn(1);
+        consumer.onMessage(message(false), channel);
+        var order = inOrder(mapper, channel);
+        order.verify(mapper).deferClaim(eq(7L), anyString(), eq(5));
+        order.verify(channel).basicAck(1, false);
+        verifyNoInteractions(writer, leaderboard);
+        verify(events, never()).publishFinished(any());
+    }
+    @Test void repeatedDockerFailureFinishesAsSystemErrorAtAttemptLimit() throws Exception {
+        mapper.selectById(7L).setJudgeAttempts(3);
+        when(engine.run(any())).thenThrow(new RetryableSandboxException(new java.io.IOException("docker offline")));
+        consumer.onMessage(message(false), channel);
+        verify(writer).save(eq(7L), anyString(), argThat(result ->
+                result.getStatus() == SubmissionStatus.SYSTEM_ERROR && result.getErrorInfo().contains("重试次数")));
+        verify(mapper, never()).deferClaim(anyLong(), anyString(), anyInt());
+        verify(channel).basicAck(1, false);
     }
     @Test void malformedMessageIsDeadLetteredWithoutClaim() throws Exception {
         consumer.onMessage(new Message("bad".getBytes(StandardCharsets.UTF_8), message(false).getMessageProperties()), channel);

@@ -28,6 +28,7 @@ import static org.mockito.ArgumentMatchers.*;
 class SubmissionDispatchTest {
     SubmissionMapper submissions = mock(SubmissionMapper.class);
     ProblemMapper problems = mock(ProblemMapper.class);
+    TestCaseMapper testCases = mock(TestCaseMapper.class);
     JudgeDispatcher dispatcher = mock(JudgeDispatcher.class);
     PushEventPublisher pushes = mock(PushEventPublisher.class);
     RecordingTransactionManager transactions = new RecordingTransactionManager();
@@ -41,6 +42,8 @@ class SubmissionDispatchTest {
         Problem problem = new Problem();
         problem.setEnabled(true);
         problem.setLanguages(List.of("c"));
+        problem.setTimeLimitMs(1000);
+        problem.setMemoryLimitMb(256);
         when(problems.selectById(3L)).thenReturn(problem);
         when(submissions.insert(any(Submission.class))).thenAnswer(call -> {
             assertTrue(TransactionSynchronizationManager.isActualTransactionActive(),
@@ -48,7 +51,7 @@ class SubmissionDispatchTest {
             call.<Submission>getArgument(0).setId(7L);
             return 1;
         });
-        service = new SubmissionServiceImpl(submissions, problems, mock(JudgeCaseMapper.class),
+        service = new SubmissionServiceImpl(submissions, problems, mock(JudgeCaseMapper.class), testCases,
                 mock(RateLimiter.class), lock, dispatcher, pushes, transactionTemplate);
         ReflectionTestUtils.setField(service, "maxCodeBytes",65536);
         ReflectionTestUtils.setField(service, "submitPerMinute",6);
@@ -56,6 +59,26 @@ class SubmissionDispatchTest {
         dto.setProblemId(3L);
         dto.setLanguage("c");
         dto.setCode("int main(){}");
+    }
+    @Test void acceptanceStoresAnImmutableOrderedSnapshotWithTheSubmission() {
+        TestCase first = new TestCase(); first.setInput("一\r\n"); first.setExpectedOutput("first");
+        TestCase second = new TestCase(); second.setInput(""); second.setExpectedOutput("second");
+        when(testCases.listJudgeCases(eq(3L), anyInt())).thenReturn(List.of(first, second));
+        var payload = ArgumentCaptor.forClass(byte[].class);
+        var key = ArgumentCaptor.forClass(String.class);
+        var row = ArgumentCaptor.forClass(Submission.class);
+        service.submit(new LoginUser(2L, 0, "jti"), dto);
+        var order = inOrder(submissions);
+        order.verify(submissions).insertJudgeSnapshot(key.capture(), payload.capture());
+        order.verify(submissions).insert(row.capture());
+        first.setExpectedOutput("edited");
+        var snapshot = com.codeoj.common.model.JudgeSnapshot.decode(
+                new String(payload.getValue(), java.nio.charset.StandardCharsets.UTF_8));
+        assertEquals(List.of("first", "second"), snapshot.cases().stream()
+                .map(com.codeoj.common.model.JudgeSnapshot.OneCase::expectedOutput).toList());
+        assertEquals("一\r\n", snapshot.cases().get(0).input());
+        assertEquals(2, row.getValue().getTotalCases());
+        assertEquals(key.getValue(), row.getValue().getJudgeSnapshotKey());
     }
 
     @Test void actualTransactionCommitsBeforeQueuedPushThenMqAndReturnsNumericStatus() {

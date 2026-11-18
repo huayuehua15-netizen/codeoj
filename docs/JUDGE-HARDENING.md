@@ -1,5 +1,7 @@
 # A 评测链路交接说明
 
+> 2026-11-18 评测复测：当前版本记录 RabbitMQ 确认，修复重复补发与 Docker 临时故障重试，并在提交时冻结用例。五语言镜像已重建并通过实际判题。升级已有库需执行 [20261118 迁移](../sql/migrations/20261118_judge_dispatch_snapshot.sql)，然后同时启用新 server 和 judge。部署详情见 [当前评测契约](./CONTRACT.md)。
+
 > 最新兼容复核：已基于 dev 72a9c2e 保留 B 新功能，并通过 61 项 Java 回归与真实接口验证；跨成员改动和时间约定见 [JUDGE-COMPATIBILITY.md](./JUDGE-COMPATIBILITY.md)。下文验证数字记录初次修复，最新批次以兼容报告为准。
 
 > 更新日期：2026-11-16 ｜ 适用当前修复分支

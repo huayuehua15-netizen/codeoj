@@ -28,6 +28,10 @@ spring:
     username: ${RABBITMQ_USER:guest}
     password: ${RABBITMQ_PASSWORD:guest}
     virtual-host: /
+    publisher-confirm-type: correlated
+    publisher-returns: true
+    template:
+      mandatory: true
     listener:
       simple:
         # 公平分发 + 手动 ACK（论文 4.6：prefetch=1 保证任务按实际处理能力分配并形成背压）
