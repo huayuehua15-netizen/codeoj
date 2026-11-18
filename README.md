@@ -130,7 +130,14 @@ python3 -m unittest discover -s tools/tests -v  # Linux/Git Bash 环境下检查
 cd oj-web && npm ci && npm run build          # Node22+
 ```
 
-`.github/workflows/ci.yml` 在推送和 PR 时执行后端测试、Python 工具检查及前端构建；本地通过 `git config core.hooksPath .githooks` 启用推送检查。推 dev 时要求工作区干净、构建提交与待推提交一致；缺工具或失败会拒绝推送。配置文件随本次修改交付，尚未替团队推送或设置 GitHub 分支保护。
+`.github/workflows/ci.yml` 在推送和 PR 时执行后端测试、Python 工具检查及前端构建；本地通过 `git config core.hooksPath .githooks` 启用推送检查。推 dev 时要求工作区干净、构建提交与待推提交一致；缺工具或失败会拒绝推送。
+
+> ⚠️ **克隆后必做一步**：在仓库根目录执行 `git config core.hooksPath .githooks`。
+> 不执行的话提交格式检查和推 dev 构建检查**都不会生效**。这条配置存在本地 `.git/config`，
+> 不随仓库分发，所以别人配过不代表你配过。验证：`git config --get core.hooksPath` 应输出 `.githooks`。
+> 详见 [协作规范 §3.0](docs/COLLABORATION.md)。
+
+> 云端检查是否强制合并仍由仓库分支保护设置决定，本地钩子不能替代云端检查。
 
 ## 管理员账号
 

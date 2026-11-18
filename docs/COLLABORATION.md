@@ -68,6 +68,30 @@
 
 为什么可以两个人都合？因为**拦住坏代码的不再是人，是 hook**。
 
+> ### ⚠️ 第一次拉下代码，先跑这一行
+>
+> ```bash
+> git config core.hooksPath .githooks
+> ```
+>
+> **不跑这行，两个钩子都不会生效**：提交格式不对不会被拦，推 `dev` 也不会自动构建。
+> 也就是说所有保护全部失效，等于没有规范。
+>
+> 仓库根目录执行，每条克隆/每台机器**只需跑一次**（配置存在 `.git/config` 里，不随仓库走，
+> 所以 A 配了不等于你配了）。
+>
+> 检查有没有配上：
+>
+> ```bash
+> git config --get core.hooksPath
+> ```
+>
+> - 输出 `.githooks` → 已启用 ✅
+> - 什么都没有输出 → **没启用**，按上面那行补上
+>
+> Windows 上用 GitHub Desktop 的话，在仓库目录右键「Open in Terminal」，或开 PowerShell
+> `cd` 到项目目录再执行。
+
 > 2026-11-17 修订：原规则是「dev 只由成员 B 合并」。实际跑下来发现 A 写完必须等人，
 > B 不在线功能就一直挂着，双人毕设里不划算。现在放开 dev 合并权，
 > 改用 `.githooks/pre-push` 在推送时自动跑构建，**失败直接拒绝推送**——
@@ -214,8 +238,11 @@ git push origin dev            # ← hook 会自动构建，通过才推得上�
 git config core.hooksPath .githooks
 ```
 
-> Windows 上用 GitHub Desktop 的话，在仓库目录右键「Open in Terminal」再执行这条。
-> 不启用也能正常提交，但推送 `dev` 时就没有构建保护了——**强烈建议启用**。
+> 🚨 **这一步不是可选项。** 不跑这条命令，下面两个钩子全部不生效——
+> 提交乱写不会被拦，`dev` 推坏代码也不会被拦。项目没有 CI 强制兜底，
+> **这两个钩子是唯一的自动保护**（详见 §3.0 开头的红框）。
+>
+> 已经拉过代码但没配过的，现在补一次就行，不用重新克隆。
 
 **这条命令同时启用两个钩子**：
 
@@ -223,6 +250,14 @@ git config core.hooksPath .githooks
 |---|---|---|
 | `.githooks/pre-push` | 推 `dev` 之前 | 后端/前端构建失败（`dev` 必须随时能跑） |
 | `.githooks/commit-msg` | 每次 `git commit` | 提交信息格式不对、带 BOM |
+
+> **怎么验证真的生效了？** 随便造一个不合法提交试一下：
+>
+> ```bash
+> git commit --allow-empty -m "test"     # 应该被拒绝，并提示「格式不合规」
+> ```
+>
+> 被拒绝了就说明钩子在跑；如果提交成功了，说明 `core.hooksPath` 没配好，回去检查。
 
 `commit-msg` 会拒绝这几种情况，并直接告诉你怎么改：
 
