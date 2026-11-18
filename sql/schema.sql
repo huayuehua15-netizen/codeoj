@@ -103,7 +103,13 @@ CREATE TABLE IF NOT EXISTS `submission` (
   -- 竞赛排名：题目集 IN (...) + 时间窗 BETWEEN，按时间升序扫描
   KEY `idx_submission_problem_created` (`problem_id`, `created_at`),
   -- 个人统计/趋势：user_id + created_at 范围聚合
-  KEY `idx_submission_user_created` (`user_id`, `created_at`)
+  KEY `idx_submission_user_created` (`user_id`, `created_at`),
+  -- 排行榜对账 acCountByUser：WHERE status=2 GROUP BY user_id, COUNT(DISTINCT problem_id)
+  -- 三列覆盖索引使该聚合为索引内扫描，无需回表（review P2-20）
+  KEY `idx_submission_status_user` (`status`, `user_id`, `problem_id`),
+  -- 课程完成统计 completionStats：JOIN s.problem_id = cp.problem_id 后
+  -- COUNT(DISTINCT s.user_id)，(problem_id, user_id) 免去逐行回表取 user_id
+  KEY `idx_submission_problem_user` (`problem_id`, `user_id`)
 ) ENGINE = InnoDB COMMENT = '提交记录表';
 
 -- ---------------------------------------------------------------------

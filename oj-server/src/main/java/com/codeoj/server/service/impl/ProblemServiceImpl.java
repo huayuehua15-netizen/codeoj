@@ -4,20 +4,25 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.codeoj.common.entity.Problem;
 import com.codeoj.common.entity.TestCase;
+import com.codeoj.common.enums.Language;
 import com.codeoj.common.exception.BizException;
 import com.codeoj.common.result.ResultCode;
 import com.codeoj.server.dto.ProblemFormDTO;
 import com.codeoj.server.mapper.ProblemMapper;
 import com.codeoj.server.mapper.TestCaseMapper;
 import com.codeoj.server.service.ProblemService;
+import com.codeoj.server.util.PageUtils;
 import com.codeoj.server.vo.ProblemListItemVO;
 import com.codeoj.server.vo.ProblemOverviewVO;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * 题目服务实现（论文表 3-3：题目增删改查与上下架）。
@@ -67,7 +72,9 @@ public class ProblemServiceImpl implements ProblemService {
                 Problem::getSubmitCount, Problem::getAcceptedCount, Problem::getEnabled,
                 Problem::getCreatedAt, Problem::getUpdatedAt);
         wrapper.orderByAsc(Problem::getId);
-        Page<Problem> result = problemMapper.selectPage(new Page<>(page, size), wrapper);
+        // page/size 下限由 PageUtils 统一夹取（review P2-25）：
+        // MyBatis-Plus 的 maxLimit 只封上限，page=0 会算出负 offset
+        Page<Problem> result = problemMapper.selectPage(PageUtils.of(page, size), wrapper);
 
         Page<ProblemListItemVO> voPage =
                 new Page<>(result.getCurrent(), result.getSize(), result.getTotal());
@@ -96,6 +103,7 @@ public class ProblemServiceImpl implements ProblemService {
 
     @Override
     public Long create(ProblemFormDTO form) {
+        requireAllowedLanguages(form.getLanguages());
         Problem p = new Problem();
         p.setTitle(form.getTitle());
         p.setDescription(form.getDescription());
@@ -116,6 +124,7 @@ public class ProblemServiceImpl implements ProblemService {
 
     @Override
     public void update(Long id, ProblemFormDTO form) {
+        requireAllowedLanguages(form.getLanguages());
         Problem p = getById(id);
         p.setTitle(form.getTitle());
         p.setDescription(form.getDescription());
@@ -128,6 +137,33 @@ public class ProblemServiceImpl implements ProblemService {
         p.setEnabled(form.getEnabled());
         p.setUpdatedAt(LocalDateTime.now());
         problemMapper.updateById(p);
+    }
+
+    /**
+     * 语言白名单校验（review P2-40）。
+     *
+     * <p><b>为什么 DTO 上的 {@code @Pattern} 还不够</b>：DTO 里的正则
+     * {@code "c|cpp|java|python3|js"} 是把 {@link Language} 的 code 抄了一遍，
+     * 两处各写一份就一定会漂移——新增语言时改了枚举忘了改正则（或反过来），
+     * 数据库里就会出现 {@code languages=[\"go\"]} 这种"题目允许、判题镜像却不存在"的题，
+     * 学生点提交只会拿到一个必然失败的判题任务。这里以枚举为唯一权威再做一次业务校验。
+     *
+     * <p>非空校验同样放在服务层：{@code @NotEmpty} 只在走 {@code @Valid} 的 HTTP 入口生效，
+     * 其它调用方（测试、未来的批量导入）绕开校验器时会写出一个谁都不能提交的题。
+     */
+    private static void requireAllowedLanguages(List<String> languages) {
+        if (languages == null || languages.isEmpty()) {
+            throw new BizException(ResultCode.BAD_REQUEST.getCode(), "语言不能为空");
+        }
+        Set<String> allowed = Arrays.stream(Language.values())
+                .map(Language::getCode)
+                .collect(Collectors.toSet());
+        for (String code : languages) {
+            if (code == null || !allowed.contains(code)) {
+                throw new BizException(ResultCode.BAD_REQUEST.getCode(),
+                        "不支持的语言：" + code + "，可选值 " + allowed);
+            }
+        }
     }
 
     @Override

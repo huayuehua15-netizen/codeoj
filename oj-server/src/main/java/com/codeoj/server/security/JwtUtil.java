@@ -3,6 +3,8 @@ package com.codeoj.server.security;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
 import javax.crypto.SecretKey;
@@ -18,6 +20,8 @@ import java.util.UUID;
  */
 @Component
 public class JwtUtil {
+
+    private static final Logger log = LoggerFactory.getLogger(JwtUtil.class);
 
     private final SecretKey key;
     private final long expireMs;
@@ -55,6 +59,10 @@ public class JwtUtil {
         try {
             return Optional.of(parse(token));
         } catch (Exception e) {
+            // 用 debug 而不是 warn：JwtAuthFilter 对每个请求都会走一次 tryParse，
+            // 匿名请求与过期令牌都是正常流量，warn 会把它们刷成告警噪音，
+            // 真正需要排查签名/过期问题时把 logging.level.com.codeoj 调成 debug 即可。
+            log.debug("jwt parse failed: {}", e.getMessage());
             return Optional.empty();
         }
     }

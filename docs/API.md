@@ -1,6 +1,6 @@
 # CodeOJ 接口文档（前后端对接契约）
 
-> 版本：v1.6（2026-11-17）｜ 兼容原字段，补齐全部难度统计、在架题目覆盖与全题库标签
+> 版本：v1.7（2026-11-18）｜ 队列监控 `cachedAt` 更名为 `queriedAt`（语义为"本次查询时间"，此前名为"缓存时间"但实际填查询时刻，见 review P2-35）；时间示例同步修正为 §0.1 的 `yyyy-MM-dd HH:mm:ss` 口径
 > 适用：前端（oj-web）按此文档先行开发，后端按此文档补全实现。
 > 标注 ⚠️ 的接口：骨架已定契约，业务实现于第二阶段完成（前端可先按 mock 开发）。
 
@@ -404,10 +404,10 @@ Query 参数：`page`（默认 1，最小 1）、`size`（默认 20，限制在 
 响应 `data`（QueueStatusVO，论文表 3-3 运维监控）：
 
 ```json
-{ "backlog": 5, "judgedToday": 128, "judgeInstances": 2, "cachedAt": "2026-11-13T08:10:00Z" }
+{ "backlog": 5, "judgedToday": 128, "judgeInstances": 2, "queriedAt": "2026-11-13 08:10:00" }
 ```
 
-`backlog` 为 RabbitMQ `oj.judge.queue` 积压量（Redis 缓存 30s）；`judgeInstances` 为在线判题实例数——oj-judge 每 20s 向 Redis 写心跳键（TTL 30s，掉线自动消失），`--scale oj-judge=4` 扩容后自动可见。
+`backlog` 为 RabbitMQ `oj.judge.queue` 积压量（Redis 缓存 30s，命中缓存时返回的是上一次探询结果）；`judgeInstances` 为在线判题实例数——oj-judge 每 20s 向 Redis 写心跳键（TTL 30s，掉线自动消失），`--scale oj-judge=4` 扩容后自动可见；`queriedAt` 为本次查询时刻（§0.1 格式），与 `backlog` 的缓存时间解耦，避免误读为"积压量的采集时间"。
 
 ### 6.2 课程实验 `/api/admin/courses`（管理员）
 

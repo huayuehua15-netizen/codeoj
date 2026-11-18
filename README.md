@@ -117,7 +117,7 @@ docker compose up -d --scale oj-judge=4
 
 `JUDGE_CONCURRENCY` 与 `MAX_PARALLEL_CONTAINERS` 默认均为 4，分别限制消费线程和容器信号量，稳态并发受两者较小值限制。调整后核查实际线程与容器峰值，再采集吞吐；不要沿用旧报告的槽位推算。`/judge/work` 在宿主机与判题服务中必须对应同一路径。
 
-首次启动会等待 MySQL TCP 认证、Redis 和 MQ 就绪。旧库升级还需按现有索引状态执行 `sql/migration-20261116-indexes.sql`；若曾执行早期租约迁移，使用 `sql/migrations/20261116_dispatch_utc_default.sql` 修正默认值，不重复添加字段。镜像自检和真实提交不能由演示数据替代。
+首次启动会等待 MySQL TCP 认证、Redis 和 MQ 就绪。旧库升级还需按现有索引状态执行 `sql/migration-20261116-indexes.sql`；若曾执行早期租约迁移，使用 `sql/migrations/20261116_dispatch_utc_default.sql` 修正默认值，不重复添加字段。[排行对账与课程统计覆盖索引](sql/migrations/20261118_submission_covering_indexes.sql) 可重复执行，旧库建议补跑（新库已含）。镜像自检和真实提交不能由演示数据替代。
 
 若沿用早期只有七张表的数据库，备份并停止旧服务后，还需在目标数据库执行 [业务结构补齐迁移](sql/migrations/20261117_legacy_business_schema.sql)。它补齐 `user.status`、`problem.tags`、竞赛/公告/收藏表，并兼容旧 `nickname` 必填列；保留已有数据且可重复执行。直接导入 `schema.sql` 不会给已存在的表增加缺失字段。
 

@@ -31,6 +31,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 /**
  * 竞赛服务实现（论文 7.2 展望落地）。
@@ -135,13 +137,21 @@ public class ContestServiceImpl implements ContestService {
         List<Contest> contests = contestMapper.selectList(
                 new LambdaQueryWrapper<Contest>().orderByDesc(Contest::getStartTime));
         LocalDateTime now = LocalDateTime.now();
+        // 题目数一次 GROUP BY 取全量再内存回填（review P2-17）：原先在循环里逐场
+        // selectCount，比赛数增长后接口耗时线性上涨。没有任何题目的比赛不会出现在
+        // 聚合结果里，getOrDefault 兜成 0。
+        Map<Long, Integer> problemCounts = new HashMap<>();
+        for (ContestMapper.ContestProblemCountRow row : contestMapper.countProblemsGrouped()) {
+            if (row.getContestId() != null) {
+                problemCounts.put(row.getContestId(),
+                        row.getProblemCount() == null ? 0 : row.getProblemCount());
+            }
+        }
         List<ContestVO> result = new ArrayList<>();
         for (Contest c : contests) {
-            Long count = contestProblemMapper.selectCount(new LambdaQueryWrapper<ContestProblem>()
-                    .eq(ContestProblem::getContestId, c.getId()));
             result.add(new ContestVO(c.getId(), c.getTitle(), c.getDescription(),
                     c.getStartTime(), c.getEndTime(), c.statusOf(now),
-                    count == null ? 0 : count.intValue()));
+                    problemCounts.getOrDefault(c.getId(), 0)));
         }
         return result;
     }
@@ -157,9 +167,17 @@ public class ContestServiceImpl implements ContestService {
                         .eq(ContestProblem::getContestId, id)
                         .orderByAsc(ContestProblem::getSortOrder));
 
+        // 一次 selectBatchIds 取回全部题目（review P2-18）：原先每题一次 selectById，
+        // 单场比赛十几题就是十几次往返。批量接口不保证返回顺序，所以先建 id → Problem
+        // 的 Map，再按 cps 的 sortOrder 顺序组装，题号顺序由 cps 决定而不依赖 IN 的返回次序。
+        List<Long> problemIds = cps.stream().map(ContestProblem::getProblemId).toList();
+        Map<Long, Problem> problems = problemIds.isEmpty() ? Map.of()
+                : problemMapper.selectBatchIds(problemIds).stream()
+                        .collect(Collectors.toMap(Problem::getId, Function.identity()));
+
         List<ContestDetailVO.Item> items = new ArrayList<>();
         for (ContestProblem cp : cps) {
-            Problem p = problemMapper.selectById(cp.getProblemId());
+            Problem p = problems.get(cp.getProblemId());
             if (p != null) {
                 items.add(new ContestDetailVO.Item(
                         labelOf(cp.getSortOrder()), p.getId(), p.getTitle(), p.getDifficulty()));
@@ -227,7 +245,8 @@ public class ContestServiceImpl implements ContestService {
                 long minutes = Duration.between(c.getStartTime(), acEntry.getValue()).toMinutes();
                 long wrong = pu.wrongCount().getOrDefault(acEntry.getKey(), 0);
                 penaltyMinutes += minutes + wrong * WRONG_PENALTY_MINUTES;
-                parts.add(label + " ✅" + minutes + "min" + (wrong > 0 ? " (-" + wrong + ")" : ""));
+                // 纯文本标记，不用 emoji（58e01db 全站去 emoji）：该字符串由前端 mono 原样渲染
+                parts.add(label + " AC " + minutes + "min" + (wrong > 0 ? " (-" + wrong + ")" : ""));
             }
             int wrongNoAc = pu.wrongCount().values().stream().mapToInt(Integer::intValue).sum();
             if (wrongNoAc > 0 && solved < labels.size()) {

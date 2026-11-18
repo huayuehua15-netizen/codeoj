@@ -1,6 +1,5 @@
 package com.codeoj.server.config;
 
-import com.codeoj.common.result.R;
 import com.codeoj.common.result.ResultCode;
 import com.codeoj.server.security.JwtAuthFilter;
 import jakarta.servlet.http.HttpServletResponse;

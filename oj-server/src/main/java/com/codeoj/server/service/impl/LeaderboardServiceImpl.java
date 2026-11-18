@@ -5,6 +5,7 @@ import com.codeoj.common.entity.User;
 import com.codeoj.server.mapper.LeaderboardStatsMapper;
 import com.codeoj.server.mapper.UserMapper;
 import com.codeoj.server.service.LeaderboardService;
+import com.codeoj.server.util.PageUtils;
 import com.codeoj.server.vo.LeaderboardVO;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -16,6 +17,7 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -52,8 +54,11 @@ public class LeaderboardServiceImpl implements LeaderboardService {
 
     @Override
     public LeaderboardVO page(long page, long size) {
-        page = Math.max(1, page);
-        size = Math.min(100, Math.max(1, size));
+        // page/size 归一（review P2-22）：page=0 会让下面的分页换算得到负下标，
+        // 而 Redis 的 reverseRangeWithScores(key,-20,-1) 是「从末尾数第 20 个」，
+        // 不会报错只会返回一段完全无关的数据；size=0 则静默返回空页。
+        page = PageUtils.page(page);
+        size = PageUtils.size(size);
         Long zsetSize = redis.opsForZSet().size(RedisKeys.LEADERBOARD_AC);
         long total = zsetSize == null ? 0 : zsetSize;
 
@@ -79,9 +84,24 @@ public class LeaderboardServiceImpl implements LeaderboardService {
             return new ArrayList<>();
         }
 
-        List<Long> userIds = all.stream()
-                .map(t -> Long.valueOf(String.valueOf(t.getValue())))
-                .toList();
+        // 先解析出干净的 userId 列表：脏 member 必须在使用前剔除，
+        // 否则它会一路传进 selectBatchIds 的 IN 列表（review P2-23）
+        List<ZSetOperations.TypedTuple<String>> rows = new ArrayList<>(all.size());
+        List<Long> userIds = new ArrayList<>(all.size());
+        Set<Long> seen = new HashSet<>();
+        for (ZSetOperations.TypedTuple<String> tuple : all) {
+            Long userId = parseMember(tuple.getValue());
+            if (userId == null) {
+                continue;
+            }
+            rows.add(tuple);
+            if (seen.add(userId)) {
+                userIds.add(userId);
+            }
+        }
+        if (rows.isEmpty() || userIds.isEmpty()) {
+            return new ArrayList<>();
+        }
 
         // 一次查出：用户信息、提交统计、首次 AC 时间
         Map<Long, User> users = userMapper.selectBatchIds(userIds).stream()
@@ -98,9 +118,9 @@ public class LeaderboardServiceImpl implements LeaderboardService {
         // 组装 + 计算同分排序键
         record Ranked(long acCount, LocalDateTime achievedAt, Long userId, LeaderboardVO.Item item) { }
 
-        List<Ranked> ranked = new ArrayList<>(all.size());
-        for (var tuple : all) {
-            Long userId = Long.valueOf(String.valueOf(tuple.getValue()));
+        List<Ranked> ranked = new ArrayList<>(rows.size());
+        for (var tuple : rows) {
+            Long userId = parseMember(tuple.getValue());
             long acCount = tuple.getScore() == null ? 0 : tuple.getScore().longValue();
             // 首次达成"当前解题数"的时刻：把该用户的首次 AC 时间升序排，取第 acCount 个
             LocalDateTime achievedAt = null;
@@ -148,7 +168,27 @@ public class LeaderboardServiceImpl implements LeaderboardService {
         return pageItems;
     }
 
-    /** 顶部统计条：人数 / 最高解题数 / 全站提交 / 全站通过率 */
+    /**
+     * 解析 ZSet member 为 userId，脏数据返回 null（review P2-23）。
+     *
+     * <p><b>为什么要兜这个</b>：ZSet 里的 member 在历史版本中曾被写成带引号的 JSON 串
+     * （{@code "\"40\""}），这类残留值会让 {@code Long.valueOf} 抛
+     * {@link NumberFormatException}，进而把整个排行榜变成 50000。
+     * 一条脏 member 不该让所有人看不到榜——跳过并记日志，交给
+     * {@code LeaderboardReconcileTask} 在下一轮对账时清掉。
+     */
+    private static Long parseMember(String raw) {
+        try {
+            return Long.valueOf(raw);
+        } catch (NumberFormatException e) {
+            log.warn("skip dirty leaderboard member: {}", raw);
+            return null;
+        }
+    }
+
+    /**
+     * 顶部统计条：人数 / 最高解题数 / 全站提交 / 全站通过率
+     */
     private LeaderboardVO.Summary buildSummary() {
         LeaderboardStatsMapper.OverviewRow ov = statsMapper.overview();
         long solverCount = ov != null && ov.getSolverCount() != null ? ov.getSolverCount() : 0;
@@ -168,6 +208,15 @@ public class LeaderboardServiceImpl implements LeaderboardService {
         return new LeaderboardVO.Summary(solverCount, maxAc, totalSubmit, rate);
     }
 
+    /**
+     * AC 时更新排行（论文 5.6）：ZINCRBY oj:leaderboard:ac。
+     *
+     * <p><b>保留但不由 oj-server 调用</b>：ZSet 的写入是 oj-judge 的职责
+     * （CONTRACT §7：判题结果落库后由判题侧投影排行榜）。oj-server 只读该 ZSet，
+     * 对账任务也只会覆盖校正而不是累加，所以这里的方法在本服务内没有调用点。
+     * 保留它是为了维持接口语义的完整性（排行榜的"写"能力属于同一领域），
+     * 同时避免日后有人以为"服务端没有写入口"而另外造一个重复实现。
+     */
     @Override
     public void incr(Long userId) {
         // AC 时更新排行（论文 5.6）：ZINCRBY oj:leaderboard:ac
