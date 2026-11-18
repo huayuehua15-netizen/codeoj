@@ -1,6 +1,6 @@
 # CodeOJ 接口文档（前后端对接契约）
 
-> 版本：v1.7（2026-11-18）｜ 队列监控 `cachedAt` 更名为 `queriedAt`（语义为"本次查询时间"，此前名为"缓存时间"但实际填查询时刻，见 review P2-35）；时间示例同步修正为 §0.1 的 `yyyy-MM-dd HH:mm:ss` 口径
+> 版本：v1.8（2026-11-19）｜ 个人中心功能扩展：LoginVO 增加 `avatar`/`signature` 字段；新增 `PUT /api/auth/profile`（签名）与 `PUT /api/auth/avatar`（头像，data URL 上传）；静态资源 `GET /uploads/**` 公开可读。v1.7：队列监控 `cachedAt` 更名为 `queriedAt`
 > 适用：前端（oj-web）按此文档先行开发，后端按此文档补全实现。
 > 标注 ⚠️ 的接口：骨架已定契约，业务实现于第二阶段完成（前端可先按 mock 开发）。
 
@@ -114,15 +114,42 @@
   "username": "张三丰",
   "email": "zhangsan@example.com",
   "role": 0,
+  "avatar": "/uploads/avatars/3-1763500000000.webp",
+  "signature": "每天进步一点点。",
   "createdAt": "2026-11-15 08:00:00"
 }
 ```
+
+`avatar` 为站点内相对路径（前端直接用于 `<img src>`，dev 由 Vite 代理、生产由 Nginx 反代 `/uploads`）；未设置头像时为 `null`，前端回退到首字母占位头像。`signature` 未设置时为 `null`。
 
 ### 1.5 邮箱修改 `PUT /api/auth/info`（登录）
 
 请求体：`{ "email": "new@example.com" }`（@Valid 校验邮箱格式）。响应 `data: null`。
 
 > 个人信息维护（论文表 3-1）：用户名与角色不可变更，仅邮箱可改。
+
+### 1.5a 签名修改 `PUT /api/auth/profile`（登录，v1.8 新增）
+
+请求体：`{ "signature": "每天进步一点点。" }`。响应 `data: null`。
+
+| 校验 | 说明 |
+|---|---|
+| signature | trim 后 1-200 字，超长或全空返回 40000 |
+
+### 1.5b 头像上传 `PUT /api/auth/avatar`（登录，v1.8 新增）
+
+请求体：`{ "dataUrl": "data:image/webp;base64,UklGRh..." }`（前端裁剪压缩后的 data URL）。
+
+响应 `data: { "avatar": "/uploads/avatars/3-1763500000000.webp" }`。
+
+| 校验 | 说明 |
+|---|---|
+| 格式 | 仅 `data:image/png`、`image/jpeg`、`image/webp`，且按魔数二次校验（防止改后缀绕过） |
+| 大小 | 解码后 ≤ 300 KB |
+| 存储 | 服务端生成文件名 `{userId}-{时间戳}.{ext}` 落盘到 `oj.upload.avatar-dir`，旧头像文件删除 |
+| 安全 | 客户端文件名永不参与落盘路径（防路径穿越）；目录由服务端创建 |
+
+头像静态读取：`GET /uploads/avatars/{file}` **无需登录**（公开可读），由 oj-server 静态映射到磁盘目录；部署时该目录需要持久卷（见 docker-compose 的 `data/server-uploads` 挂载）。
 
 ### 1.6 密码修改 `PUT /api/auth/password`（登录）
 
@@ -387,7 +414,7 @@ Query 参数：`page`（默认 1，最小 1）、`size`（默认 20，限制在 
 {
   "total": 25,
   "items": [
-    { "userId": 3, "username": "lisi", "acCount": 12, "rank": 1, "totalSubmit": 30, "acceptedSubmit": 20, "acceptRate": 66.7, "lastSubmitAt": "2026-11-17 15:00:00" }
+    { "userId": 3, "username": "lisi", "avatar": null, "acCount": 12, "rank": 1, "totalSubmit": 30, "acceptedSubmit": 20, "acceptRate": 66.7, "lastSubmitAt": "2026-11-17 15:00:00" }
   ],
   "summary": { "solverCount": 25, "maxAcCount": 12, "totalSubmit": 200, "overallAcceptRate": 60.0 }
 }

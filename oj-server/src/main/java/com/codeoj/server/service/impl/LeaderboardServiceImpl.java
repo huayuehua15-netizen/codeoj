@@ -141,6 +141,7 @@ public class LeaderboardServiceImpl implements LeaderboardService {
             LeaderboardVO.Item item = new LeaderboardVO.Item(
                     userId,
                     u != null ? u.getUsername() : null,
+                    u != null ? u.getAvatar() : null,
                     acCount,
                     0,
                     totalSubmit,

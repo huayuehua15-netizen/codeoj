@@ -13,6 +13,7 @@ import com.codeoj.server.security.LoginUser;
 import com.codeoj.server.security.TokenBlacklistService;
 import com.codeoj.server.service.AuthService;
 import com.codeoj.server.service.RateLimiter;
+import com.codeoj.server.util.AvatarDataUrl;
 import com.codeoj.server.vo.LoginVO;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -63,6 +64,13 @@ public class AuthServiceImpl implements AuthService {
     /** 注册按 IP 限流：次数/小时（API.md §1.1：10 次/小时） */
     @Value("${oj.rate-limit.register-per-hour:10}")
     private long registerPerHour;
+
+    /**
+     * 头像落盘目录（API.md v1.8 §1.5b）。相对路径基于进程工作目录；
+     * 部署时由 docker-compose 把持久卷挂到容器内同一路径。
+     */
+    @Value("${oj.upload.avatar-dir:uploads/avatars}")
+    private String avatarDir;
 
     public AuthServiceImpl(UserMapper userMapper,
                            PasswordEncoder passwordEncoder,
@@ -162,6 +170,8 @@ public class AuthServiceImpl implements AuthService {
                 .username(u.getUsername())
                 .email(u.getEmail())
                 .role(u.getRole())
+                .avatar(u.getAvatar())
+                .signature(u.getSignature())
                 .createdAt(u.getCreatedAt())
                 .build();
     }
@@ -177,6 +187,72 @@ public class AuthServiceImpl implements AuthService {
         u.setUpdatedAt(java.time.LocalDateTime.now());
         userMapper.updateById(u);
         log.info("email updated, userId={}", user.userId());
+    }
+
+    @Override
+    public void updateSignature(LoginUser user, String signature) {
+        // 签名 trim 后 1-200 字（API.md v1.8 §1.5a）；与库表 VARCHAR(200) 对齐
+        String sig = signature == null ? "" : signature.trim();
+        if (sig.isEmpty()) {
+            throw new BizException(ResultCode.BAD_REQUEST.getCode(), "签名不能为空");
+        }
+        if (sig.length() > 200) {
+            throw new BizException(ResultCode.BAD_REQUEST.getCode(), "签名不得超过 200 字");
+        }
+        User u = userMapper.selectById(user.userId());
+        if (u == null) {
+            throw new BizException(ResultCode.NOT_FOUND);
+        }
+        u.setSignature(sig);
+        u.setUpdatedAt(java.time.LocalDateTime.now());
+        userMapper.updateById(u);
+        log.info("signature updated, userId={}", user.userId());
+    }
+
+    @Override
+    public String updateAvatar(LoginUser user, String dataUrl) {
+        // 校验（API.md v1.8 §1.5b）：白名单类型 + 魔数 + 300KB，见 AvatarDataUrl
+        AvatarDataUrl.Image image = AvatarDataUrl.parse(dataUrl);
+        if (image == null) {
+            throw new BizException(ResultCode.BAD_REQUEST.getCode(),
+                    "头像仅支持 png/jpeg/webp 且不超过 300KB");
+        }
+        User u = userMapper.selectById(user.userId());
+        if (u == null) {
+            throw new BizException(ResultCode.NOT_FOUND);
+        }
+        // 文件名完全由服务端生成（userId-时间戳.扩展名）：客户端文件名永不参与路径，
+        // 从根上杜绝路径穿越与同名覆盖；先写盘成功，再更新数据库列。
+        java.nio.file.Path dir = java.nio.file.Path.of(avatarDir).toAbsolutePath().normalize();
+        String filename = user.userId() + "-" + System.currentTimeMillis() + "." + image.ext();
+        java.nio.file.Path target = dir.resolve(filename).normalize();
+        // normalize 后仍在目标目录内（双保险，防御配置被改成意外值）
+        if (!target.startsWith(dir)) {
+            throw new BizException(ResultCode.BAD_REQUEST.getCode(), "头像存储路径配置非法");
+        }
+        try {
+            java.nio.file.Files.createDirectories(dir);
+            java.nio.file.Files.write(target, image.bytes());
+        } catch (java.io.IOException e) {
+            log.error("avatar write failed, userId={}, dir={}", user.userId(), dir, e);
+            throw new BizException(ResultCode.BAD_REQUEST.getCode(), "头像保存失败，请稍后再试");
+        }
+        String url = "/uploads/avatars/" + filename;
+        // 删除旧头像文件（列更新失败时文件会残留，属于可接受的孤儿；反之则必须清理）
+        String oldAvatar = u.getAvatar();
+        if (oldAvatar != null && oldAvatar.startsWith("/uploads/avatars/")) {
+            try {
+                java.nio.file.Files.deleteIfExists(
+                        dir.resolve(oldAvatar.substring("/uploads/avatars/".length())).normalize());
+            } catch (java.io.IOException e) {
+                log.warn("old avatar cleanup failed, userId={}: {}", user.userId(), e.getMessage());
+            }
+        }
+        u.setAvatar(url);
+        u.setUpdatedAt(java.time.LocalDateTime.now());
+        userMapper.updateById(u);
+        log.info("avatar updated, userId={}, url={}", user.userId(), url);
+        return url;
     }
 
     @Override

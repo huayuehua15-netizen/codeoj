@@ -78,6 +78,11 @@ oj:
   # 提交代码大小上限（论文 4.4：≤64KB）
   submit:
     max-code-bytes: 65536
+  # 头像上传（API.md v1.8 §1.5b）：root-dir 是静态映射 /uploads/** 的根，
+  # avatar-dir 必须位于其下；部署时把持久卷挂到容器内该路径
+  upload:
+    root-dir: uploads
+    avatar-dir: uploads/avatars
 
 logging:
   level:

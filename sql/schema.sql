@@ -28,6 +28,8 @@ CREATE TABLE IF NOT EXISTS `user` (
   `email`      VARCHAR(100) DEFAULT NULL COMMENT '邮箱',
   `role`       TINYINT      NOT NULL DEFAULT 0 COMMENT '0=用户，1=管理员',
   `status`     TINYINT      NOT NULL DEFAULT 0 COMMENT '0=正常，1=封禁',
+  `avatar`     VARCHAR(255) DEFAULT NULL COMMENT '头像相对路径 /uploads/avatars/xxx',
+  `signature`  VARCHAR(200) DEFAULT NULL COMMENT '个性签名',
   `created_at` DATETIME     DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
   `updated_at` DATETIME     DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
   PRIMARY KEY (`id`),

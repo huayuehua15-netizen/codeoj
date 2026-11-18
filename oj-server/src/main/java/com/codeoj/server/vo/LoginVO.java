@@ -19,6 +19,10 @@ public class LoginVO {
     private String email;
     /** 0=用户，1=管理员 */
     private Integer role;
+    /** 头像相对路径（API.md v1.8），null=未设置 */
+    private String avatar;
+    /** 个性签名（API.md v1.8），null=未设置 */
+    private String signature;
     /** 注册时间（UTC） */
     private LocalDateTime createdAt;
 
@@ -29,6 +33,8 @@ public class LoginVO {
                 .username(user.getUsername())
                 .email(user.getEmail())
                 .role(user.getRole())
+                .avatar(user.getAvatar())
+                .signature(user.getSignature())
                 .createdAt(user.getCreatedAt())
                 .build();
     }

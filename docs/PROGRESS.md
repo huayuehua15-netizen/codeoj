@@ -13,7 +13,7 @@
 | 分工 | 方案 A（已固化）：成员 A = 评测链路（oj-judge real 引擎/judge-images）；成员 B = 业务与前端（oj-server/oj-web/联调/测试） |
 | 技术栈 | JDK17 / Spring Boot 3.2.5 / MyBatis-Plus / RabbitMQ / Redis / MySQL 8 / docker-java / Vue3+Vite+TS+Pinia+EP+Monaco / ECharts / SockJS+STOMP / Web Worker 沙箱 |
 | 仓库 | github.com/huayuehua15-netizen/codeoj ｜ 分支：**main**（发布快照）/ **dev**（集成）/ **niuzj**（成员 B 个人分支）/ feat/*（成员 A） |
-| 交付状态 | **B 侧功能 100% 交付 + 复审修复 + 三大数据页专业化 + 提交链路三页 UI 专业化 + judge_case 演示明细 + review 40 项建议落地（§19）**；A 侧 real 引擎待开工（材料就绪） |
+| 交付状态 | **B 侧功能 100% 交付 + 复审修复 + review 40 项建议落地（§19）+ 精密工具风换肤 + 个人中心头像/签名（§20）**；A 侧 real 引擎待开工（材料就绪） |
 
 ---
 
@@ -954,5 +954,51 @@ P2-3（`incr` 无调用点）**有意保留**：写入属 oj-judge 职责（CONT
 | P1 | 论文文档同步（§8 列表） |
 | P2 | JMeter 并发复测、恶意样例库 10 例、compose 部署验证（需 Linux/Docker 环境，本机 Docker 未启动） |
 | P3 | ESLint/Prettier 接入（已有 typecheck/test 兜底）、Pyodide 控制台、题解区 |
+
+---
+
+## 20. 精密工具风换肤 + 个人中心扩展（2026-11-19）
+
+### 20.1 全站换肤：AI 模板脸 → 精密工具风（`468032c`）
+
+用户反馈旧皮肤"AI 生成痕迹重"（靛蓝渐变横幅 + 玻璃拟态 + 全站胶囊圆角是三大模板味来源）。
+经三方向对齐后选定 **Linear/GitHub/Vercel 式精密工具风**，全站 14 文件重做皮肤：
+
+| 维度 | 旧 | 新 |
+|---|---|---|
+| 强调色 | 靛蓝渐变满天飞 | 全站唯一彩色 `#0969da`，语义色只进 7px 状态点 |
+| 层次 | 阴影 + hover 上浮 | 发丝边框深浅，卡片零阴影零动效 |
+| 字重/圆角 | 800 满天飞 / 胶囊 999px | 统一 600 / 芯片 4px 直角 |
+| 数据 | 不定 | 等宽字体 + tabular-nums（评测工具的基本素养） |
+| 登录页 | 双栏渐变品牌页 | 居中一栏式（词标 + 表单卡） |
+| 领奖台 | 渐变彩底行 | 2px 名次顶线 + 实色小方块名次 |
+
+实现杠杆：改 token 值 + 共享类，20+ 视图自动换肤；再清扫 8 个视图残留。
+期间用 node 脚本核对 71 处 token 引用零缺失（发现并修复头像取色引用已删 token）。
+**净删 254 行**——装饰代码变少本身就是方向的证明。
+
+### 20.2 个人中心扩展：自定义头像 + 签名（API.md v1.8）
+
+| 项 | 说明 |
+|---|---|
+| 数据 | `user` 表加 `avatar VARCHAR(255)`、`signature VARCHAR(200)`（schema + [可重复迁移](../sql/migrations/20261119_user_profile.sql)，本机库已执行） |
+| 契约 | API.md v1.8：LoginVO 加 `avatar`/`signature`；新增 `PUT /api/auth/profile`（签名）、`PUT /api/auth/avatar`（data URL 上传）；`GET /uploads/**` 公开静态读取；排行榜 Item 加 `avatar` |
+| 头像链路 | 前端 canvas 居中裁剪 256px → webp(85%) ≤几十 KB → data URL 上传 → 后端**白名单 MIME + 魔数二次校验 + 300KB 上限** → 服务端生成文件名落盘 → 旧头像文件清理 → 返回相对 URL |
+| 安全 | 客户端文件名永不参与路径（防穿越）；魔数防"改前缀冒充图片"；文件名 `{userId}-{ts}.{ext}` |
+| 静态映射 | `UploadResourceConfig`：/uploads/** → 磁盘目录（oj.upload.root-dir）；compose 加 `data/server-uploads` 持久卷 |
+| ⚠️ oj-common | `User` 实体加两字段（公共区）——**需知会成员 A**，代码为零行为变更，judge 侧不读这两列 |
+| 前端 | ProfileView 重写（资料头卡：头像 hover 更换遮罩 + 签名就地编辑 + 等宽 meta；账号安全双列；收藏用状态点）；顶栏/排行榜/领奖台接自定义头像（未设置回退首字母方头像） |
+
+### 20.3 验证（全绿，真实接口实测）
+
+| 检查 | 结果 |
+|---|---|
+| `mvn -pl oj-server test`（含 AvatarDataUrlTest 5 例：MIME 冒充/损坏 base64/超限/边界） | ✅ 43 pass |
+| 前端 build + typecheck + 18 单测 | ✅ |
+| 端到端：登录 → 签名中文写入/空签名拒绝 40000 → 头像上传 → 假 PNG 魔数拒绝 → info 回读 → `GET /uploads/...` 200 | ✅ 全通过 |
+| 排行榜响应含 `avatar` 字段 | ✅ |
+
+踩坑复现：Git Bash curl 发中文 body 是 GBK → 恰好落进 P2-29 新增的"请求体格式错误 40000"分支（修复前是 50000），
+用 `--data-binary @utf8.json` 复测通过；Windows 下运行中的 jar 被文件锁占用，重建前必须先停服务。
 
 ---

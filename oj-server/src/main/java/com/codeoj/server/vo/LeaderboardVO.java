@@ -34,6 +34,8 @@ public class LeaderboardVO {
     public static class Item {
         private Long userId;
         private String username;
+        /** 头像相对路径（API.md v1.8），null=未设置，前端回退首字母占位 */
+        private String avatar;
         /** AC 题数（ZSet score） */
         private long acCount;
         /** 名次 */

@@ -42,6 +42,8 @@ public class SecurityConfig {
                 .requestMatchers("/api/leaderboard/**").permitAll()
                 .requestMatchers("/api/contests/**").permitAll()
                 .requestMatchers("/api/announcements/**").permitAll()
+                // 头像等静态资源公开可读（API.md v1.8 §1.5b）；文件名服务端生成，无穿越面
+                .requestMatchers("/uploads/**").permitAll()
                 .requestMatchers("/ws/**").permitAll()
                 .requestMatchers("/api/admin/**").hasRole("ADMIN")
                 .anyRequest().authenticated())

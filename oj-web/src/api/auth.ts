@@ -6,6 +6,10 @@ export interface LoginVO {
   username: string
   email?: string
   role: number
+  /** 头像相对路径（API.md v1.8），null=未设置，前端回退首字母占位 */
+  avatar?: string | null
+  /** 个性签名（API.md v1.8），null=未设置 */
+  signature?: string | null
   createdAt?: string
 }
 
@@ -33,4 +37,17 @@ export function updateEmail(email: string) {
 
 export function changePassword(oldPassword: string, newPassword: string) {
   return http.put('/api/auth/password', { oldPassword, newPassword })
+}
+
+/** 签名修改（API.md v1.8 §1.5a）：trim 后 1-200 字 */
+export function updateSignature(signature: string) {
+  return http.put('/api/auth/profile', { signature })
+}
+
+/**
+ * 头像上传（API.md v1.8 §1.5b）：前端裁剪为正方形后以 data URL 上传，
+ * 返回落盘后的相对 URL（/uploads/avatars/...）
+ */
+export function updateAvatar(dataUrl: string) {
+  return http.put<never, { avatar: string }>('/api/auth/avatar', { dataUrl })
 }

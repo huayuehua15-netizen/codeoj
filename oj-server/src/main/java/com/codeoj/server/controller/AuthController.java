@@ -19,6 +19,8 @@ import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.util.Map;
+
 /**
  * 认证接口（论文表 4-7）：注册/登录公开，登出将令牌加入 Redis 黑名单。
  */
@@ -74,6 +76,21 @@ public class AuthController {
                                @AuthenticationPrincipal LoginUser user) {
         authService.updateEmail(user, dto.getEmail());
         return R.ok();
+    }
+
+    /** 签名修改（API.md v1.8 §1.5a）：trim 后 1-200 字 */
+    @PutMapping("/profile")
+    public R<Void> updateProfile(@RequestBody Map<String, String> body,
+                                 @AuthenticationPrincipal LoginUser user) {
+        authService.updateSignature(user, body.getOrDefault("signature", ""));
+        return R.ok();
+    }
+
+    /** 头像上传（API.md v1.8 §1.5b）：data URL 进，落盘后返回相对 URL */
+    @PutMapping("/avatar")
+    public R<Map<String, String>> updateAvatar(@RequestBody Map<String, String> body,
+                                               @AuthenticationPrincipal LoginUser user) {
+        return R.ok(Map.of("avatar", authService.updateAvatar(user, body.get("dataUrl"))));
     }
 
     /** 密码修改：验证旧密码，成功后当前令牌立即失效（黑名单），前端跳转重新登录 */

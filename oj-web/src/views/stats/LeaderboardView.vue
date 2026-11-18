@@ -37,7 +37,8 @@
           </svg>
         </span>
         <span class="podium-avatar" :style="{ background: avatarColor(entry.userId) }">
-          {{ (entry.username || '?').slice(0, 1).toUpperCase() }}
+          <img v-if="entry.avatar" class="avatar-img" :src="entry.avatar" alt="" />
+          <template v-else>{{ (entry.username || '?').slice(0, 1).toUpperCase() }}</template>
         </span>
         <span class="podium-name">{{ entry.username || `用户 ${entry.userId}` }}</span>
         <span class="podium-ac">{{ entry.acCount }}<small> 题</small></span>
@@ -77,7 +78,8 @@
           <template #default="{ row }">
             <div class="user-cell">
               <span class="avatar" :style="{ background: avatarColor(row.userId) }" aria-hidden="true">
-                {{ (row.username || '?').slice(0, 1).toUpperCase() }}
+                <img v-if="row.avatar" class="avatar-img" :src="row.avatar" alt="" />
+                <template v-else>{{ (row.username || '?').slice(0, 1).toUpperCase() }}</template>
               </span>
               <span class="uname">{{ row.username || `用户 ${row.userId}` }}</span>
             </div>
@@ -358,6 +360,18 @@ onMounted(load)
   font-size: 13px;
   font-weight: 600;
   flex-shrink: 0;
+  overflow: hidden;
+}
+/* 自定义头像图与首字母占位同形：占满容器、遮住底色 */
+.avatar-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.podium-avatar .avatar-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
 }
 .uname {
   font-weight: 600;

@@ -40,7 +40,9 @@
           <template v-if="userStore.isLoggedIn">
             <el-dropdown trigger="click" @command="handleCommand">
               <button class="username" type="button" aria-haspopup="menu">
-                <span class="avatar" aria-hidden="true">{{ (userStore.username || '?').slice(0, 1).toUpperCase() }}</span>
+                <!-- 自定义头像（API.md v1.8）：设置过用图片，否则回退首字母方头像 -->
+                <img v-if="userStore.avatar" class="avatar avatar-img" :src="userStore.avatar" alt="" aria-hidden="true" />
+                <span v-else class="avatar" aria-hidden="true">{{ (userStore.username || '?').slice(0, 1).toUpperCase() }}</span>
                 <span class="uname">{{ userStore.username }}</span>
                 <span v-if="userStore.isAdmin" class="role-chip">管理员</span>
                 <svg class="caret" viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
@@ -254,6 +256,11 @@ async function handleLogout() {
   font-size: 12px;
   font-weight: 600;
   flex-shrink: 0;
+}
+/* 自定义头像图片与占位头像同尺寸同圆角，观感一致 */
+.avatar-img {
+  object-fit: cover;
+  border: 1px solid var(--oj-border);
 }
 .uname {
   max-width: 120px;

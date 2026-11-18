@@ -40,4 +40,18 @@ public interface AuthService {
      * @param token 裸 JWT（不含 {@code Bearer } 前缀），可为 null
      */
     void changePassword(LoginUser user, String oldPassword, String newPassword, String token);
+
+    /**
+     * 个性签名修改（API.md v1.8 §1.5a）。
+     *
+     * @param signature 由调用方 trim；trim 后 1-200 字，否则 40000
+     */
+    void updateSignature(LoginUser user, String signature);
+
+    /**
+     * 头像上传（API.md v1.8 §1.5b）：解析并校验 data URL，落盘并更新用户列。
+     *
+     * @return 相对 URL（/uploads/avatars/{file}），前端直接用于 img src
+     */
+    String updateAvatar(LoginUser user, String dataUrl);
 }
