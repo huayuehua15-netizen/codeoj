@@ -1,12 +1,8 @@
 <template>
   <div class="auth-page">
-    <header class="auth-brand" aria-hidden="true">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-        <polyline points="8 6 3 12 8 18" />
-        <polyline points="16 6 21 12 16 18" />
-        <line x1="13.5" y1="4.5" x2="10.5" y2="19.5" />
-      </svg>
-      <span>Code<b>OJ</b></span>
+    <header class="auth-brand">
+      <span class="seal" aria-hidden="true">判</span>
+      <span class="wordmark">Code<em>OJ</em></span>
     </header>
 
     <main class="auth-main">
@@ -18,6 +14,8 @@
     </main>
 
     <footer class="auth-foot">
+      <span class="foot-motto">判题如批改，落笔即成长</span>
+      <span class="dot" aria-hidden="true">·</span>
       <span>CodeOJ · 在线代码评测与编程练习平台</span>
     </footer>
   </div>
@@ -33,50 +31,76 @@ defineProps<{
 </script>
 
 <style scoped>
-/* 登录/注册：平面居中一栏式。
-   之前的双栏渐变品牌页是典型的"模板脸"——工程产品的登录页
-   （GitHub/Linear）都极简：一个词标、一张表单卡，结束。 */
+/* 登录/注册：稿纸页。
+   整页铺极淡的稿纸竖线（与正文字距呼应），方印词标居中，
+   表单卡像一张放在稿纸上的答题卡——"作答"的仪式感就在这里。 */
 .auth-page {
   min-height: 100vh;
   display: grid;
   grid-template-rows: auto 1fr auto;
-  background: var(--oj-bg);
+  background:
+    repeating-linear-gradient(
+      to right,
+      transparent 0,
+      transparent 31px,
+      rgba(23, 105, 74, 0.045) 31px,
+      rgba(23, 105, 74, 0.045) 32px
+    ),
+    var(--oj-paper);
 }
 
 .auth-brand {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 8px;
-  padding: 28px 16px 0;
-  font-size: 17px;
+  gap: 10px;
+  padding: 34px 16px 0;
+}
+.seal {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 7px;
+  background: var(--oj-seal);
+  color: var(--oj-white);
+  font-family: var(--oj-font-display);
+  font-size: 19px;
+  font-weight: 700;
+  line-height: 1;
+  user-select: none;
+}
+.wordmark {
+  font-family: var(--oj-font-display);
+  font-size: 21px;
   font-weight: 700;
   color: var(--oj-text);
+  letter-spacing: 0.03em;
 }
-.auth-brand svg {
-  width: 18px;
-  height: 18px;
-  color: var(--oj-text);
-}
-.auth-brand b {
+.wordmark em {
+  font-style: normal;
   color: var(--oj-primary);
 }
 
 .auth-main {
   display: grid;
   place-items: center;
-  padding: 24px 16px 40px;
+  padding: 28px 16px 40px;
 }
 .auth-card {
   width: 100%;
   max-width: 380px;
   padding: 28px 28px 24px;
+  box-shadow: var(--oj-shadow);
 }
 .auth-title {
   margin: 0 0 6px;
-  font-size: 19px;
-  font-weight: 600;
+  font-family: var(--oj-font-display);
+  font-size: 20px;
+  font-weight: 700;
   color: var(--oj-text);
+  letter-spacing: 0.02em;
 }
 .auth-sub {
   margin: 0 0 18px;
@@ -87,8 +111,19 @@ defineProps<{
 
 .auth-foot {
   padding: 14px 16px 22px;
-  text-align: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
   font-size: 12px;
   color: var(--oj-text-weak);
+}
+.foot-motto {
+  font-family: var(--oj-font-display);
+  letter-spacing: 0.12em;
+  color: var(--oj-gray-600);
+}
+.auth-foot .dot {
+  opacity: 0.6;
 }
 </style>

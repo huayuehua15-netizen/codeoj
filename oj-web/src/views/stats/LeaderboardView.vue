@@ -238,10 +238,10 @@ onMounted(load)
 }
 /* 前三名只靠一条 2px 顶线区分名次——颜色大声的区域越小越显专业 */
 .podium-card.place-1 {
-  border-top: 2px solid var(--oj-gold);
+  border-top: 2px solid var(--oj-seal);
 }
 .podium-card.place-2 {
-  border-top: 2px solid var(--oj-silver);
+  border-top: 2px solid var(--oj-gray-800);
 }
 .podium-card.place-3 {
   border-top: 2px solid var(--oj-bronze);
@@ -324,16 +324,16 @@ onMounted(load)
   height: 26px;
   border-radius: 4px;
   color: var(--oj-white);
-  font-family: var(--oj-font-mono);
-  font-weight: 600;
+  /* 名次印：衬线数字，像一枚小方章 */
+  font-family: var(--oj-font-display);
+  font-weight: 700;
   font-size: 13px;
-  font-variant-numeric: tabular-nums;
 }
 .rank-badge.rank-1 {
-  background: var(--oj-gold);
+  background: var(--oj-seal);
 }
 .rank-badge.rank-2 {
-  background: var(--oj-silver);
+  background: var(--oj-gray-800);
 }
 .rank-badge.rank-3 {
   background: var(--oj-bronze);

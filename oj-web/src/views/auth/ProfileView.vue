@@ -712,9 +712,9 @@ async function savePassword() {
   display: inline-block;
 }
 .lv-0 { background: var(--oj-gray-100); }
-.lv-1 { background: #c6e6c9; }
-.lv-2 { background: #7fce8a; }
-.lv-3 { background: #3aa04b; }
+.lv-1 { background: #cbe3cf; }
+.lv-2 { background: #7abf8b; }
+.lv-3 { background: #3d9463; }
 .lv-4 { background: var(--oj-success); }
 .heatmap-scroll {
   overflow-x: auto;
@@ -764,9 +764,9 @@ async function savePassword() {
   border-radius: 2px;
 }
 .cell.lv-0 { background: var(--oj-gray-100); }
-.cell.lv-1 { background: #c6e6c9; }
-.cell.lv-2 { background: #7fce8a; }
-.cell.lv-3 { background: #3aa04b; }
+.cell.lv-1 { background: #cbe3cf; }
+.cell.lv-2 { background: #7abf8b; }
+.cell.lv-3 { background: #3d9463; }
 .cell.lv-4 { background: var(--oj-success); }
 
 /* ---------- 解题进度 ---------- */

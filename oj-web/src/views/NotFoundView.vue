@@ -51,9 +51,11 @@ const attempted = computed(() => (route.fullPath.length <= 60 ? route.fullPath :
 }
 .nf-title {
   margin: 18px 0 8px;
-  font-size: 17px;
-  font-weight: 600;
+  font-family: var(--oj-font-display);
+  font-size: 18px;
+  font-weight: 700;
   color: var(--oj-text);
+  letter-spacing: 0.02em;
 }
 .nf-desc {
   margin: 0 0 22px;

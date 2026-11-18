@@ -4,12 +4,9 @@
       <div class="header-inner">
         <!-- P2-17：原来挂在 <div> 上的 @click 键盘不可达，改成真正的 <router-link> -->
         <router-link to="/problems" class="logo" aria-label="CodeOJ 首页">
-          <svg class="logo-icon" viewBox="0 0 24 24" width="22" height="22" fill="none" aria-hidden="true">
-            <path d="M8 6 L3 12 L8 18" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
-            <path d="M16 6 L21 12 L16 18" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
-            <path d="M13.5 4 L10.5 20" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/>
-          </svg>
-          <span>Code<em>OJ</em></span>
+          <!-- 方印：朱底白「判」，全站品牌识别记号 -->
+          <span class="seal" aria-hidden="true">判</span>
+          <span class="wordmark">Code<em>OJ</em></span>
         </router-link>
 
         <nav aria-label="主导航" class="nav">
@@ -72,9 +69,9 @@
       </router-view>
     </el-main>
     <el-footer class="footer">
-      <span>CodeOJ · 在线代码评测与编程练习平台</span>
+      <span class="foot-motto">判题如批改，落笔即成长</span>
       <span class="dot" aria-hidden="true">·</span>
-      <span>Spring Boot 3 + Vue 3 + Docker</span>
+      <span>CodeOJ · Spring Boot 3 + Vue 3 + Docker</span>
     </el-footer>
   </el-container>
 </template>
@@ -170,23 +167,39 @@ async function handleLogout() {
 .logo {
   display: flex;
   align-items: center;
-  gap: 7px;
-  font-size: 17px;
-  font-weight: 700;
-  color: var(--oj-text);
-  letter-spacing: 0.2px;
+  gap: 9px;
   flex-shrink: 0;
   transition: opacity var(--oj-duration) var(--oj-ease);
 }
 .logo:hover {
-  opacity: 0.8;
+  opacity: 0.82;
 }
-.logo em {
+/* 方印：朱底白「判」，衬线字——全站唯一的品牌红色块 */
+.seal {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 6px;
+  background: var(--oj-seal);
+  color: var(--oj-white);
+  font-family: var(--oj-font-display);
+  font-size: 16px;
+  font-weight: 700;
+  line-height: 1;
+  user-select: none;
+}
+.wordmark {
+  font-family: var(--oj-font-display);
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--oj-text);
+  letter-spacing: 0.03em;
+}
+.wordmark em {
   font-style: normal;
   color: var(--oj-primary);
-}
-.logo-icon {
-  color: var(--oj-text);
 }
 .nav {
   flex: 1;
@@ -296,6 +309,12 @@ async function handleLogout() {
   color: var(--oj-text-weak);
   background: transparent;
   border-top: 1px solid var(--oj-border);
+}
+.foot-motto {
+  font-family: var(--oj-font-display);
+  font-size: 12.5px;
+  letter-spacing: 0.12em;
+  color: var(--oj-gray-600);
 }
 .footer .dot {
   opacity: 0.6;

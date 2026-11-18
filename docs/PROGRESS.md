@@ -1040,3 +1040,50 @@ Redis 榜单 ZREM 同步（对账任务 5 分钟内也会自愈）。其统计/�
 回归：前端 25 测试 ✅ typecheck ✅ build ✅；trend 接口对已清空账号返回空数组 ✅。
 
 ---
+
+## 21. 全站设计重构 v3：「墨卷」体系（2026-11-19 深夜）
+
+用户要求全站所有页面重构 UI 与布局，"好看精致、眼前一亮、不千篇一律"。
+先检索确认了编辑风（Warm Editorial）的公认公式——暖纸底 + 近黑墨字 + 单一深色强调 + 衬线大标题
+（[FreeDesignMD](https://freedesignmd.com/lexicon/editorial-web-design)、
+[PageProofer 对 Every 的拆解](https://pageproofer.com/inspiration/warm-editorial/every)、
+[Tubik 编辑设计集](https://tubikstudio.com/blog/media-editorial-website-design)），
+再结合评测平台"作答—批改"的领域本质，自行设计出**「墨卷」**体系（不照搬任何一家）：
+
+> 概念：判题如批改。平台是一张数字稿纸——学生落笔（提交代码），系统批卷（运行用例），
+> AC 得绿批，错误落朱批。暖纸底、松绿强调、朱印点睛、宋体标题、等宽数据。
+
+### 21.1 配色（自拟，全部脱离 Tailwind/GitHub 默认色号）
+
+| 角色 | 色值 | 用途 |
+|---|---|---|
+| 纸 paper | `#f6f4ec` | 页面底（暖，与冷灰 SaaS 脸区分） |
+| 卡 card | `#fffef9` | 暖白卡片 |
+| 墨 ink | `#232d26` | 主文字（墨绿黑） |
+| 松 pine | `#17694a` | 全站唯一强调色：链接/主按钮/选中 |
+| 绿批 success | `#1d7a44` | AC/通过 |
+| 朱批 danger | `#bc3f2c` | WA/CE/编译失败；`--oj-seal` 仅品牌与第一名小印 |
+| 赭批 warning | `#a26a15` | TLE/MLE/进行中 |
+| 青磷 info | `#2b7a8c` | 判题中 |
+| 松烟墨代码面板 | `#15201a` 系 | 样例/编辑器/查看器（绿相深底） |
+
+字体三层：宋体系 `--oj-font-display`（页面 h1/卡片 h2/词标/页脚格言，书卷气）
++ 系统黑体（正文）+ JetBrains Mono（数据/代码，工具感）。衬线与等宽各司其职。
+
+### 21.2 品牌记号与组件
+
+- **方印 logo**：朱底白「判」衬线字，MainLayout/AuthShell/favicon 三处同源
+- **朱印句读**：全站页面级 h1 前置 8px 朱色小方块
+- **笺纸统计条**：oj-banner 铺与行高呼应的极淡稿纸横线
+- **稿纸登录页**：AuthShell 整页铺竖向稿纸线，表单卡如答题卡置于其上
+- **名次印**：排行榜前三改印章式——状元朱印/榜眼墨方/探花赭方，衬线数字
+- 页脚衬线格言："判题如批改，落笔即成长"
+- 热力图绿阶整体转暖（`#cbe3cf`/`#7abf8b`/`#3d9463`）
+
+### 21.3 落地方式与验证
+
+token 层全量重映射（93 个变量，71 处引用经 node 脚本核对零缺失），
+20+ 视图自动换肤；手工清扫：热力图绿阶、排行榜名次印、StatisticsView ECharts 兜底色。
+回归：typecheck ✅ / 25 单测 ✅ / build 45s ✅。
+
+---
