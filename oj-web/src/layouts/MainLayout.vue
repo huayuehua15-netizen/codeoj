@@ -3,7 +3,7 @@
     <el-header class="header">
       <div class="header-inner">
         <!-- P2-17：原来挂在 <div> 上的 @click 键盘不可达，改成真正的 <router-link> -->
-        <router-link to="/problems" class="logo" aria-label="CodeOJ 首页">
+        <router-link to="/home" class="logo" aria-label="CodeOJ 首页">
           <!-- 方印：朱底白「判」，全站品牌识别记号 -->
           <span class="seal" aria-hidden="true">判</span>
           <span class="wordmark">Code<em>OJ</em></span>
@@ -13,9 +13,11 @@
           <el-menu mode="horizontal" :default-active="activeMenu" router :ellipsis="false" class="menu">
             <el-menu-item index="/problems">题目</el-menu-item>
             <el-menu-item v-if="userStore.isLoggedIn" index="/submissions">提交记录</el-menu-item>
+            <el-menu-item v-if="userStore.isLoggedIn" index="/wrongbook">错题本</el-menu-item>
             <el-menu-item v-if="userStore.isLoggedIn" index="/statistics">统计</el-menu-item>
             <el-menu-item index="/contests">竞赛</el-menu-item>
             <el-menu-item index="/leaderboard">排行榜</el-menu-item>
+            <el-menu-item index="/announcements">公告</el-menu-item>
             <el-sub-menu v-if="userStore.isAdmin" index="/admin" popper-class="admin-menu-popper">
               <template #title>
                 <svg class="menu-icon" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
@@ -71,6 +73,8 @@
     <el-footer class="footer">
       <span class="foot-motto">判题如批改，落笔即成长</span>
       <span class="dot" aria-hidden="true">·</span>
+      <router-link class="foot-link" to="/about">帮助与关于</router-link>
+      <span class="dot" aria-hidden="true">·</span>
       <span>CodeOJ · Spring Boot 3 + Vue 3 + Docker</span>
     </el-footer>
   </el-container>
@@ -94,7 +98,7 @@ const userStore = useUserStore()
  * 2) 其余按最长前缀匹配：/problems/12 要亮的是「题目」而不是什么都不亮——
  *    直接返回 route.path 时，详情页会让整条导航都没有 active 态。
  */
-const NAV_ROOTS = ['/problems', '/submissions', '/statistics', '/contests', '/leaderboard']
+const NAV_ROOTS = ['/home', '/problems', '/submissions', '/wrongbook', '/statistics', '/contests', '/leaderboard', '/announcements']
 
 const activeMenu = computed(() => {
   if (route.path.startsWith('/admin')) return '/admin'
@@ -315,6 +319,12 @@ async function handleLogout() {
   font-size: 12.5px;
   letter-spacing: 0.12em;
   color: var(--oj-gray-600);
+}
+.foot-link {
+  color: var(--oj-text-weak);
+}
+.foot-link:hover {
+  color: var(--oj-primary);
 }
 .footer .dot {
   opacity: 0.6;

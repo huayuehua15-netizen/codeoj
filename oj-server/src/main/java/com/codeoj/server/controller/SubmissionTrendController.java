@@ -46,4 +46,10 @@ public class SubmissionTrendController {
     public R<List<Map<String, Object>>> languages(@AuthenticationPrincipal LoginUser user) {
         return R.ok(submissionMapper.languageDistByUser(user.userId()));
     }
+
+    /** 错题本（API.md v1.10 §4.4c）：尝试过且未 AC 的题目，按最近提交倒序 */
+    @GetMapping("/wrongbook")
+    public R<List<Map<String, Object>>> wrongBook(@AuthenticationPrincipal LoginUser user) {
+        return R.ok(submissionMapper.wrongBookByUser(user.userId()));
+    }
 }

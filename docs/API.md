@@ -1,6 +1,6 @@
 # CodeOJ 接口文档（前后端对接契约）
 
-> 版本：v1.9（2026-11-19）｜ 个人主页数据支撑：`trend` 上限 30 → 366 天（热力图）；新增 `GET /api/submissions/languages` 语言分布。v1.8：个人中心头像/签名与 `GET /uploads/**` 静态资源
+> 版本：v1.10（2026-11-19）｜ 新增 `GET /api/submissions/wrongbook` 错题本（尝试过且未 AC 的题目聚合）。v1.9：`trend` 上限 366 天与语言分布。v1.8：个人中心头像/签名与 `GET /uploads/**` 静态资源
 > 适用：前端（oj-web）按此文档先行开发，后端按此文档补全实现。
 > 标注 ⚠️ 的接口：骨架已定契约，业务实现于第二阶段完成（前端可先按 mock 开发）。
 
@@ -416,6 +416,24 @@ Query 参数：`days`（默认 7，**上限 366**，v1.9 由 30 放宽以支持�
 ```
 
 个人主页的语言分布与"最近动态"的语种展示以此口径为准（language 为 `Language` 枚举 code）。
+
+### 4.4c 错题本 `GET /api/submissions/wrongbook`（登录，v1.10 新增）
+
+**口径**：该用户**尝试过且从未 AC** 的题目（有提交记录但 `MAX(status=2)=0`），按最近一次提交时间倒序。已 AC 的题不进错题本（哪怕曾经错过）。
+
+响应 `data`：
+
+```json
+[
+  { "problemId": 5, "title": "最长公共前缀", "difficulty": 2,
+    "attempts": 6, "lastStatus": 3, "lastLanguage": "java", "lastAt": "2026-11-10 14:20:00" }
+]
+```
+
+| 字段 | 说明 |
+|---|---|
+| attempts | 该题总提交次数 |
+| lastStatus / lastLanguage / lastAt | 最近一次提交的状态码 / 语言 / 时间 |
 
 ---
 

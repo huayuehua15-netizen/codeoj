@@ -80,3 +80,18 @@ export function getTrend(days = 7) {
 export function getLanguageDist() {
   return http.get<never, { language: string; total: number; accepted: number }[]>('/api/submissions/languages')
 }
+
+export interface WrongBookItem {
+  problemId: number
+  title: string
+  difficulty: number
+  attempts: number
+  lastStatus: number
+  lastLanguage: string
+  lastAt: string
+}
+
+/** 错题本（API.md v1.10 §4.4c）：尝试过且未 AC 的题目，按最近提交倒序 */
+export function getWrongBook() {
+  return http.get<never, WrongBookItem[]>('/api/submissions/wrongbook')
+}

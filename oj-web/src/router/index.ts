@@ -29,7 +29,13 @@ const router = createRouter({
       path: '/',
       component: () => import('@/layouts/MainLayout.vue'),
       children: [
-        { path: '', redirect: '/problems' },
+        { path: '', redirect: '/home' },
+        {
+          path: 'home',
+          name: 'home',
+          component: () => import('@/views/home/HomeView.vue'),
+          meta: { title: '首页' },
+        },
         {
           path: 'problems',
           name: 'problems',
@@ -77,6 +83,24 @@ const router = createRouter({
           name: 'leaderboard',
           component: () => import('@/views/stats/LeaderboardView.vue'),
           meta: { title: '排行榜' },
+        },
+        {
+          path: 'announcements',
+          name: 'announcements',
+          component: () => import('@/views/home/AnnouncementsView.vue'),
+          meta: { title: '公告中心' },
+        },
+        {
+          path: 'wrongbook',
+          name: 'wrongbook',
+          component: () => import('@/views/home/WrongBookView.vue'),
+          meta: { title: '错题本', requiresAuth: true },
+        },
+        {
+          path: 'about',
+          name: 'about',
+          component: () => import('@/views/home/AboutView.vue'),
+          meta: { title: '帮助与关于' },
         },
         {
           path: 'profile',
