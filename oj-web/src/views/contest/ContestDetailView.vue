@@ -1,17 +1,26 @@
 <template>
-  <div class="page-container" v-if="contest">
-    <div class="head-card" :class="`hs-${contest.status}`">
+  <!-- 加载为空态：竞赛不存在/路由 id 非法时不留白屏 -->
+  <div v-if="!contest" class="page-container">
+    <div class="card">
+      <el-empty :description="loadError ? '竞赛不存在或尚未开放' : '加载中…'">
+        <el-button v-if="loadError" type="primary" @click="$router.push('/contests')">返回竞赛列表</el-button>
+      </el-empty>
+    </div>
+  </div>
+
+  <div v-else class="page-container">
+    <header class="head-card">
       <div class="head-row">
         <div class="head-main">
-          <div class="head-badge" :class="`badge-${contest.status}`">
-            <span v-if="contest.status === 1" class="pulse" />
+          <span class="head-badge" :class="`badge-${contest.status}`">
+            <span v-if="contest.status === 1" class="pulse" aria-hidden="true" />
             {{ statusInfo(contest.status).label }}
-          </div>
+          </span>
           <h1 class="head-title">{{ contest.title }}</h1>
-          <p class="desc">{{ contest.description }}</p>
+          <p class="desc">{{ contest.description || '暂无说明' }}</p>
           <div class="head-meta">
             <span class="meta-item">
-              <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
+              <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
                 <circle cx="12" cy="12" r="9" /><path d="M12 7v5l3 2" />
               </svg>
               {{ formatDateTime(contest.startTime) }} ~ {{ formatDateTime(contest.endTime) }}
@@ -20,18 +29,18 @@
         </div>
         <div v-if="contest.status !== 2" class="head-countdown">
           <div class="cd-label">{{ contest.status === 1 ? '距结束' : '距开始' }}</div>
-          <div class="cd-value">{{ countdown }}</div>
+          <div class="cd-value" aria-live="off">{{ countdown }}</div>
         </div>
       </div>
-    </div>
+    </header>
 
-    <div class="card" style="margin-top: 16px">
+    <section class="card tabs-card">
       <el-tabs v-model="activeTab">
         <el-tab-pane label="竞赛题目" name="problems">
-          <el-table :data="contest.problems">
+          <el-table :data="contest.problems" row-key="problemId" empty-text="本竞赛还没有配置题目">
             <el-table-column label="题号" width="80">
               <template #default="{ row }">
-                <span class="label-badge">{{ row.label }}</span>
+                <span class="oj-badge-id">{{ row.label }}</span>
               </template>
             </el-table-column>
             <el-table-column label="题目" min-width="280">
@@ -41,53 +50,61 @@
             </el-table-column>
             <el-table-column label="难度" width="110">
               <template #default="{ row }">
-                <el-tag :color="diffColor(row.difficulty)" size="small">
-                  {{ ({1:'简单',2:'中等',3:'困难'} as Record<number,string>)[row.difficulty] || '?' }}
-                </el-tag>
+                <span class="oj-diff" :class="`diff-${row.difficulty}`">
+                  {{ DIFFICULTY_MAP[row.difficulty]?.label ?? '未知' }}
+                </span>
               </template>
             </el-table-column>
           </el-table>
           <el-alert
             v-if="contest.status === 1"
             title="比赛进行中：在题目页提交的代码会自动计入本赛排名"
-            type="info" :closable="false" show-icon style="margin-top: 12px" />
+            type="info" :closable="false" show-icon class="live-alert" />
         </el-tab-pane>
 
         <el-tab-pane label="实时排名" name="ranking">
-          <el-table :data="ranking" v-loading="rankLoading">
-            <el-table-column prop="rank" label="名次" width="80" />
+          <p v-if="contest.status === 0" class="rank-hint">竞赛开始后这里会显示实时排名（ACM 赛制：解题数优先，同解题数按总罚时升序）</p>
+          <el-table :data="ranking" v-loading="rankLoading" row-key="userId" empty-text="还没有提交记录">
+            <el-table-column label="名次" width="80">
+              <template #default="{ row }">
+                <span class="rank-cell" :class="`rank-${row.rank}`">{{ row.rank }}</span>
+              </template>
+            </el-table-column>
             <el-table-column label="用户" min-width="160">
               <template #default="{ row }">{{ row.username || `用户 ${row.userId}` }}</template>
             </el-table-column>
             <el-table-column prop="solved" label="解题数" width="90" />
             <el-table-column prop="penalty" label="总罚时(分钟)" width="120" />
             <el-table-column label="明细" min-width="300">
-              <template #default="{ row }">{{ row.detail || '—' }}</template>
+              <template #default="{ row }">
+                <span class="mono">{{ row.detail || '—' }}</span>
+              </template>
             </el-table-column>
           </el-table>
         </el-tab-pane>
       </el-tabs>
-    </div>
+    </section>
   </div>
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, onUnmounted, ref } from 'vue'
+import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { getContest, getContestRanking, type ContestDetail, type ContestRankItem } from '@/api/contest'
 import { formatDateTime, parseServerTime } from '@/utils/datetime'
+import { DIFFICULTY_MAP } from '@/utils/status'
 
 const route = useRoute()
-const id = route.params.id as string
 
 const contest = ref<ContestDetail>()
+const loadError = ref(false)
 const ranking = ref<ContestRankItem[]>([])
 const rankLoading = ref(false)
 const activeTab = ref('problems')
 const nowTick = ref(0)
 
 const countdown = computed(() => {
-  nowTick.value // 依赖 tick 触发重算
+  void nowTick.value // 依赖 tick 触发重算
   if (!contest.value) return ''
   const target = parseServerTime(contest.value.status === 1 ? contest.value.endTime : contest.value.startTime)
   if (!target) return '—'
@@ -100,26 +117,48 @@ const countdown = computed(() => {
 })
 
 function statusInfo(status: number) {
-  return [{ label: '未开始', type: 'info' }, { label: '进行中', type: 'success' }, { label: '已结束', type: 'info' }][status] ?? { label: '?', type: 'info' }
-}
-
-function diffColor(d: number) {
-  return ({1:'#67c23a',2:'#e6a23c',3:'#f56c6c'} as Record<number,string>)[d] || '#909399'
+  return [{ label: '未开始', type: 'info' }, { label: '进行中', type: 'success' }, { label: '已结束', type: 'info' }][status]
+    ?? { label: '未知', type: 'info' }
 }
 
 let timer: number | undefined
 
-onMounted(async () => {
-  contest.value = await getContest(id)
+async function load() {
+  const id = route.params.id
+  // P2-9：id 来自地址栏，非正整数直接落到空态，不发请求
+  if (!/^\d+$/.test(String(id))) {
+    contest.value = undefined
+    loadError.value = true
+    return
+  }
+  loadError.value = false
+  contest.value = undefined
+  ranking.value = []
+  try {
+    contest.value = await getContest(String(id))
+  } catch {
+    loadError.value = true
+    return
+  }
   // 进行中/已结束的竞赛加载排名
   if (contest.value.status !== 0) {
     rankLoading.value = true
     try {
-      ranking.value = await getContestRanking(id)
+      ranking.value = await getContestRanking(String(id))
+    } catch {
+      // 排名加载失败不影响题面浏览，由拦截器提示
+      ranking.value = []
     } finally {
       rankLoading.value = false
     }
   }
+}
+
+// P2-4：/contests/1 → /contests/2 复用同一组件时重新加载
+watch(() => route.params.id, load)
+
+onMounted(async () => {
+  await load()
   timer = window.setInterval(() => { nowTick.value++ }, 1000)
 })
 
@@ -130,11 +169,11 @@ onUnmounted(() => window.clearInterval(timer))
 .head-card {
   position: relative;
   overflow: hidden;
-  background: linear-gradient(135deg, #312e81 0%, #4338ca 55%, #4f46e5 100%);
-  color: #fff;
+  background: var(--oj-gradient-brand-live);
+  color: var(--oj-on-brand);
   border-radius: var(--oj-radius);
   padding: 28px 32px;
-  box-shadow: 0 8px 28px -10px rgba(67, 56, 202, 0.5);
+  box-shadow: var(--oj-shadow-brand-lg);
 }
 /* 右上柔光，避免纯色块发闷 */
 .head-card::before {
@@ -145,7 +184,7 @@ onUnmounted(() => window.clearInterval(timer))
   width: 280px;
   height: 280px;
   border-radius: 50%;
-  background: radial-gradient(circle, rgba(139, 92, 246, 0.55), transparent 68%);
+  background: var(--oj-glow-accent);
 }
 /* 细网格纹理，弱化"大色块"感 */
 .head-card::after {
@@ -153,8 +192,8 @@ onUnmounted(() => window.clearInterval(timer))
   position: absolute;
   inset: 0;
   background-image:
-    linear-gradient(rgba(255, 255, 255, 0.04) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(255, 255, 255, 0.04) 1px, transparent 1px);
+    linear-gradient(var(--oj-grid-line-04) 1px, transparent 1px),
+    linear-gradient(90deg, var(--oj-grid-line-04) 1px, transparent 1px);
   background-size: 30px 30px;
   pointer-events: none;
 }
@@ -174,25 +213,27 @@ onUnmounted(() => window.clearInterval(timer))
   align-items: center;
   gap: 7px;
   padding: 3px 11px;
-  border-radius: 999px;
-  background: rgba(255, 255, 255, 0.16);
+  border-radius: var(--oj-radius-pill);
+  background: var(--oj-on-brand-16);
   font-size: 11.5px;
   font-weight: 600;
   letter-spacing: 0.3px;
+  backdrop-filter: blur(4px);
 }
 .pulse {
   width: 6px;
   height: 6px;
   border-radius: 50%;
-  background: #4ade80;
+  background: var(--oj-pulse-dot);
+  box-shadow: 0 0 0 0 var(--oj-pulse-ring);
   animation: pulse 1.8s infinite;
 }
 @keyframes pulse {
   70% {
-    box-shadow: 0 0 0 7px rgba(74, 222, 128, 0);
+    box-shadow: 0 0 0 7px var(--oj-pulse-ring-out);
   }
   100% {
-    box-shadow: 0 0 0 0 rgba(74, 222, 128, 0);
+    box-shadow: 0 0 0 0 var(--oj-pulse-ring-out);
   }
 }
 .head-title {
@@ -205,12 +246,13 @@ onUnmounted(() => window.clearInterval(timer))
 .desc {
   margin: 8px 0 0;
   font-size: 13px;
-  color: rgba(255, 255, 255, 0.82);
+  color: var(--oj-on-brand-82);
   line-height: 1.65;
   max-width: 640px;
 }
 .head-meta {
   display: flex;
+  flex-wrap: wrap;
   gap: 18px;
   margin-top: 12px;
 }
@@ -219,7 +261,7 @@ onUnmounted(() => window.clearInterval(timer))
   align-items: center;
   gap: 6px;
   font-size: 12.5px;
-  color: rgba(255, 255, 255, 0.75);
+  color: var(--oj-on-brand-75);
 }
 .head-countdown {
   flex-shrink: 0;
@@ -227,29 +269,54 @@ onUnmounted(() => window.clearInterval(timer))
 }
 .cd-label {
   font-size: 11.5px;
-  color: rgba(255, 255, 255, 0.7);
+  color: var(--oj-on-brand-70);
   letter-spacing: 0.5px;
 }
 .cd-value {
   margin-top: 2px;
-  font-family: 'JetBrains Mono', Consolas, monospace;
+  font-family: var(--oj-font-mono);
   font-size: 28px;
   font-weight: 700;
   font-variant-numeric: tabular-nums;
   letter-spacing: 0.5px;
 }
-.label-badge {
+
+.tabs-card {
+  margin-top: 16px;
+  padding-bottom: 8px;
+}
+.live-alert {
+  margin-top: 12px;
+}
+.rank-hint {
+  margin: 0 0 12px;
+  font-size: 12.5px;
+  color: var(--oj-text-sub);
+}
+.rank-cell {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 30px;
-  height: 30px;
-  border-radius: 8px;
-  background: var(--oj-primary-soft);
-  color: var(--oj-primary);
-  font-weight: 800;
-  font-family: 'JetBrains Mono', Consolas, monospace;
-  font-size: 13.5px;
+  min-width: 26px;
+  height: 24px;
+  padding: 0 6px;
+  border-radius: var(--oj-radius-sm);
+  background: var(--oj-gray-50);
+  color: var(--oj-text-sub);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+.rank-cell.rank-1 {
+  background: var(--oj-warning-soft);
+  color: var(--oj-gold);
+}
+.rank-cell.rank-2 {
+  background: var(--oj-gray-50);
+  color: var(--oj-silver);
+}
+.rank-cell.rank-3 {
+  background: var(--oj-warning-soft);
+  color: var(--oj-bronze);
 }
 .p-link {
   color: var(--oj-text);
@@ -259,9 +326,7 @@ onUnmounted(() => window.clearInterval(timer))
 .p-link:hover {
   color: var(--oj-primary);
 }
-.head-card + .card {
-  margin-top: 16px;
-}
+
 @media (max-width: 820px) {
   .head-row {
     flex-direction: column;
@@ -269,6 +334,9 @@ onUnmounted(() => window.clearInterval(timer))
   }
   .head-countdown {
     text-align: left;
+  }
+  .head-card {
+    padding: 22px 20px;
   }
 }
 </style>

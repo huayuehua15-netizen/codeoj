@@ -7,38 +7,42 @@
       </el-empty>
     </div>
   </div>
+
   <div v-else class="page-container problem-detail">
     <div class="left">
       <div class="card">
         <!-- 头部：题号徽章 + 标题 + 难度软标签 + 收藏 -->
-        <div class="prob-head">
-          <span class="pid-badge">{{ problem.id }}</span>
-          <h2 class="prob-title">{{ problem.title }}</h2>
-          <span class="diff-chip" :class="`diff-${problem.difficulty}`">{{ difficultyInfo.label }}</span>
+        <header class="prob-head">
+          <span class="oj-badge-id">{{ problem.id }}</span>
+          <h1 class="prob-title">{{ problem.title }}</h1>
+          <span class="oj-diff" :class="`diff-${problem.difficulty}`">{{ difficultyInfo.label }}</span>
           <button
             v-if="userStore.isLoggedIn"
-            class="fav-btn" :class="{ active: favorited }"
-            type="button" @click="toggleFav"
+            class="fav-btn"
+            :class="{ active: favorited }"
+            type="button"
+            :aria-pressed="favorited"
+            @click="toggleFav"
           >
-            <svg viewBox="0 0 24 24" width="14" height="14"
+            <svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true"
               :fill="favorited ? 'currentColor' : 'none'"
               stroke="currentColor" stroke-width="2" stroke-linejoin="round">
               <path d="M12 3.2 L14.7 8.7 L20.8 9.6 L16.4 13.9 L17.4 20 L12 17.2 L6.6 20 L7.6 13.9 L3.2 9.6 L9.3 8.7 Z" />
             </svg>
             {{ favorited ? '已收藏' : '收藏' }}
           </button>
-        </div>
+        </header>
 
         <!-- 限制与元信息：内联 SVG 图标 + 等宽数值 -->
         <div class="limits">
           <span class="limit-tag">
-            <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+            <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
               <circle cx="12" cy="12" r="9" /><path d="M12 7 L12 12 L15.5 14.5" />
             </svg>
             {{ limitTime }}
           </span>
           <span class="limit-tag">
-            <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round">
+            <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true">
               <rect x="6" y="6" width="12" height="12" rx="1.5" /><rect x="10" y="10" width="4" height="4" />
               <path d="M9 2v4M15 2v4M9 18v4M15 18v4M2 9h4M2 15h4M18 9h4M18 15h4" />
             </svg>
@@ -53,33 +57,35 @@
 
         <MarkdownPreview :content="problem.description" />
 
-        <h3 class="sec-title">样例</h3>
-        <div v-for="(s, i) in problem.samples || []" :key="i" class="sample">
-          <div class="sample-item">
-            <div class="sample-head">
-              <span class="sample-title">输入 {{ i + 1 }}</span>
-              <button class="copy-btn" type="button" @click="copyText(s.input)">
-                <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                  <rect x="9" y="9" width="12" height="12" rx="2" /><path d="M5 15 L4 15 A2 2 0 0 1 2 13 L2 4 A2 2 0 0 1 4 2 L13 2 A2 2 0 0 1 15 4 L15 5" />
-                </svg>
-                复制
-              </button>
+        <template v-if="problem.samples && problem.samples.length">
+          <h2 class="sec-title">样例</h2>
+          <div v-for="(s, i) in problem.samples" :key="i" class="sample">
+            <div class="sample-item">
+              <div class="sample-head">
+                <span class="sample-title">输入 {{ i + 1 }}</span>
+                <button class="copy-btn" type="button" @click="copyText(s.input)">
+                  <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <rect x="9" y="9" width="12" height="12" rx="2" /><path d="M5 15 L4 15 A2 2 0 0 1 2 13 L2 4 A2 2 0 0 1 4 2 L13 2 A2 2 0 0 1 15 4 L15 5" />
+                  </svg>
+                  复制
+                </button>
+              </div>
+              <pre>{{ s.input }}</pre>
             </div>
-            <pre>{{ s.input }}</pre>
-          </div>
-          <div class="sample-item">
-            <div class="sample-head">
-              <span class="sample-title">输出 {{ i + 1 }}</span>
-              <button class="copy-btn" type="button" @click="copyText(s.output)">
-                <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                  <rect x="9" y="9" width="12" height="12" rx="2" /><path d="M5 15 L4 15 A2 2 0 0 1 2 13 L2 4 A2 2 0 0 1 4 2 L13 2 A2 2 0 0 1 15 4 L15 5" />
-                </svg>
-                复制
-              </button>
+            <div class="sample-item">
+              <div class="sample-head">
+                <span class="sample-title">输出 {{ i + 1 }}</span>
+                <button class="copy-btn" type="button" @click="copyText(s.output)">
+                  <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <rect x="9" y="9" width="12" height="12" rx="2" /><path d="M5 15 L4 15 A2 2 0 0 1 2 13 L2 4 A2 2 0 0 1 4 2 L13 2 A2 2 0 0 1 15 4 L15 5" />
+                  </svg>
+                  复制
+                </button>
+              </div>
+              <pre>{{ s.output }}</pre>
             </div>
-            <pre>{{ s.output }}</pre>
           </div>
-        </div>
+        </template>
       </div>
     </div>
 
@@ -89,23 +95,23 @@
         <div class="editor-shell">
           <div class="editor-toolbar">
             <span class="editor-label">
-              <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+              <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                 <path d="M8 6 L3 12 L8 18 M16 6 L21 12 L16 18" />
               </svg>
               代码编辑
             </span>
-            <el-select v-model="language" style="width: 130px" @change="onLanguageChange">
+            <el-select v-model="language" class="lang-select" aria-label="编程语言" @change="onLanguageChange">
               <el-option v-for="lang in allowedLanguages" :key="lang.value" :label="lang.label" :value="lang.value" />
             </el-select>
             <div class="toolbar-actions">
               <el-button v-if="language === 'js'" :disabled="running" @click="runConsole">
-                <svg class="btn-icon" viewBox="0 0 24 24" width="12" height="12" fill="currentColor">
+                <svg class="btn-icon" viewBox="0 0 24 24" width="12" height="12" fill="currentColor" aria-hidden="true">
                   <path d="M8 5 L19 12 L8 19 Z" />
                 </svg>
                 运行
               </el-button>
-              <el-button type="primary" :loading="submitting" :disabled="!userStore.isLoggedIn" @click="handleSubmit">
-                {{ userStore.isLoggedIn ? '提交' : '登录后提交' }}
+              <el-button type="primary" :loading="submitting" :disabled="!userStore.isLoggedIn || !code.trim()" @click="handleSubmit">
+                {{ userStore.isLoggedIn ? '提交代码' : '登录后提交' }}
               </el-button>
             </div>
           </div>
@@ -116,13 +122,13 @@
         <div v-if="language === 'js'" class="console-panel">
           <div class="console-head">
             <span class="console-title">
-              <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                 <rect x="3" y="4" width="18" height="12" rx="2" /><path d="M8 20 L16 20 M12 16 L12 20" />
               </svg>
               控制台（自测运行）
             </span>
             <el-button size="small" type="success" :loading="running" @click="runConsole">
-              <svg v-if="!running" class="btn-icon" viewBox="0 0 24 24" width="12" height="12" fill="currentColor">
+              <svg v-if="!running" class="btn-icon" viewBox="0 0 24 24" width="12" height="12" fill="currentColor" aria-hidden="true">
                 <path d="M8 5 L19 12 L8 19 Z" />
               </svg>
               运行
@@ -137,18 +143,20 @@
           />
           <div v-if="consoleResult" class="console-out" :class="{ err: !!consoleResult.error }">
             <div v-if="consoleResult.error" class="console-err">
-              <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round">
+              <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true">
                 <path d="M6 6 L18 18 M18 6 L6 18" />
               </svg>
               {{ consoleResult.error }}
             </div>
             <pre class="console-stdout">{{ consoleResult.stdout || '(无输出)' }}</pre>
-            <div class="console-meta">耗时 {{ consoleResult.elapsedMs }}ms ｜ 浏览器沙箱运行（仅 JS）</div>
+            <div class="console-meta">
+              耗时 {{ consoleResult.elapsedMs }}ms ｜ 浏览器沙箱运行（仅 JS）
+            </div>
           </div>
         </div>
 
         <!-- 判题状态机（论文 5.7：IDLE→SUBMITTING→QUEUED→JUDGING→FINISHED）步骤条呈现 -->
-        <div v-if="judgeState !== 'IDLE'" class="judge-status">
+        <section v-if="judgeState !== 'IDLE'" class="judge-status" aria-live="polite">
           <el-steps
             v-if="judgeState !== 'FINISHED'"
             :active="stepIndex"
@@ -181,14 +189,14 @@
               暂时不看结果（可稍后在提交记录中查看）
             </el-button>
           </div>
-        </div>
+        </section>
       </div>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, onUnmounted, ref } from 'vue'
+import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { isFavorited, toggleFavorite } from '@/api/favorite'
@@ -216,7 +224,7 @@ const judgeState = ref<'IDLE' | 'SUBMITTING' | 'QUEUED' | 'JUDGING' | 'FINISHED'
 const result = ref<{ submissionId: number; status: number; timeUsedMs?: number; memoryUsedKb?: number }>()
 const currentSubmissionId = ref<number>()
 
-const difficultyInfo = computed(() => DIFFICULTY_MAP[problem.value?.difficulty || 1])
+const difficultyInfo = computed(() => DIFFICULTY_MAP[problem.value?.difficulty || 1] ?? { label: '未知' })
 const allowedLanguages = computed(() =>
   LANGUAGE_OPTIONS.filter((l) => (problem.value?.languages || []).includes(l.value)),
 )
@@ -242,11 +250,7 @@ const rateClass = computed(() => {
   return 'rate-low'
 })
 
-const resultIcon = computed(() => {
-  const s = result.value?.status
-  if (s === 2) return 'success'
-  return 'error'
-})
+const resultIcon = computed(() => (result.value?.status === 2 ? 'success' : 'error'))
 
 const resultSubTitle = computed(() => {
   const s = result.value
@@ -329,15 +333,22 @@ async function toggleFav() {
   }
 }
 
+/** 切换语言后统一收尾：换模板 + 重新预填样例 1（P2-16：两个分支行为必须一致） */
+function applyLanguage(lang: string) {
+  code.value = CODE_TEMPLATES[lang] ?? ''
+  prevLanguage.value = lang
+  consoleInput.value = problem.value?.samples?.[0]?.input ?? ''
+  // 换语言后上一次的控制台输出不再对应当前代码，清掉避免误读
+  consoleResult.value = undefined
+}
+
 function onLanguageChange(lang: string) {
   // 论文 5.7：切换语言载入对应模板代码。
   // 当前内容为空或仍是任一模板（未编辑）→ 直接替换；已编辑 → 确认后替换，取消则回退。
   const label = LANGUAGE_OPTIONS.find((l) => l.value === lang)?.label ?? lang
   const untouched = !code.value.trim() || Object.values(CODE_TEMPLATES).includes(code.value)
   if (untouched) {
-    code.value = CODE_TEMPLATES[lang] ?? ''
-    prevLanguage.value = lang
-    consoleInput.value = problem.value?.samples?.[0]?.input ?? ''
+    applyLanguage(lang)
     return
   }
   ElMessageBox.confirm(
@@ -345,19 +356,30 @@ function onLanguageChange(lang: string) {
     '切换语言',
     { type: 'warning', confirmButtonText: '替换', cancelButtonText: '保留当前代码' },
   )
-    .then(() => {
-      code.value = CODE_TEMPLATES[lang] ?? ''
-      prevLanguage.value = lang
-      // 与未编辑分支保持一致：切换语言后重新预填样例 1
-      consoleInput.value = problem.value?.samples?.[0]?.input ?? ''
-    })
+    .then(() => applyLanguage(lang))
     .catch(() => {
+      // 用户取消：把下拉框拨回原来的语言（否则界面显示的语言与编辑区内容不符）
       language.value = prevLanguage.value
     })
 }
 
 async function load() {
-  problem.value = await getProblem(route.params.id as string)
+  const id = route.params.id
+  // P2-9：路由参数来自地址栏，可能不是数字；非正整数直接落到"不存在"空态，不发请求
+  if (!/^\d+$/.test(String(id))) {
+    problem.value = undefined
+    loadError.value = true
+    return
+  }
+  loadError.value = false
+  try {
+    problem.value = await getProblem(String(id))
+  } catch {
+    // 40002 题目不存在/未上架、40400、后端不可用：由模板渲染空态
+    problem.value = undefined
+    loadError.value = true
+    return
+  }
   if (!allowedLanguages.value.some((l) => l.value === language.value)) {
     language.value = allowedLanguages.value[0]?.value || 'cpp'
   }
@@ -365,6 +387,8 @@ async function load() {
   code.value = CODE_TEMPLATES[language.value] ?? ''
   // 控制台输入预填样例 1（进页面即可见，运行时所见即所得）
   consoleInput.value = problem.value.samples?.[0]?.input ?? ''
+  consoleResult.value = undefined
+  favorited.value = false
   loadFav()
 }
 
@@ -439,7 +463,12 @@ function startPolling() {
       if (generation !== pollGeneration || submissionId !== currentSubmissionId.value) return
       if (detail.status >= 2) {
         judgeState.value = 'FINISHED'
-        result.value = { submissionId: detail.id, status: detail.status }
+        result.value = {
+          submissionId: detail.id,
+          status: detail.status,
+          timeUsedMs: detail.timeUsedMs ?? undefined,
+          memoryUsedKb: detail.memoryUsedKb ?? undefined,
+        }
         stopPolling()
       } else if (detail.status === 1) {
         judgeState.value = 'JUDGING'
@@ -463,20 +492,23 @@ function stopPolling() {
   }
 }
 
+// P2-4：同一组件在 /problems/1 → /problems/2 之间复用，只靠 onMounted 不会重新加载
+watch(
+  () => route.params.id,
+  () => {
+    stopPolling()
+    resetJudge()
+    load()
+  },
+)
+
 onUnmounted(() => {
   stopPolling()
   unsubscribe()
   currentSubmissionId.value = undefined
 })
 
-onMounted(async () => {
-  try {
-    await load()
-  } catch {
-    // 40002 题目不存在/未上架、40400、后端不可用：保持 problem 为空，由模板渲染空态
-    loadError.value = true
-  }
-})
+onMounted(load)
 </script>
 
 <style scoped>
@@ -496,6 +528,7 @@ onMounted(async () => {
   position: sticky;
   top: 76px;
 }
+
 .prob-head {
   display: flex;
   align-items: center;
@@ -506,47 +539,9 @@ onMounted(async () => {
   margin: 0;
   font-size: 20px;
   font-weight: 800;
+  line-height: 1.35;
 }
-.pid-badge {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-width: 32px;
-  height: 26px;
-  padding: 0 8px;
-  border-radius: 7px;
-  background: #eef2ff;
-  color: #4f46e5;
-  font-weight: 800;
-  font-size: 14px;
-  font-variant-numeric: tabular-nums;
-  flex-shrink: 0;
-}
-.diff-chip {
-  display: inline-flex;
-  align-items: center;
-  padding: 3px 12px;
-  border-radius: 999px;
-  font-size: 12.5px;
-  font-weight: 600;
-  border: 1px solid transparent;
-  flex-shrink: 0;
-}
-.diff-chip.diff-1 {
-  background: #f0fdf4;
-  color: #16a34a;
-  border-color: #bbf7d0;
-}
-.diff-chip.diff-2 {
-  background: #fffbeb;
-  color: #d97706;
-  border-color: #fde68a;
-}
-.diff-chip.diff-3 {
-  background: #fef2f2;
-  color: #dc2626;
-  border-color: #fecaca;
-}
+
 /* 收藏：星星胶囊按钮（已收藏态换琥珀色） */
 .fav-btn {
   margin-left: auto;
@@ -554,76 +549,82 @@ onMounted(async () => {
   align-items: center;
   gap: 5px;
   border: 1px solid var(--oj-border);
-  background: #fff;
-  color: #6b7280;
+  background: var(--oj-white);
+  color: var(--oj-gray-500);
+  font-family: inherit;
   font-size: 12.5px;
   padding: 5px 12px;
-  border-radius: 999px;
+  border-radius: var(--oj-radius-pill);
   cursor: pointer;
-  transition: all 0.15s var(--oj-ease);
+  transition: color var(--oj-duration) var(--oj-ease),
+    border-color var(--oj-duration) var(--oj-ease),
+    background var(--oj-duration) var(--oj-ease);
   flex-shrink: 0;
 }
 .fav-btn:hover,
 .fav-btn.active {
-  color: #d97706;
-  border-color: #fcd34d;
-  background: #fffbeb;
+  color: var(--oj-warning);
+  border-color: var(--oj-warning-border);
+  background: var(--oj-warning-soft);
 }
 .fav-btn.active {
   font-weight: 600;
 }
+
 /* 章节标题：与题面 Markdown 标题同款强调竖条 */
-.card h3.sec-title {
+.card .sec-title {
   display: flex;
   align-items: center;
   gap: 8px;
   margin: 22px 0 12px;
 }
-.card h3.sec-title::before {
+.card .sec-title::before {
   content: '';
   width: 4px;
   height: 16px;
   border-radius: 2px;
   background: var(--oj-primary);
 }
+
 .limits {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
-  margin-bottom: 14px;
+  margin: 14px 0;
 }
 .limit-tag {
   display: inline-flex;
   align-items: center;
   gap: 5px;
-  background: #f8f9fc;
-  color: #4b5563;
+  background: var(--oj-gray-50);
+  color: var(--oj-gray-700);
   border: 1px solid var(--oj-border);
-  border-radius: 999px;
+  border-radius: var(--oj-radius-pill);
   padding: 3px 12px;
   font-size: 12.5px;
   font-variant-numeric: tabular-nums;
 }
 .limit-tag.lang {
-  background: #eef2ff;
-  color: #4f46e5;
-  border-color: #e0e7ff;
+  background: var(--oj-primary-soft);
+  color: var(--oj-primary);
+  border-color: var(--el-color-primary-light-7);
 }
 .limit-tag.rate.rate-good {
-  color: #16a34a;
-  border-color: #bbf7d0;
-  background: #f0fdf4;
+  color: var(--oj-success);
+  border-color: var(--oj-success-border);
+  background: var(--oj-success-soft);
 }
 .limit-tag.rate.rate-mid {
-  color: #d97706;
-  border-color: #fde68a;
-  background: #fffbeb;
+  color: var(--oj-warning);
+  border-color: var(--oj-warning-border);
+  background: var(--oj-warning-soft);
 }
 .limit-tag.rate.rate-low {
-  color: #dc2626;
-  border-color: #fecaca;
-  background: #fef2f2;
+  color: var(--oj-danger);
+  border-color: var(--oj-danger-border);
+  background: var(--oj-danger-soft);
 }
+
 .sample {
   display: flex;
   gap: 12px;
@@ -633,7 +634,7 @@ onMounted(async () => {
   flex: 1;
   min-width: 0;
   border: 1px solid var(--oj-border);
-  border-radius: 10px;
+  border-radius: var(--oj-radius-md);
   overflow: hidden;
 }
 .sample-head {
@@ -641,12 +642,12 @@ onMounted(async () => {
   align-items: center;
   justify-content: space-between;
   padding: 6px 12px;
-  background: #f8f9fc;
+  background: var(--oj-gray-50);
   border-bottom: 1px solid var(--oj-border);
 }
 .sample-title {
   font-size: 12px;
-  color: #6b7280;
+  color: var(--oj-gray-500);
   font-weight: 600;
 }
 .copy-btn {
@@ -655,12 +656,14 @@ onMounted(async () => {
   gap: 4px;
   border: none;
   background: none;
-  color: #9ca3af;
+  color: var(--oj-text-weak);
+  font-family: inherit;
   font-size: 12px;
   cursor: pointer;
   padding: 2px 8px;
   border-radius: 6px;
-  transition: all 0.15s var(--oj-ease);
+  transition: color var(--oj-duration) var(--oj-ease),
+    background var(--oj-duration) var(--oj-ease);
 }
 .copy-btn:hover {
   color: var(--oj-primary);
@@ -670,17 +673,18 @@ onMounted(async () => {
   margin: 0;
   padding: 12px 14px;
   min-height: 58px;
-  background: #0f172a;
-  color: #e2e8f0;
+  background: var(--oj-code-bg);
+  color: var(--oj-code-text);
   white-space: pre-wrap;
-  word-break: break-all;
-  font-family: 'JetBrains Mono', 'Cascadia Code', Consolas, Menlo, monospace;
+  word-break: break-word;
+  font-family: var(--oj-font-mono);
   font-size: 13px;
   line-height: 1.6;
 }
+
 /* 编辑器：深色工具条 + Monaco 连成一体（IDE 观感） */
 .editor-shell {
-  border-radius: 10px;
+  border-radius: var(--oj-radius-md);
   overflow: hidden;
   box-shadow: var(--oj-shadow-sm);
 }
@@ -688,17 +692,20 @@ onMounted(async () => {
   display: flex;
   align-items: center;
   gap: 10px;
-  background: #0f172a;
+  background: var(--oj-code-bg);
   padding: 10px 12px;
 }
 .editor-label {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  color: #94a3b8;
+  color: var(--oj-code-text-sub);
   font-size: 12.5px;
   font-weight: 600;
-  font-family: 'JetBrains Mono', Consolas, monospace;
+  font-family: var(--oj-font-mono);
+}
+.editor-toolbar .lang-select {
+  width: 130px;
 }
 .editor-toolbar .toolbar-actions {
   margin-left: auto;
@@ -715,30 +722,39 @@ onMounted(async () => {
 .editor-toolbar :deep(.el-select .el-select__placeholder),
 .editor-toolbar :deep(.el-select .el-select__selected-item),
 .editor-toolbar :deep(.el-select .el-input__inner) {
-  color: #e2e8f0;
+  color: var(--oj-code-text);
 }
 .editor-toolbar :deep(.el-select .el-select__suffix),
 .editor-toolbar :deep(.el-select .el-input__suffix) {
-  color: #94a3b8;
+  color: var(--oj-code-text-sub);
 }
 .btn-icon {
   margin-right: 4px;
 }
+
 .judge-status {
   margin-top: 12px;
 }
+.judge-steps {
+  padding: 8px 4px 0;
+}
+.judge-abort {
+  text-align: center;
+  padding-bottom: 4px;
+}
+
 .console-panel {
   margin-top: 14px;
   border: 1px solid var(--oj-border);
-  border-radius: 10px;
+  border-radius: var(--oj-radius-md);
   overflow: hidden;
 }
 .console-head {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  background: #0f172a;
-  color: #e2e8f0;
+  background: var(--oj-code-bg);
+  color: var(--oj-code-text);
   padding: 8px 14px;
 }
 .console-title {
@@ -747,15 +763,15 @@ onMounted(async () => {
   gap: 7px;
   font-size: 13px;
   font-weight: 600;
-  font-family: 'JetBrains Mono', Consolas, monospace;
+  font-family: var(--oj-font-mono);
 }
 .console-input :deep(textarea) {
-  font-family: 'JetBrains Mono', Consolas, monospace;
+  font-family: var(--oj-font-mono);
   font-size: 13px;
 }
 .console-out {
-  background: #0f172a;
-  color: #e2e8f0;
+  background: var(--oj-code-bg);
+  color: var(--oj-code-text);
   padding: 10px 14px;
   min-height: 60px;
 }
@@ -763,28 +779,35 @@ onMounted(async () => {
   display: flex;
   align-items: center;
   gap: 6px;
-  color: #f87171;
+  color: var(--oj-danger);
   font-size: 13px;
   margin-bottom: 6px;
-  word-break: break-all;
+  word-break: break-word;
 }
 .console-stdout {
   margin: 0;
-  font-family: 'JetBrains Mono', Consolas, monospace;
+  font-family: var(--oj-font-mono);
   font-size: 13px;
   white-space: pre-wrap;
-  word-break: break-all;
+  word-break: break-word;
 }
 .console-meta {
-  color: #64748b;
+  color: var(--oj-code-comment);
   font-size: 11px;
   margin-top: 8px;
 }
-.judge-steps {
-  padding: 8px 4px 0;
-}
-.judge-abort {
-  text-align: center;
-  padding-bottom: 4px;
+
+/* 窄屏改单列：编辑器不再 sticky（否则会浮在题面上） */
+@media (max-width: 1024px) {
+  .problem-detail {
+    flex-direction: column;
+  }
+  .right {
+    position: static;
+    width: 100%;
+  }
+  .sample {
+    flex-direction: column;
+  }
 }
 </style>

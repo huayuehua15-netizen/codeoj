@@ -6,6 +6,12 @@
  *    process.exit 触发终止（题目提示的两种读入方式均可运行）；
  * 3. 超时 5 秒自动 terminate（防死循环卡页面）。
  * 仅适用于 JavaScript/Vue3 逻辑题；其他语言的运行依赖 A 侧 real 沙箱。
+ *
+ * 输出为什么逐行回传而不是最后一次 postMessage：
+ * Worker 与主线程共用同一个事件循环线程模型，用户代码一旦同步死循环
+ * （while(true){}），Worker 内 setTimeout 永远排不上，只能由主线程超时后 terminate。
+ * 此时若把输出攒在 Worker 里，之前 print 的内容会全部丢失（P1-8）。
+ * 因此每产生一行就 postMessage 一次，主线程增量累积——纵使被强杀也能保住已输出的部分。
  */
 
 export interface RunResult {
@@ -13,24 +19,32 @@ export interface RunResult {
   stdout: string
   /** 运行错误（语法错误/运行时异常/超时） */
   error?: string
-  /** 耗时（毫秒） */
+  /** 耗时（毫秒），主线程实测，同步阻塞场景下也准确 */
   elapsedMs: number
 }
 
+/** Worker → 主线程的消息协议 */
+type WorkerMessage =
+  | { type: 'line'; text: string }
+  | { type: 'done'; ok: boolean; error?: string }
+
 const WORKER_SOURCE = `
+const push = (text) => self.postMessage({ type: 'line', text: String(text) });
 self.onmessage = (e) => {
-  const { code, stdin, timeoutMs } = e.data;
-  const out = [];
-  const push = (args) => out.push(args.map(a => {
-    if (typeof a === 'object' && a !== null) { try { return JSON.stringify(a); } catch (_) { return String(a); } }
+  const { code, stdin } = e.data;
+  const fmt = (args) => args.map((a) => {
+    if (typeof a === 'object' && a !== null) {
+      try { return JSON.stringify(a); } catch (_) { return String(a); }
+    }
     return String(a);
-  }).join(' '));
+  }).join(' ');
   const fakeConsole = {
-    log: (...a) => push(a),
-    info: (...a) => push(a),
-    warn: (...a) => push(a),
-    error: (...a) => push(a),
-    table: (...a) => push(a),
+    log: (...a) => push(fmt(a)),
+    info: (...a) => push(fmt(a)),
+    warn: (...a) => push(fmt(a)),
+    error: (...a) => push(fmt(a)),
+    table: (...a) => push(fmt(a)),
+    debug: (...a) => push(fmt(a)),
   };
   const fakeFs = {
     readFileSync: (fd) => (fd === 0 || fd === '/dev/stdin' ? stdin : ''),
@@ -41,28 +55,22 @@ self.onmessage = (e) => {
   };
   const fakeProcess = {
     argv: ['node', 'main.js'],
-    exit: () => { throw { __exit: true }; },
-    stdout: { write: (s) => { out.push(String(s).replace(/\\n$/, '')); return 1; } },
+    exit: (code) => { throw { __exit: true, __code: code }; },
+    stdout: { write: (s) => { push(String(s).replace(/\\n$/, '')); return 1; } },
+    stderr: { write: (s) => { push(String(s).replace(/\\n$/, '')); return 1; } },
   };
-  const timer = setTimeout(() => {
-    out.push('── 超时：程序运行超过 ' + timeoutMs + 'ms 已被终止 ──');
-    self.postMessage({ stdout: out.join('\\n'), error: 'TimeLimit', elapsedMs: timeoutMs });
-    self.close();
-  }, timeoutMs);
-  const started = Date.now();
   try {
     const fn = new Function('console', 'require', 'process', code);
-    fn(fakeConsole, fakeRequire, fakeProcess);
-    clearTimeout(timer);
-    self.postMessage({ stdout: out.join('\\n'), elapsedMs: Date.now() - started });
+    const ret = fn(fakeConsole, fakeRequire, fakeProcess);
+    // 兼容"最后 return 一个值当输出"的写法
+    if (ret !== undefined) push(fmt([ret]));
+    self.postMessage({ type: 'done', ok: true });
   } catch (err) {
-    clearTimeout(timer);
-    const isExit = err && err.__exit;
-    self.postMessage({
-      stdout: out.join('\\n'),
-      error: isExit ? undefined : String((err && err.message) || err),
-      elapsedMs: Date.now() - started,
-    });
+    if (err && err.__exit) {
+      self.postMessage({ type: 'done', ok: true });
+    } else {
+      self.postMessage({ type: 'done', ok: false, error: String((err && err.message) || err) });
+    }
   }
 };
 `
@@ -79,21 +87,40 @@ function getWorkerUrl(): string {
 /** 在 Web Worker 沙箱中运行用户 JS 代码 */
 export function runInSandbox(code: string, stdin: string, timeoutMs = 5000): Promise<RunResult> {
   return new Promise((resolve) => {
+    const lines: string[] = []
+    const started = performance.now()
+    let settled = false
     const worker = new Worker(getWorkerUrl())
+
+    const finish = (result: Omit<RunResult, 'stdout' | 'elapsedMs'>) => {
+      if (settled) return
+      settled = true
+      clearTimeout(timer)
+      worker.terminate()
+      const elapsedMs = Math.round(performance.now() - started)
+      resolve({ stdout: lines.join('\n'), elapsedMs, ...result })
+    }
+
+    // 比 Worker 内部的软超时再宽 300ms，留出正常收尾的时间；
+    // 真正兜底的是这里的 terminate（同步死循环只有它能打断）。
     const timer = setTimeout(() => {
-      worker.terminate()
-      resolve({ stdout: '', error: '运行超时（5 秒）', elapsedMs: 5000 })
-    }, timeoutMs + 1000)
-    worker.onmessage = (e) => {
-      clearTimeout(timer)
-      worker.terminate()
-      resolve(e.data as RunResult)
+      lines.push(`── 超时：程序运行超过 ${timeoutMs}ms 已被终止，以上为已产生的输出 ──`)
+      finish({ error: 'TimeLimit' })
+    }, timeoutMs + 300)
+
+    worker.onmessage = (e: MessageEvent<WorkerMessage>) => {
+      const msg = e.data
+      if (msg.type === 'line') {
+        lines.push(msg.text)
+      } else if (msg.type === 'done') {
+        finish(msg.ok ? {} : { error: msg.error || '运行异常' })
+      }
     }
+
     worker.onerror = (e) => {
-      clearTimeout(timer)
-      worker.terminate()
-      resolve({ stdout: '', error: e.message || 'Worker 异常', elapsedMs: 0 })
+      finish({ error: e.message || 'Worker 异常' })
     }
-    worker.postMessage({ code, stdin, timeoutMs })
+
+    worker.postMessage({ code, stdin })
   })
 }

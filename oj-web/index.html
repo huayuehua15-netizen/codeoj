@@ -3,10 +3,32 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <!--
+      品牌图标：内联 SVG data URI，不额外产生一个 /favicon.ico 请求。
+      图形与 MainLayout 的 logo 同一套几何（圆角方 + 尖括号 + 光标块），
+      主色取 --oj-indigo-600 到 --oj-indigo-400 的渐变。
+    -->
+    <link
+      rel="icon"
+      type="image/svg+xml"
+      href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0' stop-color='%233730a3'/%3E%3Cstop offset='0.6' stop-color='%234f46e5'/%3E%3Cstop offset='1' stop-color='%238b5cf6'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='64' height='64' rx='16' fill='url(%23g)'/%3E%3Cpath d='M26 22 L16 32 L26 42' fill='none' stroke='%23ffffff' stroke-width='5' stroke-linecap='round' stroke-linejoin='round'/%3E%3Cpath d='M38 22 L48 32 L38 42' fill='none' stroke='%23ffffff' stroke-width='5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E"
+    />
+
+    <!-- 移动端地址栏/状态栏跟随品牌主色，避免白底割裂 -->
+    <meta name="theme-color" content="#4f46e5" />
+    <meta
+      name="description"
+      content="CodeOJ —— 在线代码评测与编程练习平台。支持 C / C++ / Java / Python / JavaScript 五种语言在线编写与提交，用例级判题结果实时推送。"
+    />
+    <meta name="color-scheme" content="light" />
+
+    <!-- 首屏标题与 router.afterEach 的默认值保持同一口径 -->
     <title>CodeOJ - 在线代码评测平台</title>
   </head>
   <body>
     <div id="app"></div>
+    <noscript>CodeOJ 需要启用 JavaScript 才能运行在线编辑器与判题流程。</noscript>
     <script type="module" src="/src/main.ts"></script>
   </body>
 </html>

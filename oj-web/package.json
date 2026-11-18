@@ -6,7 +6,9 @@
   "scripts": {
     "dev": "vite",
     "build": "node scripts/build.mjs",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "typecheck": "vue-tsc --noEmit",
+    "test": "node --experimental-strip-types --disable-warning=ExperimentalWarning tests/run.ts"
   },
   "dependencies": {
     "@stomp/stompjs": "^7.0.0",

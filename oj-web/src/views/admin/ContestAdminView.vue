@@ -1,10 +1,14 @@
 <template>
   <div class="page-container">
     <div class="card">
-      <div class="toolbar">
+      <div class="page-head">
+        <div>
+          <h2>竞赛管理</h2>
+          <p class="sub">创建、编辑、删除竞赛，维护起止时间与题目集</p>
+        </div>
         <el-button type="primary" @click="openCreate">创建竞赛</el-button>
       </div>
-      <el-table :data="contests" v-loading="loading">
+      <el-table :data="contests" v-loading="loading" empty-text="还没有竞赛，点右上角「创建竞赛」开始">
         <el-table-column prop="id" label="#" width="60" />
         <el-table-column prop="title" label="比赛名称" min-width="200" />
         <el-table-column label="时间" min-width="280">
@@ -83,6 +87,7 @@ async function load() {
 }
 
 async function loadProblems() {
+  // 后端分页上限 maxLimit=100，传更大的值会被静默截断，题目数超过 100 时下拉会选不到后面的题
   const data = await pageProblems({ page: 1, size: 100 })
   allProblems.value = data.records || []
 }
@@ -139,7 +144,12 @@ async function save() {
 }
 
 async function remove(row: ContestVO) {
-  await ElMessageBox.confirm(`确认删除竞赛「${row.title}」？`, '提示', { type: 'warning' })
+  // 取消会让 confirm reject，吞掉它避免 unhandled rejection；确认后的删除逻辑不变
+  try {
+    await ElMessageBox.confirm(`确认删除竞赛「${row.title}」？`, '提示', { type: 'warning' })
+  } catch {
+    return
+  }
   await deleteContest(row.id)
   ElMessage.success('已删除')
   load()
@@ -152,7 +162,19 @@ onMounted(() => {
 </script>
 
 <style scoped>
-.toolbar {
+.page-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
   margin-bottom: 16px;
+}
+.page-head h2 {
+  margin: 0;
+}
+.sub {
+  color: var(--oj-gray-400);
+  font-size: 12.5px;
+  margin: 4px 0 0;
 }
 </style>

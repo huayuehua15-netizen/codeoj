@@ -1,10 +1,14 @@
 <template>
   <div class="page-container">
     <div class="card">
-      <div class="toolbar">
+      <div class="page-head">
+        <div>
+          <h2>课程管理</h2>
+          <p class="sub">创建课程、编排题目分组，并查看班级完成情况</p>
+        </div>
         <el-button type="primary" @click="openCreate">新建课程</el-button>
       </div>
-      <el-table :data="courses" v-loading="loading">
+      <el-table :data="courses" v-loading="loading" empty-text="还没有课程，点右上角「新建课程」开始">
         <el-table-column prop="id" label="#" width="70" />
         <el-table-column prop="name" label="课程名称" min-width="180" />
         <el-table-column prop="description" label="描述" min-width="240" show-overflow-tooltip />
@@ -39,7 +43,7 @@
 
       <!-- 完成情况（论文 3.3：教师可查班级完成情况，测试 F-15） -->
       <el-dialog v-model="completionVisible" :title="`完成情况 —— ${completionCourse?.name || ''}`" width="640px">
-        <el-table :data="completion" v-loading="completionLoading" size="small">
+        <el-table :data="completion" v-loading="completionLoading" size="small" empty-text="该课程还没有学生提交记录">
           <el-table-column prop="problemId" label="#" width="70" />
           <el-table-column prop="title" label="题目" min-width="200" />
           <el-table-column prop="submittedUsers" label="提交人数" width="100" />
@@ -110,9 +114,10 @@ async function openEdit(row: Course) {
     description: row.description || '',
     problemIds: [],
   })
-  // 回填当前分组（按 sortOrder 排序）
+  // 后端 problems() 已 orderByAsc(CourseProblem::getSortOrder) 升序返回，
+  // 这里再做一次本地 sort 是冗余的，直接按返回顺序取 problemId。
   const cps = await getCourseProblems(row.id)
-  form.problemIds = cps.sort((a, b) => a.sortOrder - b.sortOrder).map((cp) => cp.problemId)
+  form.problemIds = cps.map((cp) => cp.problemId)
   dialogVisible.value = true
 }
 
@@ -150,7 +155,12 @@ async function showCompletion(row: Course) {
 }
 
 async function remove(row: Course) {
-  await ElMessageBox.confirm(`确认删除课程「${row.name}」？`, '提示', { type: 'warning' })
+  // 取消会让 confirm reject，吞掉它避免 unhandled rejection；确认后的删除逻辑不变
+  try {
+    await ElMessageBox.confirm(`确认删除课程「${row.name}」？`, '提示', { type: 'warning' })
+  } catch {
+    return
+  }
   await deleteCourse(row.id)
   ElMessage.success('已删除')
   load()
@@ -163,7 +173,19 @@ onMounted(() => {
 </script>
 
 <style scoped>
-.toolbar {
+.page-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
   margin-bottom: 16px;
+}
+.page-head h2 {
+  margin: 0;
+}
+.sub {
+  color: var(--oj-gray-400);
+  font-size: 12.5px;
+  margin: 4px 0 0;
 }
 </style>

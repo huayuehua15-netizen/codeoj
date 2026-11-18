@@ -1,7 +1,13 @@
 <template>
   <div class="page-container">
     <div class="card">
-      <h2>测试用例管理（题目 #{{ $route.params.id }}）</h2>
+      <div class="page-head">
+        <div>
+          <h2>测试用例管理（题目 #{{ problemId }}）</h2>
+          <p class="sub">批量粘贴导入判题用例，并维护样例与分值</p>
+        </div>
+        <el-button @click="router.push('/admin/problems')">返回题目列表</el-button>
+      </div>
 
       <!-- 批量导入（论文 5.7：管理端文本粘贴解析） -->
       <div class="import-area">
@@ -44,7 +50,7 @@
       </div>
 
       <h3>已有用例</h3>
-      <el-table :data="cases" v-loading="loading">
+      <el-table :data="cases" v-loading="loading" empty-text="还没有测试用例，在上方粘贴后点「导入」">
         <el-table-column prop="id" label="#" width="70" />
         <el-table-column prop="input" label="输入" min-width="200" show-overflow-tooltip />
         <el-table-column prop="expectedOutput" label="期望输出" min-width="200" show-overflow-tooltip />
@@ -62,13 +68,19 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, ref } from 'vue'
-import { useRoute } from 'vue-router'
+import { onMounted, ref, watch } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { importTestCases, listTestCases, deleteTestCase } from '@/api/problem'
 
 const route = useRoute()
-const problemId = route.params.id as string
+const router = useRouter()
+
+/**
+ * 路由参数是字符串，直接拼进 URL 会把非法值送到后端（如 /admin/problems/abc/testcases）。
+ * 这里先做一次数字校验：不合法就提示并退回列表，完全不发请求。
+ */
+const problemId = ref(String(route.params.id ?? ''))
 
 const cases = ref<{ id: number; input: string; expectedOutput: string; isSample: boolean }[]>([])
 const pasteText = ref('')
@@ -120,15 +132,17 @@ function parse() {
 }
 
 async function load() {
+  if (!isValidProblemId()) return
   loading.value = true
   try {
-    cases.value = await listTestCases(problemId)
+    cases.value = await listTestCases(problemId.value)
   } finally {
     loading.value = false
   }
 }
 
 async function importCases() {
+  if (!isValidProblemId()) return
   importing.value = true
   try {
     const payload = parsed.value.map((c, i) => ({
@@ -137,7 +151,7 @@ async function importCases() {
       score: score.value,
       isSample: i < sampleCount.value,
     }))
-    const count = await importTestCases(problemId, payload)
+    const count = await importTestCases(problemId.value, payload)
     ElMessage.success(`成功导入 ${count} 组用例`)
     pasteText.value = ''
     parsed.value = []
@@ -148,16 +162,62 @@ async function importCases() {
 }
 
 async function remove(row: { id: number }) {
-  await ElMessageBox.confirm('确认删除该用例？', '提示', { type: 'warning' })
-  await deleteTestCase(problemId, row.id)
+  // 取消按钮会让 confirm reject，吞掉它避免 unhandled rejection；确认后的删除逻辑不变
+  try {
+    await ElMessageBox.confirm('确认删除该用例？', '提示', { type: 'warning' })
+  } catch {
+    return
+  }
+  await deleteTestCase(problemId.value, row.id)
   ElMessage.success('已删除')
   load()
 }
+
+function isValidProblemId() {
+  const n = Number(problemId.value)
+  if (!Number.isFinite(n) || n <= 0) {
+    ElMessage.error('题目编号不合法')
+    router.push('/admin/problems')
+    return false
+  }
+  return true
+}
+
+/**
+ * 路由是 /admin/problems/:id/testcases，从题目 A 的用例页跳到题目 B 时组件会被复用、
+ * setup 不会重跑；没有这个 watch 就会继续显示 A 的用例。
+ */
+watch(
+  () => route.params.id,
+  () => {
+    problemId.value = String(route.params.id ?? '')
+    cases.value = []
+    pasteText.value = ''
+    parsed.value = []
+    parseError.value = ''
+    load()
+  },
+)
 
 onMounted(load)
 </script>
 
 <style scoped>
+.page-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+.page-head h2 {
+  margin: 0;
+}
+.sub {
+  color: var(--oj-gray-400);
+  font-size: 12.5px;
+  margin: 4px 0 0;
+}
 .import-area {
   margin-bottom: 20px;
 }
@@ -168,7 +228,7 @@ onMounted(load)
   margin-bottom: 10px;
 }
 .opt-label {
-  color: #606266;
+  color: var(--oj-gray-600);
   font-size: 13px;
 }
 .preview-pre {

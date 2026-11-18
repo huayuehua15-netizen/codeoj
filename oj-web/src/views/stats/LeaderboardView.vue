@@ -1,64 +1,93 @@
 <template>
   <div class="page-container">
-    <!-- 顶部概览 -->
-    <div class="summary-bar card">
-      <div class="sum-item">
-        <span class="sum-num">{{ summary.solverCount }}</span>
-        <span class="sum-label">上榜解题者</span>
+    <section class="oj-banner card" aria-label="全站统计">
+      <div class="oj-banner-item">
+        <span class="oj-banner-num">{{ summary.solverCount }}</span>
+        <span class="oj-banner-label">上榜解题者</span>
       </div>
-      <div class="sum-divider" />
-      <div class="sum-item">
-        <span class="sum-num">{{ summary.maxAcCount }}</span>
-        <span class="sum-label">最高解题数</span>
+      <div class="oj-banner-divider" aria-hidden="true"></div>
+      <div class="oj-banner-item">
+        <span class="oj-banner-num">{{ summary.maxAcCount }}</span>
+        <span class="oj-banner-label">最高解题数</span>
       </div>
-      <div class="sum-divider" />
-      <div class="sum-item">
-        <span class="sum-num">{{ summary.totalSubmit }}</span>
-        <span class="sum-label">全站提交</span>
+      <div class="oj-banner-divider" aria-hidden="true"></div>
+      <div class="oj-banner-item">
+        <span class="oj-banner-num">{{ summary.totalSubmit }}</span>
+        <span class="oj-banner-label">全站提交</span>
       </div>
-      <div class="sum-divider" />
-      <div class="sum-item">
-        <span class="sum-num">{{ summary.overallAcceptRate }}%</span>
-        <span class="sum-label">整体通过率</span>
+      <div class="oj-banner-divider" aria-hidden="true"></div>
+      <div class="oj-banner-item">
+        <span class="oj-banner-num">{{ summary.overallAcceptRate }}<small>%</small></span>
+        <span class="oj-banner-label">整体通过率</span>
       </div>
-    </div>
+      <p class="oj-banner-note">按解题数排名<br />同分者先达成者在前</p>
+    </section>
+
+    <!-- 领奖台：只在第一页出现（第二页起没有前三名），避免翻页时视觉跳变 -->
+    <section v-if="podium.length" class="podium" aria-label="前三名">
+      <div
+        v-for="entry in podium"
+        :key="entry.userId"
+        class="podium-card"
+        :class="`place-${entry.rank}`"
+      >
+        <span class="podium-medal" :class="`medal-${entry.rank}`" aria-hidden="true">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M8 21 L12 17 L16 21" /><path d="M12 3 L14.6 8.4 L20.5 9.2 L16.2 13.3 L17.3 19.1 L12 16.3 L6.7 19.1 L7.8 13.3 L3.5 9.2 L9.4 8.4 Z" />
+          </svg>
+        </span>
+        <span class="podium-avatar" :style="{ background: avatarColor(entry.userId) }">
+          {{ (entry.username || '?').slice(0, 1).toUpperCase() }}
+        </span>
+        <span class="podium-name">{{ entry.username || `用户 ${entry.userId}` }}</span>
+        <span class="podium-ac">{{ entry.acCount }}<small> 题</small></span>
+        <span class="podium-rate" :class="rateClass(entry.acceptRate)">通过率 {{ entry.acceptRate ?? 0 }}%</span>
+      </div>
+    </section>
 
     <div class="card">
-      <div class="head">
+      <header class="head">
         <div>
           <h2>排行榜</h2>
-          <p class="sub">按解题数排序；同分者，先达成该题数者在前</p>
+          <p class="sub">共 {{ total }} 位解题者，按解题数降序排列</p>
         </div>
-        <el-select v-model="size" style="width: 120px" @change="reload">
+        <el-select v-model="size" style="width: 122px" aria-label="每页条数" @change="reload">
           <el-option :value="10" label="每页 10 条" />
           <el-option :value="20" label="每页 20 条" />
           <el-option :value="50" label="每页 50 条" />
         </el-select>
-      </div>
+      </header>
 
-      <el-table :data="items" v-loading="loading" :row-class-name="rankRowClass" class="lb-table">
-        <el-table-column prop="rank" label="名次" width="88" align="center">
+      <el-table
+        :data="items"
+        v-loading="loading"
+        :row-class-name="rankRowClass"
+        row-key="userId"
+        empty-text="还没有人上榜，快去成为第一个"
+        class="lb-table"
+      >
+        <el-table-column prop="rank" label="名次" width="84" align="center">
           <template #default="{ row }">
             <span v-if="row.rank <= 3" class="rank-badge" :class="`rank-${row.rank}`">{{ row.rank }}</span>
-            <span v-else class="rank-num">{{ row.rank }}</span>
+            <span v-else class="rank-num tabular">{{ row.rank }}</span>
           </template>
         </el-table-column>
 
         <el-table-column label="用户" min-width="200">
           <template #default="{ row }">
             <div class="user-cell">
-              <span class="avatar" :style="{ background: avatarColor(row.userId) }">
-                {{ (row.username || '?').slice(0, 1) }}
+              <span class="avatar" :style="{ background: avatarColor(row.userId) }" aria-hidden="true">
+                {{ (row.username || '?').slice(0, 1).toUpperCase() }}
               </span>
               <span class="uname">{{ row.username || `用户 ${row.userId}` }}</span>
             </div>
           </template>
         </el-table-column>
 
-        <el-table-column label="解题数" width="180" align="left">
+        <el-table-column label="解题数" width="190">
           <template #default="{ row }">
             <div class="ac-cell">
-              <span class="ac-num">{{ row.acCount }}</span>
+              <span class="ac-num tabular">{{ row.acCount }}</span>
               <el-progress
                 :percentage="maxAc ? Math.round((row.acCount / maxAc) * 100) : 0"
                 :stroke-width="8"
@@ -73,28 +102,27 @@
         <el-table-column label="通过率" width="150" align="center">
           <template #default="{ row }">
             <div class="rate-cell">
-              <span class="rate-num" :class="rateClass(row.acceptRate)">{{ row.acceptRate }}%</span>
-              <span class="rate-sub">{{ row.acceptedSubmit }}/{{ row.totalSubmit }}</span>
+              <span class="rate-num tabular" :class="rateClass(row.acceptRate)">{{ row.acceptRate ?? 0 }}%</span>
+              <span class="rate-sub tabular">{{ row.acceptedSubmit ?? 0 }}/{{ row.totalSubmit ?? 0 }}</span>
             </div>
           </template>
         </el-table-column>
 
-        <el-table-column label="最后活跃" width="160" align="right">
+        <el-table-column label="最后活跃" width="150" align="right">
           <template #default="{ row }">
             <span class="last-active">{{ relativeTime(row.lastSubmitAt) }}</span>
           </template>
         </el-table-column>
       </el-table>
 
-      <el-empty v-if="!loading && !items.length" description="还没有人上榜，快去成为第一个" />
-
       <el-pagination
+        v-if="total > size"
         v-model:current-page="page"
         :page-size="size"
         :total="total"
-        :page-sizes="[10, 20, 50]"
-        layout="total, prev, pager, next"
-        style="margin-top: 16px; justify-content: flex-end"
+        :pager-count="7"
+        layout="prev, pager, next, jumper"
+        class="pager"
         @current-change="load"
       />
     </div>
@@ -121,6 +149,9 @@ const summary = ref({
 /** 进度条基准：全站最高解题数（而非当前页第一，避免翻页时比例跳变） */
 const maxAc = computed(() => summary.value.maxAcCount || 1)
 
+/** 领奖台只取第一页的前三名，且必须真的存在 */
+const podium = computed(() => (page.value === 1 ? items.value.filter((i) => i.rank <= 3) : []))
+
 async function load() {
   loading.value = true
   try {
@@ -138,23 +169,35 @@ function reload() {
   load()
 }
 
-/** 前三名用金/银/铜渐变，其余主题色 */
+/** 前三名用金/银/铜，其余主题色（颜色统一来自设计 token） */
 function progressColor(rank: number) {
-  if (rank === 1) return '#f59e0b'
-  if (rank === 2) return '#94a3b8'
-  if (rank === 3) return '#d97706'
-  return '#6366f1'
+  if (rank === 1) return 'var(--oj-gold-light)'
+  if (rank === 2) return 'var(--oj-silver-light)'
+  if (rank === 3) return 'var(--oj-bronze-light)'
+  return 'var(--oj-primary-hover)'
 }
 
 /** 通过率分级配色：>=60 绿、>=30 橙、否则红 */
-function rateClass(rate: number) {
-  if (rate >= 60) return 'good'
-  if (rate >= 30) return 'mid'
+function rateClass(rate?: number) {
+  const r = rate ?? 0
+  if (r >= 60) return 'good'
+  if (r >= 30) return 'mid'
   return 'low'
 }
 
-/** 按 userId 稳定取色的头像底色 */
-const AVATAR_COLORS = ['#6366f1', '#10b981', '#f59e0b', '#8b5cf6', '#ec4899', '#06b6d4', '#ef4444']
+/**
+ * 稳定取色的头像底色。
+ * 只保留主色系与少量点缀色，避免彩虹色撞进靛蓝主题里显得花。
+ */
+const AVATAR_COLORS = [
+  'var(--oj-indigo-600)',
+  'var(--oj-indigo-500)',
+  'var(--oj-indigo-400)',
+  'var(--oj-success)',
+  'var(--oj-warning)',
+  'var(--oj-info)',
+  'var(--oj-indigo-800)',
+]
 function avatarColor(userId: number) {
   return AVATAR_COLORS[Math.abs(userId) % AVATAR_COLORS.length]
 }
@@ -167,77 +210,143 @@ onMounted(load)
 </script>
 
 <style scoped>
-.summary-bar {
-  display: flex;
-  align-items: center;
-  gap: 32px;
-  padding: 20px 28px;
-  margin-bottom: 16px;
-  background: linear-gradient(135deg, #3730a3 0%, #4f46e5 60%, #6366f1 100%);
-  color: #fff;
+.oj-banner-num small {
+  font-size: 14px;
+  margin-left: 1px;
 }
-.sum-item {
+
+/* ---------- 领奖台 ---------- */
+.podium {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+  margin-bottom: 16px;
+}
+.podium-card {
+  position: relative;
   display: flex;
   flex-direction: column;
   align-items: center;
+  gap: 6px;
+  padding: 26px 16px 18px;
+  border-radius: var(--oj-radius);
+  background: var(--oj-white);
+  border: 1px solid var(--oj-border);
+  box-shadow: var(--oj-shadow-sm);
+  overflow: hidden;
 }
-.sum-num {
-  font-size: 26px;
+/* 冠军卡抬高一点，形成领奖台的层次 */
+.podium-card.place-1 {
+  border-color: var(--oj-warning-border);
+  background: linear-gradient(180deg, var(--oj-warning-soft) 0%, var(--oj-white) 62%);
+  box-shadow: var(--oj-shadow);
+}
+.podium-card.place-2 {
+  border-color: var(--oj-border);
+  background: linear-gradient(180deg, var(--oj-gray-50) 0%, var(--oj-white) 62%);
+}
+.podium-card.place-3 {
+  border-color: var(--oj-warning-border);
+  background: linear-gradient(180deg, var(--oj-warning-soft) 0%, var(--oj-white) 62%);
+}
+.podium-medal {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  display: inline-flex;
+  color: var(--oj-gray-300);
+}
+.podium-medal.medal-1 {
+  color: var(--oj-gold-light);
+}
+.podium-medal.medal-2 {
+  color: var(--oj-silver);
+}
+.podium-medal.medal-3 {
+  color: var(--oj-bronze);
+}
+.podium-avatar {
+  width: 46px;
+  height: 46px;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--oj-white);
+  font-size: 19px;
   font-weight: 800;
+  box-shadow: var(--oj-shadow-sm);
+}
+.podium-name {
+  font-weight: 700;
+  font-size: 14.5px;
+  color: var(--oj-gray-800);
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.podium-ac {
+  font-size: 22px;
+  font-weight: 800;
+  color: var(--oj-primary);
+  font-variant-numeric: tabular-nums;
   line-height: 1.1;
 }
-.sum-label {
+.podium-ac small {
   font-size: 12px;
-  opacity: 0.85;
-  margin-top: 4px;
+  font-weight: 600;
+  color: var(--oj-text-sub);
 }
-.sum-divider {
-  width: 1px;
-  height: 36px;
-  background: rgba(255, 255, 255, 0.28);
+.podium-rate {
+  font-size: 12px;
+  color: var(--oj-text-sub);
 }
+
+/* ---------- 表格 ---------- */
 .head {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
+  gap: 16px;
   margin-bottom: 12px;
 }
 .head h2 {
   margin: 0;
 }
-.sub {
-  margin: 4px 0 0;
+.head .sub {
+  margin: 6px 0 0;
   font-size: 12.5px;
-  color: #909399;
+  color: var(--oj-text-sub);
 }
-/* 前三名徽章：金银铜渐变方块（替代 emoji 奖牌） */
+
 .rank-badge {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   width: 30px;
   height: 30px;
-  border-radius: 10px;
-  color: #fff;
+  border-radius: var(--oj-radius-md);
+  color: var(--oj-white);
   font-weight: 800;
   font-size: 14px;
   font-variant-numeric: tabular-nums;
   box-shadow: var(--oj-shadow-sm);
 }
 .rank-badge.rank-1 {
-  background: linear-gradient(135deg, #fbbf24, #d97706);
+  background: linear-gradient(135deg, var(--oj-gold-light), var(--oj-gold));
 }
 .rank-badge.rank-2 {
-  background: linear-gradient(135deg, #cbd5e1, #64748b);
+  background: linear-gradient(135deg, var(--oj-silver-light), var(--oj-silver));
 }
 .rank-badge.rank-3 {
-  background: linear-gradient(135deg, #f0a96c, #c2681f);
+  background: linear-gradient(135deg, var(--oj-bronze-light), var(--oj-bronze));
 }
 .rank-num {
-  color: #909399;
+  color: var(--oj-text-weak);
   font-weight: 600;
-  font-variant-numeric: tabular-nums;
 }
+
 .user-cell {
   display: flex;
   align-items: center;
@@ -250,29 +359,31 @@ onMounted(load)
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  color: #fff;
+  color: var(--oj-white);
   font-size: 14px;
-  font-weight: 700;
+  font-weight: 800;
   flex-shrink: 0;
 }
 .uname {
-  font-weight: 500;
+  font-weight: 600;
+  color: var(--oj-gray-800);
 }
+
 .ac-cell {
   display: flex;
   align-items: center;
   gap: 10px;
 }
 .ac-num {
-  font-weight: 700;
+  font-weight: 800;
   font-size: 15px;
-  min-width: 18px;
-  font-variant-numeric: tabular-nums;
+  min-width: 20px;
 }
 .ac-bar {
   flex: 1;
   min-width: 90px;
 }
+
 .rate-cell {
   display: flex;
   flex-direction: column;
@@ -280,39 +391,49 @@ onMounted(load)
   line-height: 1.3;
 }
 .rate-num {
-  font-weight: 600;
-  font-variant-numeric: tabular-nums;
+  font-weight: 700;
 }
 .rate-num.good {
-  color: #16a34a;
+  color: var(--oj-success);
 }
 .rate-num.mid {
-  color: #d97706;
+  color: var(--oj-warning);
 }
 .rate-num.low {
-  color: #dc2626;
+  color: var(--oj-danger);
 }
 .rate-sub {
   font-size: 11.5px;
-  color: #a8abb2;
-  font-variant-numeric: tabular-nums;
+  color: var(--oj-text-weak);
 }
+
 .last-active {
-  color: #909399;
+  color: var(--oj-text-sub);
   font-size: 13px;
+}
+
+.pager {
+  margin-top: 16px;
+  justify-content: flex-end;
+}
+
+@media (max-width: 720px) {
+  .podium {
+    grid-template-columns: 1fr;
+  }
 }
 </style>
 
 <style>
-/* 前三名行高亮（表格行类名非 scoped，需全局） */
+/* 前三名行高亮：表格行类名由 row-class-name 生成，scoped 选不中，只能全局 */
 .el-table .top-row-1 {
-  background: #fffbf0;
+  background: var(--oj-warning-soft);
 }
 .el-table .top-row-2 {
-  background: #f8fafc;
+  background: var(--oj-gray-50);
 }
 .el-table .top-row-3 {
-  background: #fef9f3;
+  background: var(--oj-warning-soft);
 }
 .el-table .top-row-1 td,
 .el-table .top-row-2 td,

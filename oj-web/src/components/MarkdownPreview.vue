@@ -72,19 +72,19 @@ const rendered = computed(() => {
   color: var(--oj-primary-deep);
   border-radius: 5px;
   padding: 1.5px 7px;
-  font-family: 'JetBrains Mono', 'Cascadia Code', Consolas, Menlo, monospace;
+  font-family: var(--oj-font-mono);
   font-size: 13px;
 }
 
 /* 代码块：深色高对比（代码感） */
 .markdown-body :deep(pre) {
-  background: #0f172a;
-  color: #e2e8f0;
+  background: var(--oj-code-bg);
+  color: var(--oj-code-text);
   padding: 14px 16px;
-  border-radius: 10px;
+  border-radius: var(--oj-radius-md);
   overflow: auto;
   margin: 12px 0;
-  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.06);
+  box-shadow: var(--oj-code-inset);
 }
 .markdown-body :deep(pre code) {
   background: transparent;
@@ -108,7 +108,7 @@ const rendered = computed(() => {
   padding: 8px 14px;
   border-left: 4px solid var(--oj-primary);
   background: var(--oj-primary-soft);
-  border-radius: 0 8px 8px 0;
+  border-radius: 0 var(--oj-radius-sm) var(--oj-radius-sm) 0;
   color: var(--oj-text-sub);
 }
 .markdown-body :deep(blockquote p) {
@@ -118,21 +118,39 @@ const rendered = computed(() => {
   color: var(--oj-primary);
   font-weight: 600;
 }
+.markdown-body :deep(a:hover) {
+  text-decoration: underline;
+}
 .markdown-body :deep(p) {
   margin: 10px 0;
 }
 .markdown-body :deep(strong) {
   font-weight: 700;
 }
+.markdown-body :deep(table) {
+  border-collapse: collapse;
+  margin: 12px 0;
+  font-size: 13.5px;
+}
+.markdown-body :deep(th),
+.markdown-body :deep(td) {
+  border: 1px solid var(--oj-border);
+  padding: 7px 12px;
+  text-align: left;
+}
+.markdown-body :deep(th) {
+  background: var(--oj-gray-50);
+  font-weight: 600;
+}
 
 /* 嵌入式交互控件：让下拉框/输入框/按钮/折叠块在题面里一眼可识别 */
 .markdown-body :deep(select) {
   appearance: auto;
   padding: 6px 30px 6px 10px;
-  border: 1px solid #cbd5e1;
-  border-radius: 8px;
-  background: #fff
-    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%232563eb' stroke-width='2.5'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E")
+  border: 1px solid var(--oj-gray-200);
+  border-radius: var(--oj-radius-sm);
+  background: var(--oj-white)
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%234f46e5' stroke-width='2.5'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E")
     no-repeat right 10px center;
   font-size: 14px;
   color: var(--oj-text);
@@ -144,38 +162,41 @@ const rendered = computed(() => {
 .markdown-body :deep(select:focus) {
   outline: none;
   border-color: var(--oj-primary);
-  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
+  box-shadow: var(--oj-ring-primary);
 }
 .markdown-body :deep(input[type='text']),
 .markdown-body :deep(input:not([type])) {
   padding: 6px 10px;
-  border: 1px solid #cbd5e1;
-  border-radius: 8px;
+  border: 1px solid var(--oj-gray-200);
+  border-radius: var(--oj-radius-sm);
   font-size: 14px;
+  font-family: inherit;
 }
 .markdown-body :deep(input:focus) {
   outline: none;
   border-color: var(--oj-primary);
-  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
+  box-shadow: var(--oj-ring-primary);
 }
 .markdown-body :deep(button) {
   padding: 6px 16px;
   border: none;
-  border-radius: 8px;
+  border-radius: var(--oj-radius-sm);
   background: var(--oj-primary);
-  color: #fff;
+  color: var(--oj-white);
   font-size: 14px;
+  font-family: inherit;
   cursor: pointer;
+  transition: background var(--oj-duration) var(--oj-ease);
 }
 .markdown-body :deep(button:hover) {
-  filter: brightness(1.1);
+  background: var(--oj-primary-hover);
 }
 .markdown-body :deep(details) {
   margin: 10px 0;
   border: 1px solid var(--oj-border);
-  border-radius: 8px;
+  border-radius: var(--oj-radius-sm);
   padding: 8px 14px;
-  background: #f8fafc;
+  background: var(--oj-gray-50);
 }
 .markdown-body :deep(summary) {
   color: var(--oj-primary);

@@ -19,7 +19,7 @@
 
       <!-- 我的收藏 -->
       <h3>我的收藏</h3>
-      <el-table :data="favorites" v-loading="favLoading" size="small">
+      <el-table :data="favorites" v-loading="favLoading" size="small" empty-text="还没有收藏的题目，去题库逛逛吧">
         <el-table-column label="题目" min-width="240">
           <template #default="{ row }">
             <router-link :to="`/problems/${row.problemId}`">{{ row.title }}</router-link>
@@ -27,7 +27,7 @@
         </el-table-column>
         <el-table-column label="难度" width="90">
           <template #default="{ row }">
-            <el-tag :color="({1:'#67c23a',2:'#e6a23c',3:'#f56c6c'} as Record<number,string>)[row.difficulty]" size="small">
+            <el-tag :color="({1:'var(--oj-success)',2:'var(--oj-warning)',3:'var(--oj-danger)'} as Record<number,string>)[row.difficulty]" size="small">
               {{ ({1:'简单',2:'中等',3:'困难'} as Record<number,string>)[row.difficulty] || '?' }}
             </el-tag>
           </template>
@@ -49,12 +49,13 @@
           <el-button type="primary" :loading="savingEmail" @click="saveEmail">保存邮箱</el-button>
         </el-form-item>
       </el-form>
+    </div>
 
-      <el-divider />
-
-      <!-- 密码修改 -->
-      <h3>修改密码</h3>
-      <el-form :model="pwdForm" label-width="80px" style="max-width: 420px">
+    <!-- 账号安全单列一张卡，与「基本信息」同样用 .card，两个区互不干扰 -->
+    <div class="card password-card">
+      <h2>账号安全</h2>
+      <p class="sub">定期更换密码可降低账号被盗风险</p>
+      <el-form :model="pwdForm" label-width="80px" class="pwd-form">
         <el-form-item label="原密码">
           <el-input v-model="pwdForm.oldPassword" type="password" show-password />
         </el-form-item>
@@ -65,6 +66,7 @@
           <el-input v-model="pwdForm.confirm" type="password" show-password />
         </el-form-item>
         <el-form-item>
+          <!-- 改密会强制下线，属于有副作用的操作，用 warning 而非 primary 与「保存邮箱」区分 -->
           <el-button type="warning" :loading="savingPwd" @click="savePassword">修改密码</el-button>
         </el-form-item>
       </el-form>
@@ -148,19 +150,23 @@ async function savePassword() {
   max-width: 760px;
   margin: 0 auto;
 }
+/* 两张卡片之间留出与页面其它卡片一致的 16px 间距 */
+.profile-page > .card + .card {
+  margin-top: 16px;
+}
 .profile-head {
   display: flex;
   align-items: center;
   gap: 14px;
   padding-bottom: 16px;
-  border-bottom: 1px solid #f0f0f0;
+  border-bottom: 1px solid var(--oj-border);
 }
 .avatar {
   width: 52px;
   height: 52px;
   border-radius: 50%;
-  background: linear-gradient(135deg, #3730a3, #4f46e5);
-  color: #fff;
+  background: var(--oj-gradient-brand);
+  color: var(--oj-white);
   font-size: 22px;
   font-weight: 700;
   display: inline-flex;
@@ -168,12 +174,20 @@ async function savePassword() {
   justify-content: center;
 }
 .sub {
-  color: #909399;
-  font-size: 13px;
+  color: var(--oj-gray-400);
+  /* 与 6 个管理页的副标题同号，跨页面视觉一致 */
+  font-size: 12.5px;
   margin: 4px 0 0;
 }
+.password-card h2 {
+  margin-bottom: 4px;
+}
+.pwd-form {
+  max-width: 420px;
+  margin-top: 16px;
+}
 .tip {
-  color: #909399;
+  color: var(--oj-gray-400);
   font-size: 12px;
   margin-top: 4px;
 }
