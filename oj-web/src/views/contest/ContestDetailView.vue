@@ -169,18 +169,13 @@ onUnmounted(() => window.clearInterval(timer))
 /* 竞赛详情头：墨色舞台。状态靠文字与呼吸点表达 */
 .head-card {
   background-image:
-    repeating-linear-gradient(
-      to right,
-      transparent 0,
-      transparent 31px,
-      rgba(255, 254, 249, 0.045) 31px,
-      rgba(255, 254, 249, 0.045) 32px
-    ),
-    linear-gradient(135deg, #1a261f 0%, #22312a 100%);
-  border: 1px solid #1a261f;
-  border-radius: var(--oj-radius);
+    radial-gradient(640px 260px at 12% -40%, rgba(94, 106, 210, 0.28), transparent 70%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.03), transparent 55%),
+    var(--oj-card);
+  border: 1px solid var(--oj-border);
+  border-radius: 10px;
   padding: 24px 28px;
-  color: var(--oj-white);
+  color: var(--oj-text);
 }
 .head-row {
   display: flex;
@@ -197,7 +192,7 @@ onUnmounted(() => window.clearInterval(timer))
   gap: 7px;
   font-size: 12.5px;
   font-weight: 600;
-  color: rgba(215, 228, 216, 0.78);
+  color: var(--oj-text-sub);
   letter-spacing: 0.2px;
 }
 .pulse {
@@ -218,17 +213,16 @@ onUnmounted(() => window.clearInterval(timer))
 }
 .head-title {
   margin: 10px 0 0;
-  font-family: var(--oj-font-display);
   font-size: 24px;
-  font-weight: 700;
-  letter-spacing: 0.02em;
+  font-weight: 600;
+  letter-spacing: -0.4px;
   line-height: 1.3;
-  color: var(--oj-white);
+  color: var(--oj-text);
 }
 .desc {
   margin: 8px 0 0;
   font-size: 13px;
-  color: rgba(215, 228, 216, 0.72);
+  color: var(--oj-text-sub);
   line-height: 1.65;
   max-width: 640px;
 }
@@ -243,7 +237,7 @@ onUnmounted(() => window.clearInterval(timer))
   align-items: center;
   gap: 6px;
   font-size: 12.5px;
-  color: rgba(215, 228, 216, 0.7);
+  color: var(--oj-text-sub);
 }
 .head-countdown {
   flex-shrink: 0;
@@ -251,7 +245,7 @@ onUnmounted(() => window.clearInterval(timer))
 }
 .cd-label {
   font-size: 11.5px;
-  color: rgba(215, 228, 216, 0.62);
+  color: var(--oj-text-sub);
   letter-spacing: 0.3px;
 }
 .cd-value {
@@ -261,7 +255,7 @@ onUnmounted(() => window.clearInterval(timer))
   font-weight: 600;
   font-variant-numeric: tabular-nums;
   letter-spacing: 0.3px;
-  color: var(--oj-white);
+  color: var(--oj-text);
 }
 
 .tabs-card {

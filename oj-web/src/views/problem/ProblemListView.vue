@@ -383,7 +383,7 @@ onMounted(() => {
   color: var(--oj-primary);
 }
 .seg-btn.active {
-  background: var(--oj-white);
+  background: var(--oj-gray-100);
   color: var(--oj-primary);
   box-shadow: var(--oj-shadow-sm);
 }

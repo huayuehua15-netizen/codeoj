@@ -238,7 +238,7 @@ onMounted(load)
   gap: 6px;
   padding: 24px 16px 18px;
   border-radius: var(--oj-radius);
-  background: var(--oj-white);
+  background: var(--oj-card);
   border: 1px solid var(--oj-border);
   overflow: hidden;
 }
@@ -247,7 +247,7 @@ onMounted(load)
   border-top: 2px solid var(--oj-seal);
 }
 .podium-card.place-2 {
-  border-top: 2px solid var(--oj-gray-800);
+  border-top: 2px solid var(--oj-gray-500);
 }
 .podium-card.place-3 {
   border-top: 2px solid var(--oj-bronze);
@@ -339,7 +339,7 @@ onMounted(load)
   background: var(--oj-seal);
 }
 .rank-badge.rank-2 {
-  background: var(--oj-gray-800);
+  background: var(--oj-gray-300);
 }
 .rank-badge.rank-3 {
   background: var(--oj-bronze);

@@ -315,7 +315,7 @@ onUnmounted(() => window.clearInterval(timer))
   color: var(--oj-text);
 }
 .filter-btn.active {
-  background: var(--oj-white);
+  background: var(--oj-gray-100);
   color: var(--oj-primary);
   font-weight: 600;
   box-shadow: var(--oj-shadow-sm);

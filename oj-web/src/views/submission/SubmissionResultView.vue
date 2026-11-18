@@ -268,7 +268,7 @@ onMounted(load)
   align-items: center;
   padding: 4px 12px;
   border-radius: var(--oj-radius-pill);
-  background: var(--oj-white);
+  background: var(--oj-gray-100);
   border: 1px solid var(--oj-border);
   color: var(--oj-gray-700);
   font-size: 12.5px;

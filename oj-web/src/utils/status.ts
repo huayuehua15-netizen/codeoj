@@ -28,7 +28,7 @@ export function statusType(status?: number) {
  * （以及任何需要真实色值而非 CSS 引用的场景），拿不到变量解析结果。
  * 这里统一从 :root 上取一次，色板仍然只有 styles/index.css 一份。
  */
-export function cssVar(name: string, fallback = '#6b7280'): string {
+export function cssVar(name: string, fallback = '#8a8f98'): string {
   if (typeof document === 'undefined') return fallback
   const value = getComputedStyle(document.documentElement).getPropertyValue(name).trim()
   return value || fallback

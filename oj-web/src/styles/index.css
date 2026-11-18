@@ -1,153 +1,162 @@
 /* =====================================================
-   CodeOJ 设计体系「墨卷」（Design Tokens v3）
-   概念：判题如批改——平台是一张数字稿纸，
-   学生落笔（提交代码），系统批卷（运行用例），
-   AC 得绿批，错误落朱批，奖罚分明。
+   CodeOJ 设计体系 v4「墨夜」（Design Tokens）
+   基准：Linear 暗色系统（open-design.ai 收录的公开 token 规格）
+   —— 近黑画布 + 单一薰衣草靛蓝强调 + 亮度分层代替阴影。
 
    四条铁律：
-   1. 暖纸底 + 墨色字 + 单一松绿强调，朱色只做批注与小印；
-   2. 大标题用衬线（宋体系），数据与代码用等宽——
-      书卷气与工具感各管各的，绝不混用；
-   3. 零渐变、零玻璃、零发光，层次靠纸色深浅与发丝线；
-   4. 隐喻一致性：绿=批改通过，朱=批注错误，赭=待定/进行中。
+   1. 全站唯一彩色 #5e6ad2（品牌靛蓝），其余一律无彩度灰阶；
+   2. 深度靠亮度分层（0.02→0.04→0.05 的白透明度），不靠投影；
+   3. 边框即分隔：rgba(255,255,255,0.08) 一细到底；
+   4. 数据与代码等宽，正文用系统无衬线——工具的克制感。
 
-   约定（P2-18）：SFC 的 <style> 里不写裸色值，
-   一律用本文件里的 --oj-* 变量。换肤只需改这里。
+   约定：SFC 的 <style> 里不写裸色值，一律用 --oj-* 变量。
    ===================================================== */
 :root {
-  /* ---------- 纸（暖白阶） ---------- */
-  --oj-paper: #f6f4ec;
-  --oj-paper-2: #eeece1;
-  --oj-gray-50: #f2f0e6;
-  --oj-gray-100: #e6e2d3;
-  --oj-gray-200: #d4cfba;
-  --oj-gray-300: #b4af99;
-  --oj-gray-400: #93a094;
-  --oj-gray-500: #6f7d70;
-  --oj-gray-600: #5f6d62;
-  --oj-gray-700: #47544a;
-  --oj-gray-800: #34403a;
-  --oj-gray-900: #232d26;
-  --oj-white: #fffef9;
-  --oj-card: var(--oj-white);
+  /* ---------- 画布与面板（亮度分层） ---------- */
+  --oj-bg: #08090a;
+  --oj-card: #101012;
+  --oj-paper: #08090a;           /* 兼容别名 */
+  --oj-paper-2: #141516;
+  --oj-gray-50: #141516;         /* 次级面 */
+  --oj-gray-100: #1c1d21;        /* hover/浅分隔 */
+  --oj-gray-200: #23252a;        /* 实线 */
+  --oj-gray-300: #34343a;
+  --oj-gray-400: #62666d;        /* 四级文字 */
+  --oj-gray-500: #8a8f98;        /* 弱文字 */
+  --oj-gray-600: #9ba1ac;
+  --oj-gray-700: #b4bac4;
+  --oj-gray-800: #d0d6e0;
+  --oj-gray-900: #f7f8f8;        /* 主文字（刻意不纯白） */
+  --oj-white: #f7f8f8;
+  --oj-card-hl: linear-gradient(180deg, rgba(255, 255, 255, 0.04), transparent 40%);
 
-  /* ---------- 墨与松（品牌双色） ---------- */
-  --oj-primary: #17694a;        /* 松绿：链接/主按钮/选中 */
-  --oj-primary-hover: #0f563b;
-  --oj-primary-deep: #0f563b;
-  --oj-primary-soft: #e4f0e9;
-  --oj-accent: #17694a;
-  --oj-info: #2b7a8c;           /* 青磷：判题中/信息 */
-  --oj-info-soft: #e3eef1;
-  --oj-info-border: #b8d5db;
+  /* ---------- 边框 ---------- */
+  --oj-border: rgba(255, 255, 255, 0.08);
+  --oj-border-strong: rgba(255, 255, 255, 0.14);
 
-  /* ---------- 批改三色（小面积语义色） ---------- */
-  --oj-success: #1d7a44;        /* 绿批：AC/通过 */
-  --oj-success-soft: #e4f0e9;
-  --oj-success-border: #b9d9c5;
-  --oj-warning: #a26a15;        /* 赭批：超时/内存/进行中 */
-  --oj-warning-soft: #f6ecd9;
-  --oj-warning-border: #e2cf9f;
-  --oj-danger: #bc3f2c;         /* 朱批：答案错误/编译失败 */
-  --oj-danger-soft: #fbeae6;
-  --oj-danger-border: #ecc7bd;
+  /* ---------- 品牌强调（全站唯一彩色） ---------- */
+  --oj-primary: #5e6ad2;
+  --oj-primary-hover: #7170ff;
+  --oj-primary-deep: #4752c4;
+  --oj-primary-soft: rgba(94, 106, 210, 0.14);
+  --oj-accent: #5e6ad2;
+  --oj-seal: #5e6ad2;            /* 历史名"朱印"→ 品牌靛蓝印 */
+  --oj-info: #7170ff;
+  --oj-info-soft: rgba(113, 112, 255, 0.14);
+  --oj-info-border: rgba(113, 112, 255, 0.35);
 
-  /* ---------- 判定横幅浅底（同族） ---------- */
-  --oj-tint-gray: rgba(111, 125, 112, 0.08);
-  --oj-tint-primary: rgba(23, 105, 74, 0.07);
-  --oj-tint-success: rgba(29, 122, 68, 0.08);
-  --oj-tint-warning: rgba(162, 106, 21, 0.08);
-  --oj-tint-danger: rgba(188, 63, 44, 0.06);
+  /* ---------- 语义色（暗底加亮档） ---------- */
+  --oj-success: #4cb782;
+  --oj-success-soft: rgba(76, 183, 130, 0.12);
+  --oj-success-border: rgba(76, 183, 130, 0.35);
+  --oj-warning: #eab308;
+  --oj-warning-soft: rgba(234, 179, 8, 0.12);
+  --oj-warning-border: rgba(234, 179, 8, 0.35);
+  --oj-danger: #f87171;
+  --oj-danger-soft: rgba(248, 113, 113, 0.12);
+  --oj-danger-border: rgba(248, 113, 113, 0.35);
 
-  /* ---------- 奖名（前三名，印章式处理见组件） ---------- */
-  --oj-gold: #a26a15;
-  --oj-gold-light: #f6ecd9;
-  --oj-silver: #5f6d62;
-  --oj-silver-light: #e6e2d3;
-  --oj-bronze: #96572e;
-  --oj-bronze-light: #f2e3d5;
-  --oj-seal: #bc3f2c;           /* 朱印：仅品牌与第一名小印 */
+  /* ---------- 判定横幅浅底 ---------- */
+  --oj-tint-gray: rgba(138, 143, 152, 0.1);
+  --oj-tint-primary: rgba(94, 106, 210, 0.14);
+  --oj-tint-success: rgba(76, 183, 130, 0.12);
+  --oj-tint-warning: rgba(234, 179, 8, 0.12);
+  --oj-tint-danger: rgba(248, 113, 113, 0.1);
 
-  /* ---------- 深色代码面板（松烟墨底） ---------- */
-  --oj-code-bg: #15201a;
-  --oj-code-bg-soft: #1c2a22;
-  --oj-code-border: #263529;
-  --oj-code-text: #d7e4d8;
-  --oj-code-text-sub: #8ba192;
-  --oj-code-keyword: #9fd6b0;
-  --oj-code-string: #c9dba4;
-  --oj-code-number: #e3b473;
-  --oj-code-comment: #6e8377;
+  /* ---------- 名次（暗底亮档） ---------- */
+  --oj-gold: #eab308;
+  --oj-gold-light: rgba(234, 179, 8, 0.14);
+  --oj-silver: #8a8f98;
+  --oj-silver-light: rgba(138, 143, 152, 0.14);
+  --oj-bronze: #c08552;
+  --oj-bronze-light: rgba(192, 133, 82, 0.14);
 
-  /* ---------- 层次：卡片无阴影，浮层才有阴影 ---------- */
+  /* ---------- 代码面板（比画布亮一档的松烟墨） ---------- */
+  --oj-code-bg: #0d0f13;
+  --oj-code-bg-soft: #16171b;
+  --oj-code-border: rgba(255, 255, 255, 0.06);
+  --oj-code-text: #e6e8eb;
+  --oj-code-text-sub: #8a8f98;
+  --oj-code-keyword: #a5b0ff;
+  --oj-code-string: #7ee2b8;
+  --oj-code-number: #f2c94c;
+  --oj-code-comment: #62666d;
+
+  /* ---------- 层次：亮度分层，不用投影 ---------- */
   --oj-radius: 8px;
   --oj-radius-md: 6px;
   --oj-radius-sm: 6px;
-  /* 历史"胶囊"变量：所有小芯片统一 4px 直角 */
   --oj-radius-pill: 4px;
   --oj-shadow-sm: none;
-  --oj-shadow: 0 10px 28px rgba(46, 58, 48, 0.14);
-  --oj-shadow-lg: 0 18px 44px rgba(46, 58, 48, 0.18);
+  --oj-shadow: rgba(0, 0, 0, 0.4) 0px 2px 4px;
+  --oj-shadow-lg: rgba(0, 0, 0, 0.5) 0px 8px 24px;
   --oj-shadow-brand: none;
 
-  /* ---------- 兼容别名（历史引用 → 平面等价物，清扫后删除） ---------- */
-  --oj-gradient-brand: #17694a;
-  --oj-gradient-brand-deep: #232d26;
-  --oj-gradient-brand-live: #17694a;
+  /* ---------- 兼容别名（历史引用 → 暗色等价物，清扫后删除） ---------- */
+  --oj-gradient-brand: #5e6ad2;
+  --oj-gradient-brand-deep: #1a1b26;
+  --oj-gradient-brand-live: #5e6ad2;
   --oj-gradient-page: none;
-  --oj-on-brand: #fffef9;
-  --oj-on-brand-90: rgba(255, 254, 249, 0.9);
-  --oj-on-brand-85: rgba(255, 254, 249, 0.85);
-  --oj-on-brand-82: rgba(255, 254, 249, 0.82);
-  --oj-on-brand-75: rgba(255, 254, 249, 0.75);
-  --oj-on-brand-70: rgba(255, 254, 249, 0.7);
-  --oj-on-brand-28: rgba(255, 254, 249, 0.28);
-  --oj-on-brand-16: rgba(255, 254, 249, 0.16);
-  --oj-on-brand-08: rgba(255, 254, 249, 0.08);
-  --oj-glow-accent: none;
+  --oj-on-brand: #f7f8f8;
+  --oj-on-brand-90: rgba(247, 248, 248, 0.9);
+  --oj-on-brand-85: rgba(247, 248, 248, 0.85);
+  --oj-on-brand-82: rgba(247, 248, 248, 0.82);
+  --oj-on-brand-75: rgba(247, 248, 248, 0.75);
+  --oj-on-brand-70: rgba(247, 248, 248, 0.7);
+  --oj-on-brand-28: rgba(247, 248, 248, 0.28);
+  --oj-on-brand-16: rgba(247, 248, 248, 0.16);
+  --oj-on-brand-08: rgba(247, 248, 248, 0.08);
+  --oj-glow-accent: radial-gradient(circle, rgba(94, 106, 210, 0.4), transparent 68%);
   --oj-grid-line-04: transparent;
-  --oj-code-inset: inset 0 0 0 1px #263529;
-  --oj-ring-primary: 0 0 0 3px rgba(23, 105, 74, 0.18);
+  --oj-code-inset: inset 0 0 0 1px rgba(255, 255, 255, 0.06);
+  --oj-ring-primary: 0 0 0 3px rgba(94, 106, 210, 0.3);
   --oj-shadow-brand-lg: none;
   --oj-shadow-brand-lg-hover: none;
 
-  /* ---------- 状态脉冲（进行中的呼吸点，绿=开考） ---------- */
-  --oj-pulse-dot: #1d7a44;
-  --oj-pulse-ring: rgba(29, 122, 68, 0.35);
-  --oj-pulse-ring-out: rgba(29, 122, 68, 0);
+  /* ---------- 状态脉冲 ---------- */
+  --oj-pulse-dot: #4cb782;
+  --oj-pulse-ring: rgba(76, 183, 130, 0.35);
+  --oj-pulse-ring-out: rgba(76, 183, 130, 0);
 
-  /* ---------- 过渡 ---------- */
-  --oj-ease: cubic-bezier(0.4, 0, 0.2, 1);
+  /* ---------- 过渡（Linear 节奏） ---------- */
+  --oj-ease: cubic-bezier(0.2, 0, 0, 1);
   --oj-duration: 0.15s;
 
-  /* ---------- 发丝线（暖） ---------- */
-  --oj-border: #e6e2d3;
-  --oj-border-strong: #cdc8b4;
-
   /* ---------- 语义别名 ---------- */
-  --oj-bg: var(--oj-paper);
   --oj-text: var(--oj-gray-900);
-  --oj-text-sub: var(--oj-gray-600);
+  --oj-text-sub: var(--oj-gray-500);
   --oj-text-weak: var(--oj-gray-400);
 
-  /* Element Plus 主题覆盖 */
+  /* Element Plus 主题覆盖（配合 dark/css-vars.css 使用） */
   --el-color-primary: var(--oj-primary);
-  --el-color-primary-light-3: #3d8668;
-  --el-color-primary-light-5: #6ba389;
-  --el-color-primary-light-7: #a8c7b6;
-  --el-color-primary-light-8: #c4dbcf;
-  --el-color-primary-light-9: var(--oj-primary-soft);
+  --el-color-primary-light-3: #767fdc;
+  --el-color-primary-light-5: #8a92db;
+  --el-color-primary-light-7: #a9addf;
+  --el-color-primary-light-8: #c0c3e7;
+  --el-color-primary-light-9: rgba(94, 106, 210, 0.16);
   --el-color-primary-dark-2: var(--oj-primary-deep);
   --el-border-radius-base: 6px;
+  --el-bg-color: #101012;
+  --el-bg-color-overlay: #191a1b;
+  --el-border-color: rgba(255, 255, 255, 0.08);
+  --el-border-color-light: rgba(255, 255, 255, 0.06);
+  --el-border-color-lighter: rgba(255, 255, 255, 0.05);
+  --el-fill-color-blank: #101012;
+  --el-fill-color: #1c1d21;
+  --el-fill-color-light: #191a1b;
+  --el-fill-color-lighter: #141516;
+  --el-text-color-primary: #f7f8f8;
+  --el-text-color-regular: #d0d6e0;
+  --el-text-color-secondary: #8a8f98;
+  --el-text-color-placeholder: #62666d;
   --el-font-family: var(--oj-font-sans);
 
-  /* ---------- 字体 ---------- */
-  --oj-font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei',
-    sans-serif;
-  --oj-font-mono: 'JetBrains Mono', 'Cascadia Code', Consolas, Menlo, monospace;
-  /* 衬线展示体：仅用于标题/词标/大数字以外的"文气"位置 */
-  --oj-font-display: 'Source Han Serif SC', 'Noto Serif SC', 'STZhongsong', 'Songti SC', 'SimSun',
-    Georgia, serif;
+  /* ---------- 字体（Linear 口径：Inter 系系统栈 + 等宽） ---------- */
+  --oj-font-sans: 'Inter Variable', Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI',
+    'PingFang SC', 'Microsoft YaHei', sans-serif;
+  --oj-font-mono: ui-monospace, 'Cascadia Code', 'JetBrains Mono', Consolas, Menlo, monospace;
+  /* 历史展示体引用 → 同无衬线（Linear 不用衬线） */
+  --oj-font-display: var(--oj-font-sans);
 }
 
 * {
@@ -160,14 +169,12 @@ body,
   height: 100%;
   margin: 0;
   font-family: var(--oj-font-sans);
-  /* 纸张噪点：fractalNoise 压到 4% 透明度平铺，给纸面以"纤维"质感 */
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3CfeComponentTransfer%3E%3CfeFuncA type='linear' slope='0.04'/%3E%3C/feComponentTransfer%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)'/%3E%3C/svg%3E");
-  background-color: var(--oj-paper);
+  background: var(--oj-bg);
   color: var(--oj-text);
   -webkit-font-smoothing: antialiased;
 }
 
-/* 数字与代码统一等宽字体——评测工具的基本素养 */
+/* 数字与代码统一等宽 */
 code,
 pre,
 .el-progress__text,
@@ -177,17 +184,6 @@ pre,
   font-family: var(--oj-font-mono);
 }
 
-/* 衬线标题：页面级 h1 与卡片内 h2 走文气路线 */
-.oj-page-title,
-.page-container h1,
-.card h2,
-.profile-hero .name {
-  font-family: var(--oj-font-display);
-  font-weight: 700;
-  letter-spacing: 0.02em;
-}
-
-/* 等宽数字：表格里数字列不跳动 */
 .tabular,
 .el-table {
   font-variant-numeric: tabular-nums;
@@ -198,14 +194,12 @@ a {
   color: inherit;
 }
 
-/* 键盘可聚焦元素统一焦点环（P2-17） */
 :focus-visible {
   outline: 2px solid var(--oj-primary);
   outline-offset: 2px;
   border-radius: 4px;
 }
 
-/* 尊重「减少动效」系统偏好 */
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
@@ -216,9 +210,11 @@ a {
   }
 }
 
-/* 统一卡片：暖白纸卡 + 暖发丝边 + 8px 圆角，无阴影无浮起 */
+/* 卡片：亮度分层——面板色 + 顶部内高光 + 发丝边，无投影 */
 .card {
+  position: relative;
   background: var(--oj-card);
+  background-image: var(--oj-card-hl);
   border: 1px solid var(--oj-border);
   border-radius: var(--oj-radius);
   padding: 24px;
@@ -230,24 +226,15 @@ a {
   padding: 24px 20px;
 }
 
-/* ---------- 页面顶部统计条（笺纸风） ----------
-   暖纸卡 + 极淡的稿纸横线纹理（repeating-gradient，
-   间距与正文行高呼应），数据靠等宽字说话。 */
+/* ---------- 页面顶部统计条 ---------- */
 .oj-banner {
   display: flex;
   align-items: center;
   gap: 28px;
   padding: 18px 26px;
   margin-bottom: 16px;
-  background:
-    repeating-linear-gradient(
-      to bottom,
-      transparent 0,
-      transparent 30px,
-      rgba(23, 105, 74, 0.05) 30px,
-      rgba(23, 105, 74, 0.05) 31px
-    ),
-    var(--oj-card);
+  background-image: var(--oj-card-hl);
+  background-color: var(--oj-card);
   border: 1px solid var(--oj-border);
   border-radius: var(--oj-radius);
   color: var(--oj-text);
@@ -264,7 +251,7 @@ a {
   line-height: 1.2;
   font-variant-numeric: tabular-nums;
   letter-spacing: -0.3px;
-  color: var(--oj-primary-deep);
+  color: var(--oj-text);
 }
 .oj-banner .oj-banner-label {
   font-size: 12px;
@@ -282,8 +269,6 @@ a {
   color: var(--oj-text-sub);
   text-align: right;
 }
-
-/* 窄屏：两列网格，分隔线隐藏，提示整宽 */
 @media (max-width: 768px) {
   .oj-banner {
     display: grid;
@@ -302,7 +287,7 @@ a {
   }
 }
 
-/* ---------- 题号小徽章：墨字纸片 ---------- */
+/* ---------- 题号小徽章 ---------- */
 .oj-badge-id {
   display: inline-flex;
   align-items: center;
@@ -311,7 +296,7 @@ a {
   height: 22px;
   padding: 0 6px;
   border-radius: var(--oj-radius-sm);
-  background: var(--oj-gray-50);
+  background: var(--oj-gray-100);
   border: 1px solid var(--oj-border);
   color: var(--oj-gray-700);
   font-family: var(--oj-font-mono);
@@ -321,7 +306,7 @@ a {
   flex-shrink: 0;
 }
 
-/* 难度：小圆点 + 文字，颜色只出现在 7px 的点上 */
+/* 难度：色点 + 文字 */
 .oj-diff {
   display: inline-flex;
   align-items: center;
@@ -329,7 +314,7 @@ a {
   font-size: 12.5px;
   font-weight: 500;
   white-space: nowrap;
-  color: var(--oj-gray-700);
+  color: var(--oj-gray-600);
 }
 .oj-diff::before {
   content: '';
@@ -343,17 +328,16 @@ a {
 .oj-diff.diff-2 { color: var(--oj-warning); }
 .oj-diff.diff-3 { color: var(--oj-danger); }
 
-/* 通过率三级配色 */
 .rate-good { color: var(--oj-success); }
 .rate-mid { color: var(--oj-warning); }
 .rate-low { color: var(--oj-danger); }
 
 /* Element Plus 细节统一 */
 .el-table {
-  --el-table-row-hover-bg-color: var(--oj-paper-2);
+  --el-table-row-hover-bg-color: var(--oj-gray-100);
   --el-table-border-color: var(--oj-border);
-  --el-table-header-text-color: var(--oj-gray-600);
-  --el-table-header-bg-color: var(--oj-gray-50);
+  --el-table-header-text-color: var(--oj-gray-500);
+  --el-table-header-bg-color: transparent;
 }
 .el-table th.el-table__cell {
   font-weight: 600;
@@ -365,8 +349,9 @@ a {
   font-weight: 500;
 }
 .el-dialog {
-  border-radius: var(--oj-radius);
-  box-shadow: var(--oj-shadow-lg);
+  border-radius: 10px;
+  background: var(--oj-card);
+  border: 1px solid var(--oj-border);
 }
 .el-tag {
   border-radius: 4px;
@@ -382,21 +367,19 @@ a {
   font-size: 13px;
 }
 
-/* 卡片内的区块标题 */
 .card h2 {
   margin: 0 0 8px;
-  font-size: 18px;
-  font-weight: 700;
+  font-size: 17px;
+  font-weight: 600;
+  letter-spacing: -0.1px;
 }
 .card h3 {
   margin: 20px 0 10px;
-  font-size: 15px;
+  font-size: 14.5px;
   font-weight: 600;
 }
 
-/* ---------- 页面头部：标题 + 说明 + 右侧操作 ----------
-   标题一律 h1 衬线体，前置一枚朱印小方块（句读印），
-   这是全站标题的识别记号。 */
+/* ---------- 页面头部：朱印改品牌印 ---------- */
 .oj-page-head {
   display: flex;
   align-items: flex-start;
@@ -411,6 +394,8 @@ a {
   position: relative;
   padding-left: 16px;
   font-size: 21px;
+  font-weight: 600;
+  letter-spacing: -0.3px;
   line-height: 1.35;
   color: var(--oj-text);
 }
@@ -419,11 +404,11 @@ a {
   content: '';
   position: absolute;
   left: 0;
-  top: 0.32em;
+  top: 0.34em;
   width: 8px;
   height: 8px;
   background: var(--oj-seal);
-  border-radius: 1px;
+  border-radius: 2px;
 }
 .oj-page-sub {
   margin: 6px 0 0;
@@ -432,7 +417,7 @@ a {
   color: var(--oj-text-sub);
 }
 .oj-page-sub b {
-  color: var(--oj-primary);
+  color: var(--oj-primary-hover);
   font-variant-numeric: tabular-nums;
 }
 .oj-toolbar {
@@ -445,7 +430,8 @@ a {
   .oj-page-head {
     gap: 12px;
   }
-  .oj-page-title {
+  .oj-page-title,
+  .page-container h1 {
     font-size: 19px;
   }
   .oj-toolbar {
@@ -453,37 +439,34 @@ a {
   }
 }
 
-/* ---------- 墨色舞台（全站页头横幅） ----------
-   每页的"开场"：深松烟墨底 + 暗稿纸线 + 纸白衬线大标题 + 朱印。
-   明（纸）—暗（墨）—明（纸卡）的交替给页面节奏感，
-   这是"有感觉"与"平铺卡片"的分水岭。 */
+/* ---------- 墨色舞台 → 辉光舞台 ----------
+   深面板 + 品牌靛蓝径向辉光 + 微网格，一束光从左上打下来。 */
 .oj-stage {
   position: relative;
   overflow: hidden;
+  display: flex;
+  align-items: flex-start;
+  gap: 20px;
+  flex-wrap: wrap;
   padding: 26px 30px;
   margin-bottom: 16px;
-  border-radius: var(--oj-radius);
+  border-radius: 10px;
+  border: 1px solid var(--oj-border);
   background-image:
-    repeating-linear-gradient(
-      to right,
-      transparent 0,
-      transparent 31px,
-      rgba(255, 254, 249, 0.045) 31px,
-      rgba(255, 254, 249, 0.045) 32px
-    ),
-    linear-gradient(135deg, #1a261f 0%, #22312a 100%);
-  color: var(--oj-white);
+    radial-gradient(640px 260px at 12% -40%, rgba(94, 106, 210, 0.28), transparent 70%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.03), transparent 55%),
+    var(--oj-card);
+  color: var(--oj-text);
 }
 .oj-stage .oj-stage-title {
   margin: 0;
   position: relative;
   padding-left: 18px;
-  font-family: var(--oj-font-display);
   font-size: 26px;
-  font-weight: 700;
-  letter-spacing: 0.04em;
+  font-weight: 600;
+  letter-spacing: -0.5px;
   line-height: 1.3;
-  color: var(--oj-white);
+  color: var(--oj-text);
 }
 .oj-stage .oj-stage-title::before {
   content: '';
@@ -493,25 +476,24 @@ a {
   width: 9px;
   height: 9px;
   background: var(--oj-seal);
-  border-radius: 1px;
+  border-radius: 2px;
 }
 .oj-stage .oj-stage-sub {
   margin: 8px 0 0;
   font-size: 13px;
   line-height: 1.7;
-  color: rgba(215, 228, 216, 0.72);
+  color: var(--oj-text-sub);
 }
 .oj-stage .oj-stage-sub b {
-  color: #9fd6b0;
+  color: var(--oj-primary-hover);
   font-variant-numeric: tabular-nums;
 }
 .oj-stage .oj-stage-side {
   margin-left: auto;
   display: flex;
   align-items: center;
-  gap: 0;
-  flex-shrink: 0;
   align-self: stretch;
+  flex-shrink: 0;
 }
 .oj-stage .oj-stage-stat {
   display: flex;
@@ -521,7 +503,7 @@ a {
   padding: 0 16px;
 }
 .oj-stage .oj-stage-stat + .oj-stage-stat {
-  border-left: 1px solid rgba(255, 254, 249, 0.14);
+  border-left: 1px solid var(--oj-border);
 }
 .oj-stage .oj-stage-num {
   font-family: var(--oj-font-mono);
@@ -530,26 +512,20 @@ a {
   line-height: 1.15;
   letter-spacing: -0.5px;
   font-variant-numeric: tabular-nums;
-  color: var(--oj-white);
+  color: var(--oj-text);
 }
 .oj-stage .oj-stage-label {
   margin-top: 4px;
   font-size: 11.5px;
-  color: rgba(215, 228, 216, 0.62);
+  color: var(--oj-text-sub);
   white-space: nowrap;
-}
-.oj-stage {
-  display: flex;
-  align-items: flex-start;
-  gap: 20px;
-  flex-wrap: wrap;
 }
 @media (max-width: 760px) {
   .oj-stage .oj-stage-side {
     margin-left: 0;
     width: 100%;
     justify-content: flex-start;
-    border-top: 1px solid rgba(255, 254, 249, 0.14);
+    border-top: 1px solid var(--oj-border);
     padding-top: 14px;
   }
   .oj-stage .oj-stage-stat:first-child {
@@ -559,7 +535,7 @@ a {
 
 /* 页面进入动画（仅首屏） */
 .page-enter-active {
-  transition: opacity 0.18s var(--oj-ease), transform 0.18s var(--oj-ease);
+  transition: opacity 0.15s var(--oj-ease), transform 0.15s var(--oj-ease);
 }
 .page-enter-from {
   opacity: 0;

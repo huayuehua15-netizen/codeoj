@@ -39,15 +39,8 @@ defineProps<{
   display: grid;
   grid-template-rows: auto 1fr auto;
   background-image:
-    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3CfeComponentTransfer%3E%3CfeFuncA type='linear' slope='0.05'/%3E%3C/feComponentTransfer%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)'/%3E%3C/svg%3E"),
-    repeating-linear-gradient(
-      to right,
-      transparent 0,
-      transparent 31px,
-      rgba(159, 214, 176, 0.06) 31px,
-      rgba(159, 214, 176, 0.06) 32px
-    ),
-    linear-gradient(160deg, #14211a 0%, #1c2a22 55%, #16231c 100%);
+    radial-gradient(760px 420px at 50% -20%, rgba(94, 106, 210, 0.28), transparent 70%),
+    linear-gradient(180deg, #0c0d10, #08090a);
 }
 
 .auth-brand {
@@ -81,7 +74,7 @@ defineProps<{
 }
 .wordmark em {
   font-style: normal;
-  color: #9fd6b0;
+  color: #828fff;
 }
 
 .auth-main {
@@ -117,12 +110,11 @@ defineProps<{
   justify-content: center;
   gap: 8px;
   font-size: 12px;
-  color: rgba(215, 228, 216, 0.45);
+  color: var(--oj-gray-400);
 }
 .foot-motto {
-  font-family: var(--oj-font-display);
-  letter-spacing: 0.12em;
-  color: rgba(215, 228, 216, 0.6);
+  letter-spacing: 0.02em;
+  color: var(--oj-gray-500);
 }
 .auth-foot .dot {
   opacity: 0.6;

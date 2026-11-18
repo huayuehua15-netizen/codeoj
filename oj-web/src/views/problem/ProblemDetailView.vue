@@ -549,7 +549,7 @@ onMounted(load)
   align-items: center;
   gap: 5px;
   border: 1px solid var(--oj-border);
-  background: var(--oj-white);
+  background: var(--oj-gray-100);
   color: var(--oj-gray-500);
   font-family: inherit;
   font-size: 12.5px;

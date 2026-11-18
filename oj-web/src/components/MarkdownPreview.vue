@@ -139,7 +139,7 @@ const rendered = computed(() => {
   text-align: left;
 }
 .markdown-body :deep(th) {
-  background: var(--oj-gray-50);
+  background: var(--oj-gray-100);
   font-weight: 600;
 }
 
@@ -147,10 +147,10 @@ const rendered = computed(() => {
 .markdown-body :deep(select) {
   appearance: auto;
   padding: 6px 30px 6px 10px;
-  border: 1px solid var(--oj-gray-200);
+  border: 1px solid var(--oj-border);
   border-radius: var(--oj-radius-sm);
-  background: var(--oj-white)
-    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%234f46e5' stroke-width='2.5'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E")
+  background: var(--oj-gray-100)
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%237170ff' stroke-width='2.5'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E")
     no-repeat right 10px center;
   font-size: 14px;
   color: var(--oj-text);
@@ -167,10 +167,12 @@ const rendered = computed(() => {
 .markdown-body :deep(input[type='text']),
 .markdown-body :deep(input:not([type])) {
   padding: 6px 10px;
-  border: 1px solid var(--oj-gray-200);
+  border: 1px solid var(--oj-border);
   border-radius: var(--oj-radius-sm);
   font-size: 14px;
   font-family: inherit;
+  background: var(--oj-gray-100);
+  color: var(--oj-text);
 }
 .markdown-body :deep(input:focus) {
   outline: none;
@@ -182,7 +184,7 @@ const rendered = computed(() => {
   border: none;
   border-radius: var(--oj-radius-sm);
   background: var(--oj-primary);
-  color: var(--oj-white);
+  color: #ffffff;
   font-size: 14px;
   font-family: inherit;
   cursor: pointer;
@@ -196,7 +198,7 @@ const rendered = computed(() => {
   border: 1px solid var(--oj-border);
   border-radius: var(--oj-radius-sm);
   padding: 8px 14px;
-  background: var(--oj-gray-50);
+  background: var(--oj-gray-100);
 }
 .markdown-body :deep(summary) {
   color: var(--oj-primary);

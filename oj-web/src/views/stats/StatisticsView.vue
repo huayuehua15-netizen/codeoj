@@ -154,9 +154,9 @@ function rateClass(rate: number) {
 
 /** 通过率三级配色值：图表需要真实色值，从设计 token 读，避免在 JS 里再写一份色板 */
 function rateColor(rate: number) {
-  if (rate >= 60) return cssVar('--oj-success', '#1d7a44')
-  if (rate >= 30) return cssVar('--oj-warning', '#a26a15')
-  return cssVar('--oj-danger', '#bc3f2c')
+  if (rate >= 60) return cssVar('--oj-success', '#4cb782')
+  if (rate >= 30) return cssVar('--oj-warning', '#eab308')
+  return cssVar('--oj-danger', '#f87171')
 }
 
 /** 各判题状态的配色：与 utils/status.ts 的 STATUS_COLOR 语义保持一致 */
@@ -174,8 +174,8 @@ function statusChartColor(status: number): string {
 }
 
 function renderCharts(trend: { date: string; total: number; accepted: number }[]) {
-  const axisLine = cssVar('--oj-border', '#e6e2d3')
-  const labelColor = cssVar('--oj-text-sub', '#5f6d62')
+  const axisLine = cssVar('--oj-border', 'rgba(255, 255, 255, 0.08)')
+  const labelColor = cssVar('--oj-text-sub', '#8a8f98')
   const cardBg = cssVar('--oj-white', '#ffffff')
 
   // 状态分布：环形图（比柱状更省空间，且适合看占比）

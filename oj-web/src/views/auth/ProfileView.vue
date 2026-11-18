@@ -526,16 +526,11 @@ async function savePassword() {
 .profile-hero {
   padding: 26px 30px;
   background-image:
-    repeating-linear-gradient(
-      to right,
-      transparent 0,
-      transparent 31px,
-      rgba(255, 254, 249, 0.045) 31px,
-      rgba(255, 254, 249, 0.045) 32px
-    ),
-    linear-gradient(135deg, #1a261f 0%, #22312a 100%);
-  border-color: #1a261f;
-  color: var(--oj-white);
+    radial-gradient(640px 260px at 12% -40%, rgba(94, 106, 210, 0.3), transparent 70%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.03), transparent 55%),
+    var(--oj-card);
+  border-color: var(--oj-border);
+  color: var(--oj-text);
 }
 .hero-top {
   display: flex;
@@ -562,9 +557,8 @@ async function savePassword() {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  /* 墨底舞台上的首字母头像：纸白方块 + 墨字，反转配色才压得住深底 */
-  background: var(--oj-white);
-  color: var(--oj-gray-900);
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--oj-text);
   font-size: 34px;
   font-weight: 600;
 }
@@ -614,8 +608,8 @@ async function savePassword() {
   padding: 1px 6px;
 }
 .role-chip.admin {
-  color: #9fd6b0;
-  border-color: rgba(159, 214, 176, 0.4);
+  color: #828fff;
+  border-color: rgba(113, 112, 255, 0.4);
   background: rgba(29, 122, 68, 0.22);
 }
 .sig-row {
@@ -729,10 +723,10 @@ async function savePassword() {
   border-radius: 2px;
   display: inline-block;
 }
-.lv-0 { background: var(--oj-gray-100); }
-.lv-1 { background: #cbe3cf; }
-.lv-2 { background: #7abf8b; }
-.lv-3 { background: #3d9463; }
+.lv-0 { background: rgba(255, 255, 255, 0.06); }
+.lv-1 { background: #1d4633; }
+.lv-2 { background: #2c7a52; }
+.lv-3 { background: #3fae72; }
 .lv-4 { background: var(--oj-success); }
 .heatmap-scroll {
   overflow-x: auto;
@@ -781,10 +775,10 @@ async function savePassword() {
   height: 11px;
   border-radius: 2px;
 }
-.cell.lv-0 { background: var(--oj-gray-100); }
-.cell.lv-1 { background: #cbe3cf; }
-.cell.lv-2 { background: #7abf8b; }
-.cell.lv-3 { background: #3d9463; }
+.cell.lv-0 { background: rgba(255, 255, 255, 0.06); }
+.cell.lv-1 { background: #1d4633; }
+.cell.lv-2 { background: #2c7a52; }
+.cell.lv-3 { background: #3fae72; }
 .cell.lv-4 { background: var(--oj-success); }
 
 /* ---------- 解题进度 ---------- */

@@ -47,7 +47,7 @@ const attempted = computed(() => (route.fullPath.length <= 60 ? route.fullPath :
   font-weight: 600;
   line-height: 1;
   letter-spacing: -2px;
-  color: var(--oj-gray-300);
+  color: var(--oj-gray-500);
 }
 .nf-title {
   margin: 18px 0 8px;
@@ -78,7 +78,7 @@ const attempted = computed(() => (route.fullPath.length <= 60 ? route.fullPath :
 .nf-attempted code {
   padding: 2px 6px;
   border-radius: 4px;
-  background: var(--oj-gray-50);
+  background: var(--oj-gray-100);
   border: 1px solid var(--oj-border);
   color: var(--oj-text-sub);
 }

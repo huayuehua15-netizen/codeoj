@@ -153,18 +153,13 @@ onMounted(async () => {
 .hero {
   position: relative;
   overflow: hidden;
-  border: 1px solid #1a261f;
+  border: 1px solid var(--oj-border);
   border-radius: var(--oj-radius);
   background-image:
-    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3CfeComponentTransfer%3E%3CfeFuncA type='linear' slope='0.05'/%3E%3C/feComponentTransfer%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)'/%3E%3C/svg%3E"),
-    repeating-linear-gradient(
-      to right,
-      transparent 0,
-      transparent 31px,
-      rgba(159, 214, 176, 0.055) 31px,
-      rgba(159, 214, 176, 0.055) 32px
-    ),
-    linear-gradient(150deg, #14211a 0%, #1d2c24 55%, #16231c 100%);
+    radial-gradient(900px 400px at 18% -60%, rgba(94, 106, 210, 0.35), transparent 70%),
+    radial-gradient(700px 320px at 90% -40%, rgba(113, 112, 255, 0.16), transparent 70%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.035), transparent 55%),
+    var(--oj-card);
   color: var(--oj-white);
 }
 .hero-inner {
@@ -174,7 +169,7 @@ onMounted(async () => {
   margin: 0;
   font-size: 12px;
   letter-spacing: 0.28em;
-  color: rgba(159, 214, 176, 0.75);
+  color: var(--oj-primary-hover);
 }
 .hero-title {
   margin: 14px 0 0;
@@ -187,13 +182,13 @@ onMounted(async () => {
 }
 .hero-title em {
   font-style: normal;
-  color: #9fd6b0;
+  color: #828fff;
 }
 .hero-sub {
   margin: 16px 0 0;
   font-size: 14px;
   line-height: 1.9;
-  color: rgba(215, 228, 216, 0.72);
+  color: var(--oj-text-sub);
 }
 .hero-cta {
   display: flex;
@@ -235,12 +230,12 @@ onMounted(async () => {
   font-weight: 600;
   line-height: 1.15;
   letter-spacing: -0.5px;
-  color: var(--oj-white);
+  color: var(--oj-text);
 }
 .hs-label {
   margin-top: 4px;
   font-size: 12px;
-  color: rgba(215, 228, 216, 0.6);
+  color: var(--oj-text-sub);
 }
 
 .home-body {
@@ -411,9 +406,9 @@ onMounted(async () => {
 .rank-badge.rank-3 { background: var(--oj-bronze); }
 .rank-badge.rank-4,
 .rank-badge.rank-5 {
-  background: var(--oj-gray-50);
+  background: var(--oj-gray-100);
   border: 1px solid var(--oj-border);
-  color: var(--oj-gray-600);
+  color: var(--oj-gray-700);
 }
 .rank-name {
   flex: 1;

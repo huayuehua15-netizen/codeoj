@@ -268,8 +268,8 @@ async function handleLogout() {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  background: var(--oj-gray-900);
-  color: var(--oj-white);
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--oj-text);
   font-size: 12px;
   font-weight: 600;
   flex-shrink: 0;
