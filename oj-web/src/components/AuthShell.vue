@@ -31,22 +31,23 @@ defineProps<{
 </script>
 
 <style scoped>
-/* 登录/注册：稿纸页。
-   整页铺极淡的稿纸竖线（与正文字距呼应），方印词标居中，
-   表单卡像一张放在稿纸上的答题卡——"作答"的仪式感就在这里。 */
+/* 登录/注册：全暗稿纸页。
+   深松烟墨铺满整页，绿相稿纸竖线 + 纸张噪点做质感，
+   纸白衬线词标压在正中——一张纸卡浮在墨卷上，"作答"的仪式感。 */
 .auth-page {
   min-height: 100vh;
   display: grid;
   grid-template-rows: auto 1fr auto;
-  background:
+  background-image:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3CfeComponentTransfer%3E%3CfeFuncA type='linear' slope='0.05'/%3E%3C/feComponentTransfer%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)'/%3E%3C/svg%3E"),
     repeating-linear-gradient(
       to right,
       transparent 0,
       transparent 31px,
-      rgba(23, 105, 74, 0.045) 31px,
-      rgba(23, 105, 74, 0.045) 32px
+      rgba(159, 214, 176, 0.06) 31px,
+      rgba(159, 214, 176, 0.06) 32px
     ),
-    var(--oj-paper);
+    linear-gradient(160deg, #14211a 0%, #1c2a22 55%, #16231c 100%);
 }
 
 .auth-brand {
@@ -75,12 +76,12 @@ defineProps<{
   font-family: var(--oj-font-display);
   font-size: 21px;
   font-weight: 700;
-  color: var(--oj-text);
+  color: var(--oj-white);
   letter-spacing: 0.03em;
 }
 .wordmark em {
   font-style: normal;
-  color: var(--oj-primary);
+  color: #9fd6b0;
 }
 
 .auth-main {
@@ -92,7 +93,7 @@ defineProps<{
   width: 100%;
   max-width: 380px;
   padding: 28px 28px 24px;
-  box-shadow: var(--oj-shadow);
+  box-shadow: var(--oj-shadow-lg);
 }
 .auth-title {
   margin: 0 0 6px;
@@ -116,12 +117,12 @@ defineProps<{
   justify-content: center;
   gap: 8px;
   font-size: 12px;
-  color: var(--oj-text-weak);
+  color: rgba(215, 228, 216, 0.45);
 }
 .foot-motto {
   font-family: var(--oj-font-display);
   letter-spacing: 0.12em;
-  color: var(--oj-gray-600);
+  color: rgba(215, 228, 216, 0.6);
 }
 .auth-foot .dot {
   opacity: 0.6;

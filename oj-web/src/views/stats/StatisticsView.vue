@@ -1,6 +1,12 @@
 <template>
   <div class="page-container">
-    <!-- 顶部概览：与题库/排行榜/提交记录同款渐变概览条 -->
+    <header class="oj-stage">
+      <div>
+        <h1 class="oj-stage-title">学习统计</h1>
+        <p class="oj-stage-sub">难度覆盖、状态分布与七日趋势——数据不会说谎</p>
+      </div>
+    </header>
+    <!-- 顶部概览 -->
     <div class="card oj-banner">
       <div class="oj-banner-item">
         <span class="oj-banner-num">{{ stat.acceptRate }}%</span>

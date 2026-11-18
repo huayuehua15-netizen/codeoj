@@ -1,5 +1,11 @@
 <template>
   <div class="page-container">
+    <header class="oj-stage">
+      <div>
+        <h1 class="oj-stage-title">排行榜</h1>
+        <p class="oj-stage-sub">以解题数定高低，同数比快慢——这是刷题人的荣誉簿</p>
+      </div>
+    </header>
     <section class="oj-banner card" aria-label="全站统计">
       <div class="oj-banner-item">
         <span class="oj-banner-num">{{ summary.solverCount }}</span>

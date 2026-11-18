@@ -520,9 +520,22 @@ async function savePassword() {
   text-decoration: underline;
 }
 
-/* ---------- 资料头 ---------- */
+/* ---------- 资料头：墨色舞台 ----------
+   个人页的开场白：深松烟墨底上摆纸白衬线名与等宽数据，
+   与下方纸卡形成明暗节奏。 */
 .profile-hero {
-  padding: 24px 28px;
+  padding: 26px 30px;
+  background-image:
+    repeating-linear-gradient(
+      to right,
+      transparent 0,
+      transparent 31px,
+      rgba(255, 254, 249, 0.045) 31px,
+      rgba(255, 254, 249, 0.045) 32px
+    ),
+    linear-gradient(135deg, #1a261f 0%, #22312a 100%);
+  border-color: #1a261f;
+  color: var(--oj-white);
 }
 .hero-top {
   display: flex;
@@ -549,8 +562,9 @@ async function savePassword() {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  background: var(--oj-gray-900);
-  color: var(--oj-white);
+  /* 墨底舞台上的首字母头像：纸白方块 + 墨字，反转配色才压得住深底 */
+  background: var(--oj-white);
+  color: var(--oj-gray-900);
   font-size: 34px;
   font-weight: 600;
 }
@@ -587,21 +601,22 @@ async function savePassword() {
 }
 .name {
   margin: 0;
-  font-size: 20px;
-  font-weight: 600;
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--oj-white);
 }
 .role-chip {
   font-size: 11px;
   font-weight: 600;
-  color: var(--oj-gray-500);
-  border: 1px solid var(--oj-border);
+  color: rgba(215, 228, 216, 0.75);
+  border: 1px solid rgba(255, 254, 249, 0.2);
   border-radius: 4px;
   padding: 1px 6px;
 }
 .role-chip.admin {
-  color: var(--oj-primary);
-  border-color: var(--oj-info-border);
-  background: var(--oj-primary-soft);
+  color: #9fd6b0;
+  border-color: rgba(159, 214, 176, 0.4);
+  background: rgba(29, 122, 68, 0.22);
 }
 .sig-row {
   display: flex;
@@ -609,20 +624,23 @@ async function savePassword() {
   gap: 12px;
   margin-top: 10px;
   padding: 8px 14px;
-  border: 1px dashed var(--oj-border-strong);
+  border: 1px dashed rgba(255, 254, 249, 0.22);
   border-radius: var(--oj-radius-md);
-  background: var(--oj-gray-50);
+  background: rgba(255, 254, 249, 0.05);
+}
+.sig-row :deep(.el-button) {
+  color: rgba(215, 228, 216, 0.8);
 }
 .sig-text {
   margin: 0;
   font-size: 13.5px;
   line-height: 1.6;
-  color: var(--oj-text);
+  color: #e8efe9;
   flex: 1;
   min-width: 0;
 }
 .sig-text.empty {
-  color: var(--oj-text-weak);
+  color: rgba(215, 228, 216, 0.5);
 }
 .sig-editor {
   margin-top: 10px;
@@ -640,17 +658,17 @@ async function savePassword() {
   gap: 8px;
   margin: 10px 0 0;
   font-size: 12px;
-  color: var(--oj-text-sub);
+  color: rgba(215, 228, 216, 0.7);
 }
 .meta .dot {
-  color: var(--oj-gray-300);
+  color: rgba(255, 254, 249, 0.3);
 }
 .hero-stats {
   display: flex;
   align-self: stretch;
   align-items: center;
   flex-shrink: 0;
-  border-left: 1px solid var(--oj-border);
+  border-left: 1px solid rgba(255, 254, 249, 0.14);
   padding-left: 24px;
   margin-left: 8px;
 }
@@ -662,20 +680,20 @@ async function savePassword() {
   padding: 0 14px;
 }
 .stat + .stat {
-  border-left: 1px solid var(--oj-border);
+  border-left: 1px solid rgba(255, 254, 249, 0.14);
 }
 .stat-num {
-  font-size: 24px;
+  font-size: 26px;
   font-weight: 600;
   line-height: 1.15;
-  color: var(--oj-text);
+  color: var(--oj-white);
   letter-spacing: -0.5px;
   font-variant-numeric: tabular-nums;
 }
 .stat-label {
   margin-top: 4px;
   font-size: 11.5px;
-  color: var(--oj-text-sub);
+  color: rgba(215, 228, 216, 0.62);
   white-space: nowrap;
 }
 @media (max-width: 760px) {
@@ -688,7 +706,7 @@ async function savePassword() {
     padding-left: 0;
     width: 100%;
     justify-content: space-between;
-    border-top: 1px solid var(--oj-border);
+    border-top: 1px solid rgba(255, 254, 249, 0.14);
     padding-top: 16px;
   }
 }

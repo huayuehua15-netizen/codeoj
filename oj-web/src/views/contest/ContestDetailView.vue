@@ -166,13 +166,21 @@ onUnmounted(() => window.clearInterval(timer))
 </script>
 
 <style scoped>
-/* 竞赛详情头：白底平面卡。状态靠文字与呼吸点表达，不做大色块 */
+/* 竞赛详情头：墨色舞台。状态靠文字与呼吸点表达 */
 .head-card {
-  background: var(--oj-card);
-  border: 1px solid var(--oj-border);
+  background-image:
+    repeating-linear-gradient(
+      to right,
+      transparent 0,
+      transparent 31px,
+      rgba(255, 254, 249, 0.045) 31px,
+      rgba(255, 254, 249, 0.045) 32px
+    ),
+    linear-gradient(135deg, #1a261f 0%, #22312a 100%);
+  border: 1px solid #1a261f;
   border-radius: var(--oj-radius);
   padding: 24px 28px;
-  color: var(--oj-text);
+  color: var(--oj-white);
 }
 .head-row {
   display: flex;
@@ -189,7 +197,7 @@ onUnmounted(() => window.clearInterval(timer))
   gap: 7px;
   font-size: 12.5px;
   font-weight: 600;
-  color: var(--oj-gray-600);
+  color: rgba(215, 228, 216, 0.78);
   letter-spacing: 0.2px;
 }
 .pulse {
@@ -210,15 +218,17 @@ onUnmounted(() => window.clearInterval(timer))
 }
 .head-title {
   margin: 10px 0 0;
-  font-size: 21px;
-  font-weight: 600;
-  letter-spacing: -0.1px;
+  font-family: var(--oj-font-display);
+  font-size: 24px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
   line-height: 1.3;
+  color: var(--oj-white);
 }
 .desc {
   margin: 8px 0 0;
   font-size: 13px;
-  color: var(--oj-text-sub);
+  color: rgba(215, 228, 216, 0.72);
   line-height: 1.65;
   max-width: 640px;
 }
@@ -233,7 +243,7 @@ onUnmounted(() => window.clearInterval(timer))
   align-items: center;
   gap: 6px;
   font-size: 12.5px;
-  color: var(--oj-text-sub);
+  color: rgba(215, 228, 216, 0.7);
 }
 .head-countdown {
   flex-shrink: 0;
@@ -241,7 +251,7 @@ onUnmounted(() => window.clearInterval(timer))
 }
 .cd-label {
   font-size: 11.5px;
-  color: var(--oj-text-sub);
+  color: rgba(215, 228, 216, 0.62);
   letter-spacing: 0.3px;
 }
 .cd-value {
@@ -251,7 +261,7 @@ onUnmounted(() => window.clearInterval(timer))
   font-weight: 600;
   font-variant-numeric: tabular-nums;
   letter-spacing: 0.3px;
-  color: var(--oj-text);
+  color: var(--oj-white);
 }
 
 .tabs-card {

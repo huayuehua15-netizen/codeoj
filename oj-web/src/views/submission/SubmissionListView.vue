@@ -1,5 +1,11 @@
 <template>
   <div class="page-container">
+    <header class="oj-stage">
+      <div>
+        <h1 class="oj-stage-title">提交记录</h1>
+        <p class="oj-stage-sub">每一次提交都有完整判题明细——错在哪里，用例说了算</p>
+      </div>
+    </header>
     <!-- 顶部概览：个人提交全景（来自 /api/submissions/statistics，全表聚合，不随筛选变化） -->
     <section class="oj-banner card" aria-label="个人提交概览">
       <div class="oj-banner-item">

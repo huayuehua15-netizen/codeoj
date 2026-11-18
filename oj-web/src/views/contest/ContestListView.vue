@@ -1,20 +1,19 @@
 <template>
   <div class="page-container">
-    <!-- 页头：标题 + 实时状态统计 -->
-    <header class="page-head">
+    <!-- 页头：墨色舞台 + 实时状态统计 -->
+    <header class="oj-stage">
       <div>
-        <h1>竞赛</h1>
-        <p class="sub">限时竞赛 · ACM 赛制 · 解题数优先，同解题数按总罚时排序</p>
+        <h1 class="oj-stage-title">竞赛</h1>
+        <p class="oj-stage-sub">限时竞赛 · ACM 赛制 · 解题数优先，同解题数按总罚时排序</p>
       </div>
-      <div class="head-stat">
-        <div class="hs-item">
-          <span class="hs-num">{{ runningCount }}</span>
-          <span class="hs-label">进行中</span>
+      <div class="oj-stage-side">
+        <div class="oj-stage-stat">
+          <span class="oj-stage-num">{{ runningCount }}</span>
+          <span class="oj-stage-label">进行中</span>
         </div>
-        <div class="hs-sep" aria-hidden="true" />
-        <div class="hs-item">
-          <span class="hs-num">{{ upcomingCount }}</span>
-          <span class="hs-label">即将开始</span>
+        <div class="oj-stage-stat">
+          <span class="oj-stage-num">{{ upcomingCount }}</span>
+          <span class="oj-stage-label">即将开始</span>
         </div>
       </div>
     </header>
@@ -162,52 +161,7 @@ onUnmounted(() => window.clearInterval(timer))
 </script>
 
 <style scoped>
-.page-head {
-  display: flex;
-  align-items: flex-end;
-  justify-content: space-between;
-  gap: 16px;
-  flex-wrap: wrap;
-  padding: 4px 2px 18px;
-}
-.page-head h1 {
-  margin: 0;
-  font-size: 24px;
-  font-weight: 600;
-  letter-spacing: -0.3px;
-  color: var(--oj-text);
-}
-.sub {
-  margin: 6px 0 0;
-  color: var(--oj-text-sub);
-  font-size: 13px;
-}
-.head-stat {
-  display: flex;
-  align-items: center;
-  gap: 20px;
-}
-.hs-item {
-  text-align: right;
-}
-.hs-num {
-  display: block;
-  font-family: var(--oj-font-mono);
-  font-size: 22px;
-  font-weight: 600;
-  font-variant-numeric: tabular-nums;
-  color: var(--oj-text);
-  line-height: 1.1;
-}
-.hs-label {
-  font-size: 11.5px;
-  color: var(--oj-text-sub);
-}
-.hs-sep {
-  width: 1px;
-  height: 28px;
-  background: var(--oj-border);
-}
+/* 页头已统一走 index.css 的 .oj-stage（墨色舞台），此处不再重复定义 */
 
 /* ---------- 进行中：强调卡（整卡可键盘聚焦，链接语义） ----------
    平面强调：白底 + 3px 绿色左边线 + 绿色呼吸点。

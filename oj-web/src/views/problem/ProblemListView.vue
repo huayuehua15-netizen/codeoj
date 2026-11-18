@@ -1,6 +1,12 @@
 <template>
   <div class="page-container">
-    <!-- 顶部概览：与排行榜/提交/统计页共用 .oj-banner 外观 -->
+    <header class="oj-stage">
+      <div>
+        <h1 class="oj-stage-title">题库</h1>
+        <p class="oj-stage-sub">从 A+B 开始，把每一道题都变成自己的</p>
+      </div>
+    </header>
+    <!-- 顶部概览 -->
     <section class="oj-banner card" aria-label="平台概览">
       <div class="oj-banner-item">
         <span class="oj-banner-num">{{ overview.totalProblems }}</span>
