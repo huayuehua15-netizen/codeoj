@@ -128,7 +128,7 @@ public interface SubmissionMapper extends BaseMapper<Submission>, SubmissionLeas
     }
 
     /**
-     * 提交趋势（个人统计页图表）：近 N 天按日聚合提交数与通过数。
+     * 提交趋势（个人统计页图表 / 个人主页热力图）：近 N 天按日聚合提交数与通过数。
      */
     @Select("SELECT DATE(s.created_at) AS date, COUNT(*) AS total, " +
             "       SUM(s.status = 2) AS accepted " +
@@ -137,4 +137,15 @@ public interface SubmissionMapper extends BaseMapper<Submission>, SubmissionLeas
             "   AND s.created_at >= DATE_SUB(CURDATE(), INTERVAL #{days} DAY) " +
             " GROUP BY DATE(s.created_at) ORDER BY DATE(s.created_at)")
     List<Map<String, Object>> trendByUser(@Param("userId") Long userId, @Param("days") int days);
+
+    /**
+     * 语言分布（个人主页，API.md v1.9 §4.4b）：各语言提交数与通过数，按提交数降序。
+     * language 是 Language 枚举 code，由前端映射为显示名。
+     */
+    @Select("SELECT s.language AS language, COUNT(*) AS total, " +
+            "       SUM(s.status = 2) AS accepted " +
+            "  FROM submission s " +
+            " WHERE s.user_id = #{userId} " +
+            " GROUP BY s.language ORDER BY total DESC")
+    List<Map<String, Object>> languageDistByUser(@Param("userId") Long userId);
 }

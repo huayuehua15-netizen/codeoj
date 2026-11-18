@@ -1,6 +1,6 @@
 # CodeOJ 接口文档（前后端对接契约）
 
-> 版本：v1.8（2026-11-19）｜ 个人中心功能扩展：LoginVO 增加 `avatar`/`signature` 字段；新增 `PUT /api/auth/profile`（签名）与 `PUT /api/auth/avatar`（头像，data URL 上传）；静态资源 `GET /uploads/**` 公开可读。v1.7：队列监控 `cachedAt` 更名为 `queriedAt`
+> 版本：v1.9（2026-11-19）｜ 个人主页数据支撑：`trend` 上限 30 → 366 天（热力图）；新增 `GET /api/submissions/languages` 语言分布。v1.8：个人中心头像/签名与 `GET /uploads/**` 静态资源
 > 适用：前端（oj-web）按此文档先行开发，后端按此文档补全实现。
 > 标注 ⚠️ 的接口：骨架已定契约，业务实现于第二阶段完成（前端可先按 mock 开发）。
 
@@ -398,6 +398,25 @@ Query 参数：`problemId`、`status`（0-8）、`begin`/`end`（ISO 时间范�
 
 `byDifficulty` 始终包含简单、中等、困难三行，包括尚未提交的难度。`totalCount` 统计该难度全部上架题目；新增的 `availableSolvedCount` 只计已 AC 且仍在架的不同题目，用作题库覆盖率分子。原 `solvedCount`、提交数和通过数保留含下架题目的历史口径，重复 AC 同一道题不会增加解题数。
 
+### 4.4a 提交趋势 `GET /api/submissions/trend`（登录）
+
+Query 参数：`days`（默认 7，**上限 366**，v1.9 由 30 放宽以支持个人主页热力图）。
+
+响应 `data`：按日聚合数组 `[{ "date": "2026-11-18", "total": 3, "accepted": 2 }]`（仅有提交的日子会出现，无提交日由前端补零）。
+
+### 4.4b 语言分布 `GET /api/submissions/languages`（登录，v1.9 新增）
+
+响应 `data`：该用户各语言的提交聚合，按提交数降序：
+
+```json
+[
+  { "language": "cpp", "total": 20, "accepted": 12 },
+  { "language": "python3", "total": 5, "accepted": 3 }
+]
+```
+
+个人主页的语言分布与"最近动态"的语种展示以此口径为准（language 为 `Language` 枚举 code）。
+
 ---
 
 ## 5. 排行榜 `/api/leaderboard`
@@ -593,3 +612,4 @@ new Client({
 | 2026-11-16 | v1.4 | 保留 v1.3 接口及 LoginUser Principal；补充 STOMP 黑名单/数据库状态鉴权、订阅白名单与 SEND 限制。提交事务及时间字段保持 B 契约，内部租约/补发采用 UTC | A 评测修复，待 B 评审 |
 | 2026-11-17 | v1.5 | 补齐当前统计/排行榜响应；课程/竞赛题组与用例导入校验；有历史或引用的题目禁止物理删除；无效分页处理 | 项目完整性改善，待评审 |
 | 2026-11-17 | v1.6 | 统计固定返回三个难度，新增在架解题数；新增题库概览与全站标签；题库横幅和筛选翻页口径修正，原响应字段保留 | 题库完善，待评审 |
+| 2026-11-19 | v1.9 | 个人主页数据支撑：`4.4a` trend 上限 30 → 366 天；新增 `4.4b` `GET /api/submissions/languages` 语言分布 | 成员 B |
