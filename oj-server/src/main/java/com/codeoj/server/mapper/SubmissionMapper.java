@@ -20,15 +20,21 @@ public interface SubmissionMapper extends BaseMapper<Submission>, SubmissionLeas
      * <p>同时给出该难度的题目总数与已 AC 题目数，用于计算"难度覆盖度"
      * （做了 5 道简单题里的 3 道 vs 做了 1 道困难题里的 1 道）。
      */
-    @Select("SELECT p.difficulty AS difficulty, "
-            + "       COUNT(*) AS submitCount, "
-            + "       SUM(s.status = 2) AS acceptedCount, "
-            + "       COUNT(DISTINCT CASE WHEN s.status = 2 THEN s.problem_id END) AS solvedCount, "
-            + "       (SELECT COUNT(*) FROM problem p2 "
-            + "         WHERE p2.difficulty = p.difficulty AND p2.enabled = 1) AS totalCount "
-            + "  FROM submission s JOIN problem p ON s.problem_id = p.id "
-            + " WHERE s.user_id = #{userId} "
-            + " GROUP BY p.difficulty")
+    @Select("SELECT d.difficulty, COALESCE(s.submitCount, 0) AS submitCount, "
+            + "COALESCE(s.acceptedCount, 0) AS acceptedCount, "
+            + "COALESCE(s.solvedCount, 0) AS solvedCount, "
+            + "COALESCE(s.availableSolvedCount, 0) AS availableSolvedCount, "
+            + "COALESCE(p.totalCount, 0) AS totalCount "
+            + "FROM (SELECT 1 AS difficulty UNION ALL SELECT 2 UNION ALL SELECT 3) d "
+            + "LEFT JOIN (SELECT p.difficulty, COUNT(*) AS submitCount, "
+            + "SUM(s.status = 2) AS acceptedCount, "
+            + "COUNT(DISTINCT CASE WHEN s.status = 2 THEN s.problem_id END) AS solvedCount, "
+            + "COUNT(DISTINCT CASE WHEN s.status = 2 AND p.enabled = 1 THEN s.problem_id END) AS availableSolvedCount "
+            + "FROM submission s JOIN problem p ON s.problem_id = p.id "
+            + "WHERE s.user_id = #{userId} GROUP BY p.difficulty) s ON s.difficulty = d.difficulty "
+            + "LEFT JOIN (SELECT difficulty, COUNT(*) AS totalCount FROM problem "
+            + "WHERE enabled = 1 GROUP BY difficulty) p ON p.difficulty = d.difficulty "
+            + "ORDER BY d.difficulty")
     List<DifficultyStatRow> statisticsByUser(@Param("userId") Long userId);
 
     /**
@@ -54,6 +60,7 @@ public interface SubmissionMapper extends BaseMapper<Submission>, SubmissionLeas
         private Long submitCount;
         private Long acceptedCount;
         private Long solvedCount;
+        private Long availableSolvedCount;
         private Long totalCount;
 
         public Integer getDifficulty() {
@@ -70,6 +77,10 @@ public interface SubmissionMapper extends BaseMapper<Submission>, SubmissionLeas
 
         public Long getSolvedCount() {
             return solvedCount;
+        }
+
+        public Long getAvailableSolvedCount() {
+            return availableSolvedCount;
         }
 
         public Long getTotalCount() {

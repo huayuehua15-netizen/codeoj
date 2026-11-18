@@ -32,10 +32,10 @@
             <el-tag :color="DIFFICULTY_MAP[d.difficulty]?.color" effect="dark" size="small">
               {{ d.difficultyLabel }}
             </el-tag>
-            <span class="diff-count">{{ d.solvedCount }} / {{ d.totalCount }} 题</span>
+            <span class="diff-count">{{ d.availableSolvedCount }} / {{ d.totalCount }} 道在架题</span>
           </div>
           <el-progress
-            :percentage="d.totalCount ? Math.round((d.solvedCount / d.totalCount) * 100) : 0"
+            :percentage="d.totalCount ? Math.round((d.availableSolvedCount / d.totalCount) * 100) : 0"
             :stroke-width="10"
             :color="DIFFICULTY_MAP[d.difficulty]?.color"
           />
@@ -72,8 +72,8 @@
             </el-tag>
           </template>
         </el-table-column>
-        <el-table-column label="已解题 / 总题" width="140">
-          <template #default="{ row }">{{ row.solvedCount }} / {{ row.totalCount }}</template>
+        <el-table-column label="在架已解 / 总题" width="150">
+          <template #default="{ row }">{{ row.availableSolvedCount }} / {{ row.totalCount }}</template>
         </el-table-column>
         <el-table-column prop="submit" label="提交次数" width="110" />
         <el-table-column prop="accepted" label="通过次数" width="110" />
@@ -92,7 +92,7 @@
           </template>
         </el-table-column>
       </el-table>
-      <el-empty v-if="!loading && !stat.byDifficulty.length" description="还没有提交记录，去做一道题吧" />
+      <el-empty v-if="!loading && !stat.totalSubmit" description="还没有提交记录，去做一道题吧" />
     </div>
   </div>
 </template>
@@ -110,6 +110,7 @@ const emptyStat = (): Statistics => ({
   totalAccepted: 0,
   acceptRate: 0,
   solvedCount: 0,
+  availableSolvedCount: 0,
   attemptedCount: 0,
 })
 
@@ -127,7 +128,7 @@ const totalProblems = computed(() =>
 
 /** 题目覆盖率：已解决 / 全站题数 */
 const coverageRate = computed(() =>
-  totalProblems.value ? Math.round((stat.value.solvedCount / totalProblems.value) * 1000) / 10 : 0)
+  totalProblems.value ? Math.round((stat.value.availableSolvedCount / totalProblems.value) * 1000) / 10 : 0)
 
 /** 平均每解一题需要多少次提交（衡量效率，越低越好） */
 const submitPerSolved = computed(() =>

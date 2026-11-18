@@ -10,6 +10,7 @@ import com.codeoj.server.dto.ProblemFormDTO;
 import com.codeoj.server.security.LoginUser;
 import com.codeoj.server.service.ProblemService;
 import com.codeoj.server.vo.ProblemListItemVO;
+import com.codeoj.server.vo.ProblemOverviewVO;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -33,6 +34,11 @@ public class ProblemController {
 
     public ProblemController(ProblemService problemService) {
         this.problemService = problemService;
+    }
+
+    @GetMapping("/overview")
+    public R<ProblemOverviewVO> overview() {
+        return R.ok(problemService.overview());
     }
 
     /** 分页列表（关键词/难度/标签筛选；不返回题面大字段，见 API.md §2.1） */

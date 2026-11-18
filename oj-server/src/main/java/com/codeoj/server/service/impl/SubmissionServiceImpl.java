@@ -237,6 +237,7 @@ public class SubmissionServiceImpl implements SubmissionService {
                             accepted,
                             submit == 0 ? 0 : Math.round(accepted * 1000.0 / submit) / 10.0,
                             row.getSolvedCount() == null ? 0 : row.getSolvedCount(),
+                            row.getAvailableSolvedCount() == null ? 0 : row.getAvailableSolvedCount(),
                             row.getTotalCount() == null ? 0 : row.getTotalCount());
                 })
                 .toList();
@@ -259,9 +260,10 @@ public class SubmissionServiceImpl implements SubmissionService {
                 .toList();
 
         long solvedCount = items.stream().mapToLong(StatisticsVO.Item::getSolvedCount).sum();
+        long availableSolvedCount = items.stream().mapToLong(StatisticsVO.Item::getAvailableSolvedCount).sum();
         long attemptedCount = submissionMapper.attemptedCountByUser(userId);
 
         return new StatisticsVO(items, statusItems, totalSubmit, totalAccepted,
-                acceptRate, solvedCount, attemptedCount);
+                acceptRate, solvedCount, availableSolvedCount, attemptedCount);
     }
 }

@@ -2,7 +2,7 @@
   <div class="page-container">
     <div class="stat-banner card">
       <div class="stat-item">
-        <span class="stat-num">{{ total }}</span>
+        <span class="stat-num">{{ totalProblems }}</span>
         <span class="stat-label">题目总数</span>
       </div>
       <div class="stat-divider"></div>
@@ -34,22 +34,22 @@
 
     <div class="card">
       <div class="toolbar">
-        <el-input v-model="keyword" placeholder="按关键词搜索题目" style="width: 240px" clearable @keyup.enter="load" />
-        <el-select v-model="difficulty" placeholder="难度" style="width: 120px" clearable @change="load">
+        <el-input v-model="keyword" placeholder="按关键词搜索题目" style="width: 240px" clearable @keyup.enter="search" @clear="search" />
+        <el-select v-model="difficulty" placeholder="难度" style="width: 120px" clearable @change="search">
           <el-option label="简单" :value="1" />
           <el-option label="中等" :value="2" />
           <el-option label="困难" :value="3" />
         </el-select>
-        <el-select v-model="tag" placeholder="标签" style="width: 140px" clearable filterable allow-create @change="load">
+        <el-select v-model="tag" placeholder="标签" style="width: 140px" clearable filterable allow-create @change="search">
           <el-option v-for="t in tagOptions" :key="t" :label="t" :value="t" />
         </el-select>
-        <el-button type="primary" @click="load">搜索</el-button>
+        <el-button type="primary" @click="search">搜索</el-button>
       </div>
 
       <el-table :data="problems" v-loading="loading">
-        <el-table-column prop="id" label="#" width="70">
-          <template #default="{ row }">
-            <span class="pid-badge">{{ row.id }}</span>
+        <el-table-column label="序号" width="70">
+          <template #default="{ $index }">
+            <span class="pid-badge">{{ (page - 1) * size + $index + 1 }}</span>
           </template>
         </el-table-column>
         <el-table-column label="题目" min-width="300">
@@ -97,7 +97,7 @@
 
 <script setup lang="ts">
 import { onMounted, ref } from 'vue'
-import { pageProblems, type Problem } from '@/api/problem'
+import { getProblemOverview, pageProblems, type Problem } from '@/api/problem'
 import { getLeaderboard } from '@/api/leaderboard'
 import { listAnnouncements, type AnnouncementItem } from '@/api/announcement'
 import { DIFFICULTY_MAP } from '@/utils/status'
@@ -110,6 +110,7 @@ const difficulty = ref<number | undefined>()
 const page = ref(1)
 const size = ref(10)
 const total = ref(0)
+const totalProblems = ref(0)
 const loading = ref(false)
 
 function difficultyInfo(d: number) {
@@ -131,8 +132,15 @@ function rateColor(rate: number) {
 const lbTotal = ref(0)
 const announcements = ref<AnnouncementItem[]>([])
 const totalSubmits = ref(0)
+let loadVersion = 0
+
+function search() {
+  page.value = 1
+  load()
+}
 
 async function load() {
+  const version = ++loadVersion
   loading.value = true
   try {
     const data = await pageProblems({
@@ -142,16 +150,11 @@ async function load() {
       page: page.value,
       size: size.value,
     })
+    if (version !== loadVersion) return
     problems.value = data.records || []
     total.value = data.total
-    // 标签选项：从现有题目聚合（去重）
-    const tags = new Set<string>()
-    for (const p of problems.value) for (const t of p.tags || []) tags.add(t)
-    tagOptions.value = [...tags].sort()
-    // 横幅统计：榜上人数 + 本页题目累计提交数（现成接口聚合，呈现层）
-    totalSubmits.value = (data.records || []).reduce((sum, p) => sum + (p.submitCount || 0), 0)
   } finally {
-    loading.value = false
+    if (version === loadVersion) loading.value = false
   }
 }
 
@@ -160,7 +163,13 @@ onMounted(async () => {
   try {
     const lb = await getLeaderboard({ page: 1, size: 1 })
     lbTotal.value = lb.total
+    totalSubmits.value = lb.summary?.totalSubmit || 0
   } catch { /* 横幅统计失败不影响列表 */ }
+  try {
+    const overview = await getProblemOverview()
+    totalProblems.value = overview.totalProblems
+    tagOptions.value = overview.tags
+  } catch { /* 概览失败不影响列表 */ }
   try {
     announcements.value = (await listAnnouncements()).slice(0, 5)
   } catch { /* 公告栏失败不影响列表 */ }

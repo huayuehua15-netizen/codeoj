@@ -11,10 +11,13 @@ import com.codeoj.server.mapper.ProblemMapper;
 import com.codeoj.server.mapper.TestCaseMapper;
 import com.codeoj.server.service.ProblemService;
 import com.codeoj.server.vo.ProblemListItemVO;
+import com.codeoj.server.vo.ProblemOverviewVO;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.List;
+import java.util.Objects;
 
 /**
  * 题目服务实现（论文表 3-3：题目增删改查与上下架）。
@@ -28,6 +31,17 @@ public class ProblemServiceImpl implements ProblemService {
     public ProblemServiceImpl(ProblemMapper problemMapper, TestCaseMapper testCaseMapper) {
         this.problemMapper = problemMapper;
         this.testCaseMapper = testCaseMapper;
+    }
+
+    @Override
+    public ProblemOverviewVO overview() {
+        // 只读取轻量元信息；不返回题面、隐藏题目和判题用例。
+        List<Problem> available = problemMapper.selectList(new LambdaQueryWrapper<Problem>()
+                .select(Problem::getId, Problem::getTags).eq(Problem::getEnabled, true));
+        List<String> tags = available.stream().filter(p -> p.getTags() != null)
+                .flatMap(p -> p.getTags().stream()).filter(Objects::nonNull)
+                .map(String::trim).filter(t -> !t.isEmpty()).distinct().sorted().toList();
+        return new ProblemOverviewVO(available.size(), tags);
     }
 
     @Override

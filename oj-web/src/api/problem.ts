@@ -24,6 +24,10 @@ export function getProblem(id: number | string) {
   return http.get<never, Problem>(`/api/problems/${id}`)
 }
 
+export function getProblemOverview() {
+  return http.get<never, { totalProblems: number; tags: string[] }>('/api/problems/overview')
+}
+
 export function createProblem(data: Record<string, unknown>) {
   return http.post('/api/problems', data)
 }

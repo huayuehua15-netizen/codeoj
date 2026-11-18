@@ -1,6 +1,6 @@
 # CodeOJ 接口文档（前后端对接契约）
 
-> 版本：v1.5（2026-11-17）｜ 保留原接口，补齐统计、管理校验与删除约束
+> 版本：v1.6（2026-11-17）｜ 兼容原字段，补齐全部难度统计、在架题目覆盖与全题库标签
 > 适用：前端（oj-web）按此文档先行开发，后端按此文档补全实现。
 > 标注 ⚠️ 的接口：骨架已定契约，业务实现于第二阶段完成（前端可先按 mock 开发）。
 
@@ -175,6 +175,11 @@ Query 参数：
 > ⚠️ **管理端编辑表单必须调 2.2 详情接口回填**，不能复用列表行数据——否则
 > description/samples/languages 为空，保存即静默清空题面。
 
+### 2.1.1 题库概览 `GET /api/problems/overview`（公开）
+
+响应 `data`：`{ "totalProblems": 50, "tags": ["二分查找", "动态规划", "图论"] }`。
+仅汇总所有上架题目，标签去重排序；不随列表翻页或关键词/标签筛选变化，不泄露下架题目的元信息。题库横幅的全站提交数取排行榜 `summary.totalSubmit`。
+
 ### 2.2 题目详情 `GET /api/problems/{id}`（公开）
 
 响应 `data`：
@@ -347,8 +352,9 @@ Query 参数：`problemId`、`status`（0-8）、`begin`/`end`（ISO 时间范�
 ```json
 {
   "byDifficulty": [
-    { "difficulty": 1, "difficultyLabel": "简单", "submit": 8, "accepted": 6, "acceptRate": 75.0, "solvedCount": 3, "totalCount": 10 },
-    { "difficulty": 2, "difficultyLabel": "中等", "submit": 3, "accepted": 1, "acceptRate": 33.3, "solvedCount": 1, "totalCount": 5 }
+    { "difficulty": 1, "difficultyLabel": "简单", "submit": 8, "accepted": 6, "acceptRate": 75.0, "solvedCount": 3, "availableSolvedCount": 3, "totalCount": 10 },
+    { "difficulty": 2, "difficultyLabel": "中等", "submit": 3, "accepted": 1, "acceptRate": 33.3, "solvedCount": 1, "availableSolvedCount": 1, "totalCount": 5 },
+    { "difficulty": 3, "difficultyLabel": "困难", "submit": 0, "accepted": 0, "acceptRate": 0, "solvedCount": 0, "availableSolvedCount": 0, "totalCount": 2 }
   ],
   "byStatus": [
     { "status": 2, "statusDesc": "通过", "count": 7, "percent": 63.6 },
@@ -358,9 +364,12 @@ Query 参数：`problemId`、`status`（0-8）、`begin`/`end`（ISO 时间范�
   "totalAccepted": 7,
   "acceptRate": 63.6,
   "solvedCount": 4,
+  "availableSolvedCount": 4,
   "attemptedCount": 6
 }
 ```
+
+`byDifficulty` 始终包含简单、中等、困难三行，包括尚未提交的难度。`totalCount` 统计该难度全部上架题目；新增的 `availableSolvedCount` 只计已 AC 且仍在架的不同题目，用作题库覆盖率分子。原 `solvedCount`、提交数和通过数保留含下架题目的历史口径，重复 AC 同一道题不会增加解题数。
 
 ---
 
@@ -556,3 +565,4 @@ new Client({
 | 2026-11-16 | v1.3 | **审查修复批次**：① 4.1 `SubmitVO.status` 明确为数字码（原输出枚举名）；② 2.1 列表接口明确不返回 description/samples/languages（后端已按此瘦身），管理端编辑须走 2.2；③ 7.1 WS 鉴权改为 STOMP CONNECT 帧 `Authorization` 头（原「无独立 token 校验」不可投递，属文档与实现双缺失）；④ 收藏接口未登录返回 40100；⑤ 全局时间序列化统一 `yyyy-MM-dd HH:mm:ss`（`spring.jackson.date-format` 对 `LocalDateTime` 无效，需注册序列化器）；⑥ 补登记 `GET /api/submissions/trend` | 成员 B |
 | 2026-11-16 | v1.4 | 保留 v1.3 接口及 LoginUser Principal；补充 STOMP 黑名单/数据库状态鉴权、订阅白名单与 SEND 限制。提交事务及时间字段保持 B 契约，内部租约/补发采用 UTC | A 评测修复，待 B 评审 |
 | 2026-11-17 | v1.5 | 补齐当前统计/排行榜响应；课程/竞赛题组与用例导入校验；有历史或引用的题目禁止物理删除；无效分页处理 | 项目完整性改善，待评审 |
+| 2026-11-17 | v1.6 | 统计固定返回三个难度，新增在架解题数；新增题库概览与全站标签；题库横幅和筛选翻页口径修正，原响应字段保留 | 题库完善，待评审 |

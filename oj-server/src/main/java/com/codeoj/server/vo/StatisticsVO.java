@@ -32,6 +32,8 @@ public class StatisticsVO {
     private double acceptRate;
     /** 已解决题目数（AC 过的不同题目） */
     private long solvedCount;
+    /** 仍在架的已解决题目数，用于题库覆盖率 */
+    private long availableSolvedCount;
     /** 尝试过的题目数（提交过的不同题目） */
     private long attemptedCount;
 
@@ -50,6 +52,8 @@ public class StatisticsVO {
         private double acceptRate;
         /** 该难度下已 AC 的题目数 */
         private long solvedCount;
+        /** 该难度下仍在架的已解决题目数 */
+        private long availableSolvedCount;
         /** 该难度下的题目总数（题库口径） */
         private long totalCount;
     }

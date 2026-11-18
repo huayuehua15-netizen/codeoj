@@ -45,6 +45,7 @@ export interface StatisticsDifficultyItem {
   accepted: number
   acceptRate: number
   solvedCount: number
+  availableSolvedCount: number
   totalCount: number
 }
 
@@ -62,6 +63,7 @@ export interface Statistics {
   totalAccepted: number
   acceptRate: number
   solvedCount: number
+  availableSolvedCount: number
   attemptedCount: number
 }
 
