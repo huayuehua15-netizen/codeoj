@@ -145,16 +145,16 @@ async function handleLogout() {
   height: 100%;
   min-height: 100%;
 }
+/* 顶栏：纯白 + 发丝底边，不做玻璃拟态。
+   sticky 是功能（长表格滚动时导航常驻），模糊背景是装饰，砍掉。 */
 .header {
-  background: rgba(255, 255, 255, 0.82);
-  backdrop-filter: blur(14px) saturate(1.4);
-  -webkit-backdrop-filter: blur(14px) saturate(1.4);
+  background: var(--oj-card);
   padding: 0;
-  border-bottom: 1px solid rgba(17, 24, 39, 0.06);
-  box-shadow: 0 1px 2px rgba(17, 24, 39, 0.04);
+  border-bottom: 1px solid var(--oj-border);
   position: sticky;
   top: 0;
   z-index: 20;
+  --el-header-height: 52px;
 }
 .header-inner {
   max-width: 1200px;
@@ -168,23 +168,23 @@ async function handleLogout() {
 .logo {
   display: flex;
   align-items: center;
-  gap: 8px;
-  font-size: 20px;
-  font-weight: 800;
-  color: var(--oj-primary-deep);
-  letter-spacing: 0.5px;
+  gap: 7px;
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--oj-text);
+  letter-spacing: 0.2px;
   flex-shrink: 0;
   transition: opacity var(--oj-duration) var(--oj-ease);
 }
 .logo:hover {
-  opacity: 0.82;
+  opacity: 0.8;
 }
 .logo em {
   font-style: normal;
   color: var(--oj-primary);
 }
 .logo-icon {
-  color: var(--oj-primary);
+  color: var(--oj-text);
 }
 .nav {
   flex: 1;
@@ -193,6 +193,23 @@ async function handleLogout() {
 .menu {
   border-bottom: none;
   background: transparent;
+}
+/* 横向菜单收敛：去掉 EP 默认的大字号与粗下划线，改成安静的文本导航 */
+.menu .el-menu-item {
+  height: 52px;
+  line-height: 52px;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--oj-gray-600);
+  border-bottom: 2px solid transparent;
+}
+.menu .el-menu-item:hover {
+  background: transparent;
+  color: var(--oj-text);
+}
+.menu .el-menu-item.is-active {
+  color: var(--oj-text);
+  border-bottom-color: var(--oj-text);
 }
 .menu-icon {
   margin-right: 4px;
@@ -208,34 +225,34 @@ async function handleLogout() {
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  padding: 4px 10px 4px 4px;
+  padding: 3px 8px 3px 3px;
   border: 1px solid transparent;
-  border-radius: var(--oj-radius-pill);
+  border-radius: var(--oj-radius-md);
   background: transparent;
-  color: var(--oj-gray-800);
+  color: var(--oj-gray-700);
   font-family: inherit;
-  font-size: 14px;
-  font-weight: 600;
+  font-size: 13.5px;
+  font-weight: 500;
   cursor: pointer;
   transition: background var(--oj-duration) var(--oj-ease),
     border-color var(--oj-duration) var(--oj-ease);
 }
 .username:hover {
-  background: var(--oj-primary-soft);
+  background: var(--oj-gray-50);
   border-color: var(--oj-border);
 }
-/* 首字母头像：比纯文本用户名更像"账号"，也与排行榜头像风格统一 */
+/* 首字母方头像：灰底白字，工程产品的克制感（不用彩色渐变圆） */
 .avatar {
-  width: 28px;
-  height: 28px;
-  border-radius: 50%;
+  width: 24px;
+  height: 24px;
+  border-radius: 4px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  background: var(--oj-gradient-brand);
+  background: var(--oj-gray-900);
   color: var(--oj-white);
-  font-size: 13px;
-  font-weight: 800;
+  font-size: 12px;
+  font-weight: 600;
   flex-shrink: 0;
 }
 .uname {
@@ -245,12 +262,13 @@ async function handleLogout() {
   white-space: nowrap;
 }
 .role-chip {
-  padding: 1px 7px;
-  border-radius: var(--oj-radius-pill);
-  background: var(--oj-primary-soft);
-  color: var(--oj-primary);
   font-size: 11px;
-  font-weight: 700;
+  font-weight: 600;
+  color: var(--oj-gray-500);
+  border: 1px solid var(--oj-border);
+  border-radius: 4px;
+  padding: 0 5px;
+  line-height: 16px;
 }
 .caret {
   color: var(--oj-gray-400);
@@ -266,10 +284,11 @@ async function handleLogout() {
   justify-content: center;
   gap: 8px;
   height: auto;
-  padding: 20px 16px 28px;
-  font-size: 12.5px;
+  padding: 18px 16px 24px;
+  font-size: 12px;
   color: var(--oj-text-weak);
   background: transparent;
+  border-top: 1px solid var(--oj-border);
 }
 .footer .dot {
   opacity: 0.6;
@@ -295,11 +314,21 @@ async function handleLogout() {
 .admin-menu-popper .el-menu--popup {
   min-width: 148px;
   border-radius: var(--oj-radius-md);
-  padding: 6px;
+  border: 1px solid var(--oj-border);
+  box-shadow: var(--oj-shadow);
+  padding: 4px;
 }
 .admin-menu-popper .el-menu-item {
-  border-radius: var(--oj-radius-sm);
-  height: 38px;
-  line-height: 38px;
+  border-radius: 4px;
+  height: 34px;
+  line-height: 34px;
+  font-size: 13.5px;
+}
+.admin-menu-popper .el-menu-item:hover {
+  background: var(--oj-gray-50);
+}
+.admin-menu-popper .el-menu-item.is-active {
+  color: var(--oj-text);
+  background: var(--oj-gray-100);
 }
 </style>

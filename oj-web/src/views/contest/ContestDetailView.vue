@@ -166,40 +166,15 @@ onUnmounted(() => window.clearInterval(timer))
 </script>
 
 <style scoped>
+/* 竞赛详情头：白底平面卡。状态靠文字与呼吸点表达，不做大色块 */
 .head-card {
-  position: relative;
-  overflow: hidden;
-  background: var(--oj-gradient-brand-live);
-  color: var(--oj-on-brand);
+  background: var(--oj-card);
+  border: 1px solid var(--oj-border);
   border-radius: var(--oj-radius);
-  padding: 28px 32px;
-  box-shadow: var(--oj-shadow-brand-lg);
-}
-/* 右上柔光，避免纯色块发闷 */
-.head-card::before {
-  content: '';
-  position: absolute;
-  right: -70px;
-  top: -90px;
-  width: 280px;
-  height: 280px;
-  border-radius: 50%;
-  background: var(--oj-glow-accent);
-}
-/* 细网格纹理，弱化"大色块"感 */
-.head-card::after {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background-image:
-    linear-gradient(var(--oj-grid-line-04) 1px, transparent 1px),
-    linear-gradient(90deg, var(--oj-grid-line-04) 1px, transparent 1px);
-  background-size: 30px 30px;
-  pointer-events: none;
+  padding: 24px 28px;
+  color: var(--oj-text);
 }
 .head-row {
-  position: relative;
-  z-index: 1;
   display: flex;
   align-items: flex-end;
   justify-content: space-between;
@@ -212,13 +187,10 @@ onUnmounted(() => window.clearInterval(timer))
   display: inline-flex;
   align-items: center;
   gap: 7px;
-  padding: 3px 11px;
-  border-radius: var(--oj-radius-pill);
-  background: var(--oj-on-brand-16);
-  font-size: 11.5px;
+  font-size: 12.5px;
   font-weight: 600;
-  letter-spacing: 0.3px;
-  backdrop-filter: blur(4px);
+  color: var(--oj-gray-600);
+  letter-spacing: 0.2px;
 }
 .pulse {
   width: 6px;
@@ -230,23 +202,23 @@ onUnmounted(() => window.clearInterval(timer))
 }
 @keyframes pulse {
   70% {
-    box-shadow: 0 0 0 7px var(--oj-pulse-ring-out);
+    box-shadow: 0 0 0 6px var(--oj-pulse-ring-out);
   }
   100% {
     box-shadow: 0 0 0 0 var(--oj-pulse-ring-out);
   }
 }
 .head-title {
-  margin: 12px 0 0;
-  font-size: 24px;
-  font-weight: 800;
-  letter-spacing: -0.3px;
+  margin: 10px 0 0;
+  font-size: 21px;
+  font-weight: 600;
+  letter-spacing: -0.1px;
   line-height: 1.3;
 }
 .desc {
   margin: 8px 0 0;
   font-size: 13px;
-  color: var(--oj-on-brand-82);
+  color: var(--oj-text-sub);
   line-height: 1.65;
   max-width: 640px;
 }
@@ -261,7 +233,7 @@ onUnmounted(() => window.clearInterval(timer))
   align-items: center;
   gap: 6px;
   font-size: 12.5px;
-  color: var(--oj-on-brand-75);
+  color: var(--oj-text-sub);
 }
 .head-countdown {
   flex-shrink: 0;
@@ -269,16 +241,17 @@ onUnmounted(() => window.clearInterval(timer))
 }
 .cd-label {
   font-size: 11.5px;
-  color: var(--oj-on-brand-70);
-  letter-spacing: 0.5px;
+  color: var(--oj-text-sub);
+  letter-spacing: 0.3px;
 }
 .cd-value {
   margin-top: 2px;
   font-family: var(--oj-font-mono);
-  font-size: 28px;
-  font-weight: 700;
+  font-size: 26px;
+  font-weight: 600;
   font-variant-numeric: tabular-nums;
-  letter-spacing: 0.5px;
+  letter-spacing: 0.3px;
+  color: var(--oj-text);
 }
 
 .tabs-card {

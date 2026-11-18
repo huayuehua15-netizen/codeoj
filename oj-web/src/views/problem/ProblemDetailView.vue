@@ -538,7 +538,7 @@ onMounted(load)
 .prob-title {
   margin: 0;
   font-size: 20px;
-  font-weight: 800;
+  font-weight: 600;
   line-height: 1.35;
 }
 

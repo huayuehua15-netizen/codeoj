@@ -187,16 +187,16 @@ function rateClass(rate?: number) {
 
 /**
  * 稳定取色的头像底色。
- * 只保留主色系与少量点缀色，避免彩虹色撞进靛蓝主题里显得花。
+ * 精密工具风下头像不做彩虹拼盘：统一深灰墨色，靠首字母区分；
+ * 保留少量低饱和点缀色用于区分同屏的相邻用户。
  */
 const AVATAR_COLORS = [
-  'var(--oj-indigo-600)',
-  'var(--oj-indigo-500)',
-  'var(--oj-indigo-400)',
-  'var(--oj-success)',
-  'var(--oj-warning)',
+  'var(--oj-gray-700)',
+  'var(--oj-gray-800)',
+  'var(--oj-gray-900)',
   'var(--oj-info)',
-  'var(--oj-indigo-800)',
+  'var(--oj-bronze)',
+  'var(--oj-silver)',
 ]
 function avatarColor(userId: number) {
   return AVATAR_COLORS[Math.abs(userId) % AVATAR_COLORS.length]
@@ -228,26 +228,21 @@ onMounted(load)
   flex-direction: column;
   align-items: center;
   gap: 6px;
-  padding: 26px 16px 18px;
+  padding: 24px 16px 18px;
   border-radius: var(--oj-radius);
   background: var(--oj-white);
   border: 1px solid var(--oj-border);
-  box-shadow: var(--oj-shadow-sm);
   overflow: hidden;
 }
-/* 冠军卡抬高一点，形成领奖台的层次 */
+/* 前三名只靠一条 2px 顶线区分名次——颜色大声的区域越小越显专业 */
 .podium-card.place-1 {
-  border-color: var(--oj-warning-border);
-  background: linear-gradient(180deg, var(--oj-warning-soft) 0%, var(--oj-white) 62%);
-  box-shadow: var(--oj-shadow);
+  border-top: 2px solid var(--oj-gold);
 }
 .podium-card.place-2 {
-  border-color: var(--oj-border);
-  background: linear-gradient(180deg, var(--oj-gray-50) 0%, var(--oj-white) 62%);
+  border-top: 2px solid var(--oj-silver);
 }
 .podium-card.place-3 {
-  border-color: var(--oj-warning-border);
-  background: linear-gradient(180deg, var(--oj-warning-soft) 0%, var(--oj-white) 62%);
+  border-top: 2px solid var(--oj-bronze);
 }
 .podium-medal {
   position: absolute;
@@ -257,7 +252,7 @@ onMounted(load)
   color: var(--oj-gray-300);
 }
 .podium-medal.medal-1 {
-  color: var(--oj-gold-light);
+  color: var(--oj-gold);
 }
 .podium-medal.medal-2 {
   color: var(--oj-silver);
@@ -266,16 +261,15 @@ onMounted(load)
   color: var(--oj-bronze);
 }
 .podium-avatar {
-  width: 46px;
-  height: 46px;
-  border-radius: 50%;
+  width: 44px;
+  height: 44px;
+  border-radius: 6px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   color: var(--oj-white);
-  font-size: 19px;
-  font-weight: 800;
-  box-shadow: var(--oj-shadow-sm);
+  font-size: 18px;
+  font-weight: 600;
 }
 .podium-name {
   font-weight: 700;
@@ -288,7 +282,7 @@ onMounted(load)
 }
 .podium-ac {
   font-size: 22px;
-  font-weight: 800;
+  font-weight: 600;
   color: var(--oj-primary);
   font-variant-numeric: tabular-nums;
   line-height: 1.1;
@@ -324,27 +318,28 @@ onMounted(load)
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 30px;
-  height: 30px;
-  border-radius: var(--oj-radius-md);
+  width: 26px;
+  height: 26px;
+  border-radius: 4px;
   color: var(--oj-white);
-  font-weight: 800;
-  font-size: 14px;
+  font-family: var(--oj-font-mono);
+  font-weight: 600;
+  font-size: 13px;
   font-variant-numeric: tabular-nums;
-  box-shadow: var(--oj-shadow-sm);
 }
 .rank-badge.rank-1 {
-  background: linear-gradient(135deg, var(--oj-gold-light), var(--oj-gold));
+  background: var(--oj-gold);
 }
 .rank-badge.rank-2 {
-  background: linear-gradient(135deg, var(--oj-silver-light), var(--oj-silver));
+  background: var(--oj-silver);
 }
 .rank-badge.rank-3 {
-  background: linear-gradient(135deg, var(--oj-bronze-light), var(--oj-bronze));
+  background: var(--oj-bronze);
 }
 .rank-num {
   color: var(--oj-text-weak);
-  font-weight: 600;
+  font-weight: 500;
+  font-family: var(--oj-font-mono);
 }
 
 .user-cell {
@@ -353,15 +348,15 @@ onMounted(load)
   gap: 10px;
 }
 .avatar {
-  width: 32px;
-  height: 32px;
-  border-radius: 50%;
+  width: 28px;
+  height: 28px;
+  border-radius: 4px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   color: var(--oj-white);
-  font-size: 14px;
-  font-weight: 800;
+  font-size: 13px;
+  font-weight: 600;
   flex-shrink: 0;
 }
 .uname {
@@ -375,8 +370,9 @@ onMounted(load)
   gap: 10px;
 }
 .ac-num {
-  font-weight: 800;
-  font-size: 15px;
+  font-family: var(--oj-font-mono);
+  font-weight: 600;
+  font-size: 14px;
   min-width: 20px;
 }
 .ac-bar {
@@ -426,15 +422,7 @@ onMounted(load)
 
 <style>
 /* 前三名行高亮：表格行类名由 row-class-name 生成，scoped 选不中，只能全局 */
-.el-table .top-row-1 {
-  background: var(--oj-warning-soft);
-}
-.el-table .top-row-2 {
-  background: var(--oj-gray-50);
-}
-.el-table .top-row-3 {
-  background: var(--oj-warning-soft);
-}
+/* 前三行的强调交给名次徽章，行底色保持安静 */
 .el-table .top-row-1 td,
 .el-table .top-row-2 td,
 .el-table .top-row-3 td {

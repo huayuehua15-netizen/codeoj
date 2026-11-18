@@ -162,13 +162,13 @@ async function savePassword() {
   border-bottom: 1px solid var(--oj-border);
 }
 .avatar {
-  width: 52px;
-  height: 52px;
-  border-radius: 50%;
-  background: var(--oj-gradient-brand);
+  width: 48px;
+  height: 48px;
+  border-radius: 6px;
+  background: var(--oj-gray-900);
   color: var(--oj-white);
-  font-size: 22px;
-  font-weight: 700;
+  font-size: 20px;
+  font-weight: 600;
   display: inline-flex;
   align-items: center;
   justify-content: center;

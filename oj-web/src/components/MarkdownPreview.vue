@@ -55,9 +55,9 @@ const rendered = computed(() => {
   left: 0;
   top: 4px;
   bottom: 4px;
-  width: 4px;
-  border-radius: 2px;
-  background: linear-gradient(180deg, var(--oj-primary), var(--oj-accent));
+  width: 3px;
+  border-radius: 1px;
+  background: var(--oj-primary);
 }
 .markdown-body :deep(h3)::before {
   bottom: 2px;

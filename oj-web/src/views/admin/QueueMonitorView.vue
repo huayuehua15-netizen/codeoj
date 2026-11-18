@@ -110,7 +110,7 @@ onMounted(load)
 }
 .metric-num {
   font-size: 28px;
-  font-weight: 800;
+  font-weight: 600;
   line-height: 1.1;
   color: var(--oj-gray-900);
 }

@@ -1,90 +1,97 @@
 /* =====================================================
    CodeOJ 设计体系（Design Tokens）
-   精致浅色风：柔和层次 + 代码感 + 统一过渡
+   精密工具风：平面层次 + 发丝边框 + 等宽数据 + 单一强调色
+
+   三条铁律：
+   1. 零渐变、零玻璃、零发光——层次只靠边框和灰阶；
+   2. 全站只有一个彩色：--oj-primary（链接/主按钮/选中态），
+      其余语义色只许小面积出现（状态点、判定标签）；
+   3. 数字与 ID 一律等宽字体（--oj-font-mono），这是"评测工具"
+      与"营销页"最直观的区别。
 
    约定（P2-18）：SFC 的 <style> 里不再写裸色值，
    一律用本文件里的 --oj-* 变量。色板调整只需改这里。
    ===================================================== */
 :root {
-  /* ---------- 品牌色阶（靛蓝 indigo） ---------- */
-  --oj-indigo-950: #1e1b4b;
-  --oj-indigo-900: #312e81;
-  --oj-indigo-800: #3730a3;
-  --oj-indigo-600: #4f46e5;
-  --oj-indigo-500: #6366f1;
-  --oj-indigo-400: #8b5cf6;
-  --oj-indigo-50: #eef2ff;
-
-  /* ---------- 中性色阶（slate/gray 混用，按语义取） ---------- */
-  --oj-gray-900: #1f2937;
-  --oj-gray-800: #303133;
-  --oj-gray-700: #4b5563;
-  --oj-gray-600: #606266;
-  --oj-gray-500: #6b7280;
-  --oj-gray-400: #909399;
-  --oj-gray-300: #a8abb2;
-  --oj-gray-200: #cbd5e1;
-  --oj-gray-100: #e8eaf2;
-  --oj-gray-50: #f5f6fa;
+  /* ---------- 中性色阶（GitHub light 口径，冷灰） ---------- */
+  --oj-gray-900: #1f2328;
+  --oj-gray-800: #32383f;
+  --oj-gray-700: #59636e;
+  --oj-gray-600: #656d76;
+  --oj-gray-500: #6e7781;
+  --oj-gray-400: #8c959f;
+  --oj-gray-300: #b7bfc9;
+  --oj-gray-200: #d1d9de;
+  --oj-gray-100: #e7ebef;
+  --oj-gray-50: #f6f8fa;
   --oj-white: #ffffff;
 
-  /* ---------- 语义色（成功/警告/危险，含浅底与描边） ---------- */
-  --oj-success: #16a34a;
-  --oj-success-soft: #f0fdf4;
-  --oj-success-border: #bbf7d0;
-  --oj-warning: #d97706;
-  --oj-warning-soft: #fffbeb;
-  --oj-warning-border: #fde68a;
-  --oj-danger: #dc2626;
-  --oj-danger-soft: #fef2f2;
-  --oj-danger-border: #fecaca;
-  --oj-info: #0284c7;
-  --oj-info-soft: #f0f9ff;
-  --oj-info-border: #bae6fd;
+  /* ---------- 强调色（全站唯一的彩色） ---------- */
+  --oj-primary: #0969da;
+  --oj-primary-hover: #0550ae;
+  --oj-primary-deep: #0550ae;
+  --oj-primary-soft: #ddf4ff;
+  --oj-accent: #0969da;
 
-  /* ---------- 语义浅底（判定横幅等大面积背景，替代 rgba 硬编码） ---------- */
-  --oj-tint-gray: rgba(107, 114, 128, 0.08);
-  --oj-tint-primary: rgba(79, 70, 229, 0.07);
-  --oj-tint-success: rgba(22, 163, 74, 0.08);
-  --oj-tint-warning: rgba(217, 119, 6, 0.08);
-  --oj-tint-danger: rgba(220, 38, 38, 0.06);
+  /* ---------- 语义色（小面积使用：状态点/判定/提示） ---------- */
+  --oj-success: #1a7f37;
+  --oj-success-soft: #dafbe1;
+  --oj-success-border: #b3e6c0;
+  --oj-warning: #9a6700;
+  --oj-warning-soft: #fff8c5;
+  --oj-warning-border: #e8c87a;
+  --oj-danger: #cf222e;
+  --oj-danger-soft: #ffebe9;
+  --oj-danger-border: #ffc0bd;
+  --oj-info: #0550ae;
+  --oj-info-soft: #ddf4ff;
+  --oj-info-border: #b6d7f5;
 
-  /* ---------- 奖牌色（排行榜前三） ---------- */
-  --oj-gold: #d97706;
-  --oj-gold-light: #fbbf24;
-  --oj-silver: #64748b;
-  --oj-silver-light: #cbd5e1;
-  --oj-bronze: #c2681f;
-  --oj-bronze-light: #f0a96c;
+  /* ---------- 判定横幅浅底（与上方语义色同族） ---------- */
+  --oj-tint-gray: rgba(110, 119, 129, 0.08);
+  --oj-tint-primary: rgba(9, 105, 218, 0.07);
+  --oj-tint-success: rgba(26, 127, 55, 0.08);
+  --oj-tint-warning: rgba(154, 103, 0, 0.08);
+  --oj-tint-danger: rgba(207, 34, 46, 0.06);
 
-  /* ---------- 深色代码面板（样例/console/代码查看器） ---------- */
-  --oj-code-bg: #0f172a;
-  --oj-code-bg-soft: #1e293b;
-  --oj-code-border: #1e293b;
-  --oj-code-text: #e2e8f0;
-  --oj-code-text-sub: #94a3b8;
-  --oj-code-keyword: #c084fc;
-  --oj-code-string: #86efac;
-  --oj-code-number: #fbbf24;
-  --oj-code-comment: #64748b;
+  /* ---------- 排行前三（弱化的奖牌色，只用于文字与小标记） ---------- */
+  --oj-gold: #9a6700;
+  --oj-gold-light: #fff8c5;
+  --oj-silver: #57606a;
+  --oj-silver-light: #e7ebef;
+  --oj-bronze: #95621a;
+  --oj-bronze-light: #f6e8d3;
 
-  /* ---------- 层次 ---------- */
-  --oj-radius: 14px;
-  --oj-radius-md: 10px;
-  --oj-radius-sm: 8px;
-  --oj-radius-pill: 999px;
-  --oj-shadow-sm: 0 1px 2px rgba(17, 24, 39, 0.05);
-  --oj-shadow: 0 1px 3px rgba(17, 24, 39, 0.06), 0 6px 16px -8px rgba(17, 24, 39, 0.1);
-  --oj-shadow-lg: 0 8px 24px -6px rgba(17, 24, 39, 0.14);
-  --oj-shadow-brand: 0 6px 20px -6px rgba(79, 70, 229, 0.45);
+  /* ---------- 深色代码面板（样例/console/代码查看器，GitHub dark 口径） ---------- */
+  --oj-code-bg: #0d1117;
+  --oj-code-bg-soft: #161b22;
+  --oj-code-border: #21262d;
+  --oj-code-text: #e6edf3;
+  --oj-code-text-sub: #8b949e;
+  --oj-code-keyword: #d2a8ff;
+  --oj-code-string: #a5d6ff;
+  --oj-code-number: #ffa657;
+  --oj-code-comment: #8b949e;
 
-  /* ---------- 渐变（各页顶部概览条统一） ---------- */
-  --oj-gradient-brand: linear-gradient(135deg, #3730a3 0%, #4f46e5 60%, #6366f1 100%);
-  --oj-gradient-brand-deep: linear-gradient(135deg, #1e1b4b 0%, #4338ca 45%, #6366f1 100%);
-  --oj-gradient-brand-live: linear-gradient(135deg, #312e81 0%, #4338ca 55%, #4f46e5 100%);
-  --oj-gradient-page: radial-gradient(1200px 400px at 85% -100px, rgba(99, 102, 241, 0.08), transparent);
+  /* ---------- 层次：卡片无阴影，浮层才有阴影 ---------- */
+  --oj-radius: 8px;
+  --oj-radius-md: 6px;
+  --oj-radius-sm: 6px;
+  /* 历史"胶囊"变量：精密工具风下所有小芯片统一 4px 直角，
+     引用该变量的标签/筛选钮无需逐个改 */
+  --oj-radius-pill: 4px;
+  --oj-shadow-sm: none;
+  --oj-shadow: 0 8px 24px rgba(31, 35, 40, 0.12);
+  --oj-shadow-lg: 0 16px 40px rgba(31, 35, 40, 0.16);
+  --oj-shadow-brand: none;
 
-  /* ---------- 品牌底上的前景（白字 / 白透明层 / 柔光） ---------- */
+  /* ---------- 兼容别名（历史代码引用，统一指向平面等价物） ----------
+     渐变/玻璃/辉光已全部退役：这些 token 只为让未清扫的引用
+     不至于渲染破碎，清扫后应当删除。 */
+  --oj-gradient-brand: #1f2328;
+  --oj-gradient-brand-deep: #1f2328;
+  --oj-gradient-brand-live: #1f2328;
+  --oj-gradient-page: none;
   --oj-on-brand: #ffffff;
   --oj-on-brand-90: rgba(255, 255, 255, 0.9);
   --oj-on-brand-85: rgba(255, 255, 255, 0.85);
@@ -94,45 +101,42 @@
   --oj-on-brand-28: rgba(255, 255, 255, 0.28);
   --oj-on-brand-16: rgba(255, 255, 255, 0.16);
   --oj-on-brand-08: rgba(255, 255, 255, 0.08);
-  --oj-glow-accent: radial-gradient(circle, rgba(139, 92, 246, 0.55), transparent 68%);
-  --oj-grid-line-04: rgba(255, 255, 255, 0.04);
-  --oj-code-inset: inset 0 0 0 1px rgba(255, 255, 255, 0.06);
-  /* 输入类控件聚焦环（与 --oj-primary 同族，透明度收敛） */
-  --oj-ring-primary: 0 0 0 3px rgba(79, 70, 229, 0.15);
-  --oj-shadow-brand-lg: 0 8px 28px -10px rgba(67, 56, 202, 0.55);
-  --oj-shadow-brand-lg-hover: 0 14px 36px -12px rgba(67, 56, 202, 0.65);
+  --oj-glow-accent: none;
+  --oj-grid-line-04: transparent;
+  --oj-code-inset: inset 0 0 0 1px #21262d;
+  --oj-ring-primary: 0 0 0 3px rgba(9, 105, 218, 0.18);
+  --oj-shadow-brand-lg: none;
+  --oj-shadow-brand-lg-hover: none;
 
-  /* ---------- 状态脉冲（竞赛"进行中"呼吸点） ---------- */
-  --oj-pulse-dot: #4ade80;
-  --oj-pulse-ring: rgba(74, 222, 128, 0.7);
-  --oj-pulse-ring-out: rgba(74, 222, 128, 0);
+  /* ---------- 状态脉冲（竞赛"进行中"呼吸点，弱化） ---------- */
+  --oj-pulse-dot: #1a7f37;
+  --oj-pulse-ring: rgba(26, 127, 55, 0.35);
+  --oj-pulse-ring-out: rgba(26, 127, 55, 0);
 
   /* ---------- 过渡 ---------- */
   --oj-ease: cubic-bezier(0.4, 0, 0.2, 1);
-  --oj-duration: 0.18s;
+  --oj-duration: 0.15s;
 
-  /* ---------- 语义别名（组件里最常用的那几个） ---------- */
-  --oj-primary: var(--oj-indigo-600);
-  --oj-primary-deep: var(--oj-indigo-800);
-  --oj-primary-soft: var(--oj-indigo-50);
-  --oj-primary-hover: var(--oj-indigo-500);
-  --oj-accent: var(--oj-indigo-400);
+  /* ---------- 边框（发丝线是这套皮肤的主角） ---------- */
+  --oj-border: #e1e6ec;
+  --oj-border-strong: #cbd5e0;
+
+  /* ---------- 语义别名 ---------- */
   --oj-bg: var(--oj-gray-50);
   --oj-card: var(--oj-white);
-  --oj-border: var(--oj-gray-100);
   --oj-text: var(--oj-gray-900);
-  --oj-text-sub: var(--oj-gray-500);
-  --oj-text-weak: var(--oj-gray-300);
+  --oj-text-sub: var(--oj-gray-600);
+  --oj-text-weak: var(--oj-gray-400);
 
-  /* Element Plus 主题覆盖：全局组件跟随靛蓝主色 */
-  --el-color-primary: var(--oj-indigo-600);
-  --el-color-primary-light-3: #7679f0;
-  --el-color-primary-light-5: #a5b0f7;
-  --el-color-primary-light-7: #cdd2fa;
-  --el-color-primary-light-8: #dfe2fb;
-  --el-color-primary-light-9: var(--oj-indigo-50);
-  --el-color-primary-dark-2: var(--oj-indigo-800);
-  --el-border-radius-base: 8px;
+  /* Element Plus 主题覆盖 */
+  --el-color-primary: var(--oj-primary);
+  --el-color-primary-light-3: #2f81d8;
+  --el-color-primary-light-5: #6fa6e4;
+  --el-color-primary-light-7: #b3d0f1;
+  --el-color-primary-light-8: #cfe1f6;
+  --el-color-primary-light-9: var(--oj-primary-soft);
+  --el-color-primary-dark-2: var(--oj-primary-deep);
+  --el-border-radius-base: 6px;
   --el-font-family: var(--oj-font-sans);
 
   /* ---------- 字体 ---------- */
@@ -151,11 +155,12 @@ body,
   height: 100%;
   margin: 0;
   font-family: var(--oj-font-sans);
-  background: var(--oj-gradient-page), var(--oj-bg);
+  background: var(--oj-bg);
   color: var(--oj-text);
+  -webkit-font-smoothing: antialiased;
 }
 
-/* 数字与代码统一等宽字体，强化"代码感" */
+/* 数字与代码统一等宽字体——评测工具的基本素养 */
 code,
 pre,
 .el-progress__text,
@@ -166,7 +171,8 @@ pre,
 }
 
 /* 等宽数字：表格里数字列不跳动 */
-.tabular {
+.tabular,
+.el-table {
   font-variant-numeric: tabular-nums;
 }
 
@@ -193,17 +199,13 @@ a {
   }
 }
 
-/* 统一卡片：白底 + 细边 + 柔和大阴影 + 14px 圆角 + hover 微浮 */
+/* 统一卡片：白底 + 发丝边框 + 8px 圆角，无阴影无 hover 浮起。
+   层次感来自边框深浅，而不是投影——这是与"模板皮肤"最根本的区别。 */
 .card {
   background: var(--oj-card);
   border: 1px solid var(--oj-border);
   border-radius: var(--oj-radius);
   padding: 24px;
-  box-shadow: var(--oj-shadow-sm);
-  transition: box-shadow 0.25s var(--oj-ease), transform 0.25s var(--oj-ease);
-}
-.card:hover {
-  box-shadow: var(--oj-shadow);
 }
 
 .page-container {
@@ -212,61 +214,57 @@ a {
   padding: 24px 20px;
 }
 
-/* ---------- 可复用的顶部概览条（5 个页面共用外观） ---------- */
+/* ---------- 页面顶部统计条（4 个页面共用外观） ----------
+   平面版：白底发丝框，数据靠等宽字体与灰阶层次说话。 */
 .oj-banner {
   display: flex;
   align-items: center;
   gap: 28px;
-  padding: 20px 28px;
+  padding: 16px 24px;
   margin-bottom: 16px;
-  background: var(--oj-gradient-brand);
-  color: var(--oj-white);
-  box-shadow: var(--oj-shadow-brand);
-  border: none;
-}
-/* .card:hover 的阴影优先级高于 .oj-banner，会把这个品牌阴影换成中性灰，
-   所以品牌条要显式锁住 hover 态，否则鼠标一移上去卡片就"褪色"。 */
-.oj-banner,
-.oj-banner:hover {
-  box-shadow: var(--oj-shadow-brand);
+  background: var(--oj-card);
+  border: 1px solid var(--oj-border);
+  border-radius: var(--oj-radius);
+  color: var(--oj-text);
 }
 .oj-banner .oj-banner-item {
   display: flex;
   flex-direction: column;
-  align-items: center;
+  align-items: flex-start;
 }
 .oj-banner .oj-banner-num {
-  font-size: 26px;
-  font-weight: 800;
-  line-height: 1.1;
+  font-family: var(--oj-font-mono);
+  font-size: 22px;
+  font-weight: 600;
+  line-height: 1.2;
   font-variant-numeric: tabular-nums;
+  letter-spacing: -0.3px;
 }
 .oj-banner .oj-banner-label {
   font-size: 12px;
-  opacity: 0.85;
-  margin-top: 4px;
+  color: var(--oj-text-sub);
+  margin-top: 2px;
 }
 .oj-banner .oj-banner-divider {
   width: 1px;
-  height: 36px;
-  background: rgba(255, 255, 255, 0.28);
+  height: 32px;
+  background: var(--oj-border);
 }
 .oj-banner .oj-banner-note {
   margin-left: auto;
-  font-size: 13px;
-  opacity: 0.9;
-  letter-spacing: 0.5px;
+  font-size: 12.5px;
+  color: var(--oj-text-sub);
+  letter-spacing: 0;
   text-align: right;
 }
 
-/* 窄屏：概览条改两列网格，分隔线变成格子之间的视觉噪音，直接隐藏；
-   右侧那句提示文案挪到最下面一行整宽显示。 */
+/* 窄屏：概览条改两列网格，分隔线隐藏，提示文案整宽显示 */
 @media (max-width: 768px) {
   .oj-banner {
     display: grid;
     grid-template-columns: 1fr 1fr;
     gap: 16px 12px;
-    padding: 18px 20px;
+    padding: 16px 20px;
   }
   .oj-banner .oj-banner-divider {
     display: none;
@@ -279,48 +277,51 @@ a {
   }
 }
 
-/* ---------- 可复用的小徽章 ---------- */
+/* ---------- 题号小徽章：安静的等宽灰片 ---------- */
 .oj-badge-id {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   min-width: 30px;
-  height: 24px;
-  padding: 0 7px;
+  height: 22px;
+  padding: 0 6px;
   border-radius: var(--oj-radius-sm);
-  background: var(--oj-primary-soft);
-  color: var(--oj-primary);
-  font-weight: 800;
-  font-size: 13px;
+  background: var(--oj-gray-50);
+  border: 1px solid var(--oj-border);
+  color: var(--oj-gray-600);
+  font-family: var(--oj-font-mono);
+  font-weight: 600;
+  font-size: 12px;
   font-variant-numeric: tabular-nums;
   flex-shrink: 0;
 }
 
-/* 难度软色 chip：列表/详情/竞赛共用 */
+/* 难度：小圆点 + 文字。彩色只出现在 6px 的点上，不再是大色块胶囊 */
 .oj-diff {
   display: inline-flex;
   align-items: center;
-  padding: 2px 10px;
-  border-radius: var(--oj-radius-pill);
-  font-size: 12px;
-  font-weight: 600;
-  border: 1px solid transparent;
+  gap: 6px;
+  font-size: 12.5px;
+  font-weight: 500;
   white-space: nowrap;
+  color: var(--oj-gray-700);
+}
+.oj-diff::before {
+  content: '';
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: currentColor;
+  flex-shrink: 0;
 }
 .oj-diff.diff-1 {
-  background: var(--oj-success-soft);
   color: var(--oj-success);
-  border-color: var(--oj-success-border);
 }
 .oj-diff.diff-2 {
-  background: var(--oj-warning-soft);
   color: var(--oj-warning);
-  border-color: var(--oj-warning-border);
 }
 .oj-diff.diff-3 {
-  background: var(--oj-danger-soft);
   color: var(--oj-danger);
-  border-color: var(--oj-danger-border);
 }
 
 /* 通过率三级配色 */
@@ -336,27 +337,26 @@ a {
 
 /* Element Plus 细节统一 */
 .el-table {
-  --el-table-row-hover-bg-color: var(--oj-primary-soft);
+  --el-table-row-hover-bg-color: var(--oj-gray-50);
   --el-table-border-color: var(--oj-border);
   --el-table-header-text-color: var(--oj-gray-500);
-  --el-table-header-bg-color: #fafbfe;
+  --el-table-header-bg-color: var(--oj-gray-50);
 }
 .el-table th.el-table__cell {
   font-weight: 600;
-  font-size: 13px;
+  font-size: 12px;
+  letter-spacing: 0.02em;
 }
 .el-button {
-  border-radius: 8px;
-  transition: transform 0.15s var(--oj-ease);
-}
-.el-button:active {
-  transform: scale(0.97);
+  border-radius: var(--oj-radius-md);
+  font-weight: 500;
 }
 .el-dialog {
   border-radius: var(--oj-radius);
+  box-shadow: var(--oj-shadow-lg);
 }
 .el-tag {
-  border-radius: 6px;
+  border-radius: 4px;
 }
 .el-pagination {
   --el-pagination-font-size: 13px;
@@ -372,22 +372,18 @@ a {
 /* 卡片内的区块标题（页面级标题请用 .oj-page-title，见下） */
 .card h2 {
   margin: 0 0 8px;
-  font-size: 20px;
-  font-weight: 800;
+  font-size: 18px;
+  font-weight: 600;
 }
 .card h3 {
   margin: 20px 0 10px;
-  font-size: 16px;
-  font-weight: 700;
+  font-size: 15px;
+  font-weight: 600;
 }
 
 /* ---------- 页面头部：标题 + 说明 + 右侧操作 ----------
-   题库/提交记录/排行榜/统计与 6 个管理页原来各写了一套 .page-head /
-   .list-head / .head，间距和对齐还互不相同。统一到这里：
-   - 标题一律 h1（每页有且只有一个，屏幕阅读器靠它判断页面主题），
-     视觉尺寸比卡片内 h2 略大，靠字重和字距区分层级；
-   - 说明文字统一 12.5px 中性灰，比 gray-400 深一档，弱光屏也读得清；
-   - flex-wrap 让窄屏时右侧操作掉到下一行，而不是把标题挤成两行。 */
+   标题一律 h1（每页有且只有一个），600 字重；
+   说明文字 13px 中性灰；flex-wrap 让窄屏时右侧操作掉到下一行。 */
 .oj-page-head {
   display: flex;
   align-items: flex-start;
@@ -398,15 +394,15 @@ a {
 }
 .oj-page-title {
   margin: 0;
-  font-size: 21px;
-  font-weight: 800;
-  letter-spacing: -0.2px;
-  line-height: 1.3;
+  font-size: 20px;
+  font-weight: 600;
+  letter-spacing: -0.1px;
+  line-height: 1.35;
   color: var(--oj-text);
 }
 .oj-page-sub {
   margin: 6px 0 0;
-  font-size: 12.5px;
+  font-size: 13px;
   line-height: 1.6;
   color: var(--oj-text-sub);
 }
@@ -426,7 +422,7 @@ a {
     gap: 12px;
   }
   .oj-page-title {
-    font-size: 19px;
+    font-size: 18px;
   }
   .oj-toolbar {
     width: 100%;
@@ -435,11 +431,11 @@ a {
 
 /* 页面进入动画（仅首屏，避免表格滚动时反复触发） */
 .page-enter-active {
-  transition: opacity 0.2s var(--oj-ease), transform 0.2s var(--oj-ease);
+  transition: opacity 0.18s var(--oj-ease), transform 0.18s var(--oj-ease);
 }
 .page-enter-from {
   opacity: 0;
-  transform: translateY(6px);
+  transform: translateY(4px);
 }
 
 /* 无障碍：仅屏幕阅读器可见 */

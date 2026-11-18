@@ -148,9 +148,9 @@ function rateClass(rate: number) {
 
 /** 通过率三级配色值：图表需要真实色值，从设计 token 读，避免在 JS 里再写一份色板 */
 function rateColor(rate: number) {
-  if (rate >= 60) return cssVar('--oj-success', '#16a34a')
-  if (rate >= 30) return cssVar('--oj-warning', '#d97706')
-  return cssVar('--oj-danger', '#dc2626')
+  if (rate >= 60) return cssVar('--oj-success', '#1a7f37')
+  if (rate >= 30) return cssVar('--oj-warning', '#9a6700')
+  return cssVar('--oj-danger', '#cf222e')
 }
 
 /** 各判题状态的配色：与 utils/status.ts 的 STATUS_COLOR 语义保持一致 */
@@ -158,7 +158,7 @@ function statusChartColor(status: number): string {
   switch (status) {
     case 2: return cssVar('--oj-success')
     case 3: return cssVar('--oj-warning')
-    case 4: return cssVar('--oj-indigo-400')
+    case 4: return cssVar('--oj-info')
     case 5: return cssVar('--oj-bronze-light')
     case 6: return cssVar('--oj-danger')
     case 7: return cssVar('--oj-silver')
@@ -168,8 +168,8 @@ function statusChartColor(status: number): string {
 }
 
 function renderCharts(trend: { date: string; total: number; accepted: number }[]) {
-  const axisLine = cssVar('--oj-border', '#e8eaf2')
-  const labelColor = cssVar('--oj-text-sub', '#6b7280')
+  const axisLine = cssVar('--oj-border', '#e1e6ec')
+  const labelColor = cssVar('--oj-text-sub', '#656d76')
   const cardBg = cssVar('--oj-white', '#ffffff')
 
   // 状态分布：环形图（比柱状更省空间，且适合看占比）
@@ -305,7 +305,7 @@ onUnmounted(() => {
   gap: 8px;
   margin: 0 0 6px;
   font-size: 16px;
-  font-weight: 800;
+  font-weight: 600;
 }
 .sec-head::before {
   content: '';

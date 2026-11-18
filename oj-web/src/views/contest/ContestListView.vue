@@ -22,7 +22,6 @@
     <!-- 进行中优先展示（强调大卡片） -->
     <template v-if="liveContests.length">
       <router-link v-for="c in liveContests" :key="c.id" :to="`/contests/${c.id}`" class="live-card">
-        <span class="live-glow" aria-hidden="true" />
         <div class="live-left">
           <span class="live-badge">
             <span class="pulse" aria-hidden="true" />
@@ -174,7 +173,7 @@ onUnmounted(() => window.clearInterval(timer))
 .page-head h1 {
   margin: 0;
   font-size: 24px;
-  font-weight: 800;
+  font-weight: 600;
   letter-spacing: -0.3px;
   color: var(--oj-text);
 }
@@ -193,10 +192,11 @@ onUnmounted(() => window.clearInterval(timer))
 }
 .hs-num {
   display: block;
+  font-family: var(--oj-font-mono);
   font-size: 22px;
-  font-weight: 800;
+  font-weight: 600;
   font-variant-numeric: tabular-nums;
-  color: var(--oj-primary);
+  color: var(--oj-text);
   line-height: 1.1;
 }
 .hs-label {
@@ -209,35 +209,26 @@ onUnmounted(() => window.clearInterval(timer))
   background: var(--oj-border);
 }
 
-/* ---------- 进行中：强调卡（整卡可键盘聚焦，链接语义） ---------- */
+/* ---------- 进行中：强调卡（整卡可键盘聚焦，链接语义） ----------
+   平面强调：白底 + 3px 绿色左边线 + 绿色呼吸点。
+   不再用整块渐变底——强调要靠位置和一根线，而不是一块大色板。 */
 .live-card {
   position: relative;
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 24px;
-  padding: 24px 28px;
+  padding: 20px 24px;
   margin-bottom: 16px;
+  border: 1px solid var(--oj-border);
+  border-left: 3px solid var(--oj-success);
   border-radius: var(--oj-radius);
-  background: var(--oj-gradient-brand-live);
-  color: var(--oj-on-brand);
-  overflow: hidden;
-  box-shadow: var(--oj-shadow-brand-lg);
-  transition: transform 0.25s var(--oj-ease), box-shadow 0.25s var(--oj-ease);
+  background: var(--oj-card);
+  color: var(--oj-text);
+  transition: border-color var(--oj-duration) var(--oj-ease);
 }
 .live-card:hover {
-  transform: translateY(-2px);
-  box-shadow: var(--oj-shadow-brand-lg-hover);
-}
-/* 右上角柔光，避免纯色块显得平 */
-.live-glow {
-  position: absolute;
-  top: -70px;
-  right: -30px;
-  width: 260px;
-  height: 260px;
-  background: var(--oj-glow-accent);
-  pointer-events: none;
+  border-color: var(--oj-border-strong);
 }
 .live-left {
   position: relative;
@@ -247,13 +238,10 @@ onUnmounted(() => window.clearInterval(timer))
   display: inline-flex;
   align-items: center;
   gap: 7px;
-  padding: 3px 11px;
-  border-radius: var(--oj-radius-pill);
-  background: var(--oj-on-brand-16);
-  font-size: 11.5px;
+  font-size: 12px;
   font-weight: 600;
-  letter-spacing: 0.3px;
-  backdrop-filter: blur(4px);
+  color: var(--oj-success);
+  letter-spacing: 0.2px;
 }
 .pulse {
   width: 6px;
@@ -265,22 +253,22 @@ onUnmounted(() => window.clearInterval(timer))
 }
 @keyframes pulse {
   70% {
-    box-shadow: 0 0 0 7px var(--oj-pulse-ring-out);
+    box-shadow: 0 0 0 6px var(--oj-pulse-ring-out);
   }
   100% {
     box-shadow: 0 0 0 0 var(--oj-pulse-ring-out);
   }
 }
 .live-title {
-  margin: 12px 0 0;
-  font-size: 21px;
-  font-weight: 800;
-  letter-spacing: -0.2px;
+  margin: 10px 0 0;
+  font-size: 18px;
+  font-weight: 600;
+  letter-spacing: -0.1px;
 }
 .live-desc {
-  margin: 8px 0 0;
+  margin: 6px 0 0;
   font-size: 13px;
-  color: var(--oj-on-brand-82);
+  color: var(--oj-text-sub);
   max-width: 520px;
   line-height: 1.6;
 }
@@ -288,14 +276,14 @@ onUnmounted(() => window.clearInterval(timer))
   display: flex;
   flex-wrap: wrap;
   gap: 18px;
-  margin-top: 12px;
+  margin-top: 10px;
 }
 .meta-item {
   display: inline-flex;
   align-items: center;
   gap: 6px;
   font-size: 12.5px;
-  color: var(--oj-on-brand-75);
+  color: var(--oj-text-sub);
 }
 .live-right {
   position: relative;
@@ -304,29 +292,30 @@ onUnmounted(() => window.clearInterval(timer))
 }
 .countdown-label {
   font-size: 11.5px;
-  color: var(--oj-on-brand-70);
-  letter-spacing: 0.5px;
+  color: var(--oj-text-sub);
+  letter-spacing: 0.3px;
 }
 .countdown-value {
   font-family: var(--oj-font-mono);
-  font-size: 30px;
-  font-weight: 700;
+  font-size: 26px;
+  font-weight: 600;
   font-variant-numeric: tabular-nums;
-  letter-spacing: 0.5px;
+  letter-spacing: 0.3px;
   margin: 2px 0 12px;
+  color: var(--oj-text);
 }
 .live-btn {
   display: inline-block;
-  padding: 9px 22px;
-  border-radius: var(--oj-radius-sm);
-  background: var(--oj-on-brand);
-  color: var(--oj-primary-deep);
-  font-size: 13.5px;
-  font-weight: 700;
-  transition: background 0.2s var(--oj-ease);
+  padding: 7px 16px;
+  border-radius: var(--oj-radius-md);
+  background: var(--oj-primary);
+  color: var(--oj-white);
+  font-size: 13px;
+  font-weight: 500;
+  transition: background 0.15s var(--oj-ease);
 }
 .live-card:hover .live-btn {
-  background: var(--oj-primary-soft);
+  background: var(--oj-primary-hover);
 }
 
 /* ---------- 其余竞赛：紧凑列表 ---------- */

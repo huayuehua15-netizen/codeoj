@@ -245,7 +245,7 @@ onMounted(load)
 .verdict-label {
   margin: 0;
   font-size: 24px;
-  font-weight: 800;
+  font-weight: 600;
   line-height: 1.2;
 }
 .verdict-sub {
@@ -330,7 +330,7 @@ onMounted(load)
 .pass-num {
   color: var(--oj-success);
   font-size: 16px;
-  font-weight: 800;
+  font-weight: 600;
 }
 .first-fail {
   margin-left: 10px;
