@@ -1,6 +1,6 @@
 <template>
   <div class="page-container profile-page">
-    <!-- 资料头卡：身份区 + 就地编辑 + 关键数据行。个人主页的"门面" -->
+    <!-- 资料头卡：身份区 + 就地编辑 + 关键数据行 -->
     <div class="card profile-hero">
       <div class="hero-top">
         <button
@@ -35,7 +35,6 @@
               {{ userStore.isAdmin ? '管理员' : '学生' }}
             </span>
           </div>
-          <!-- 签名：展示态 / 编辑态就地切换 -->
           <div v-if="!sigEditing" class="sig-row">
             <p class="sig-text" :class="{ empty: !signature }">
               {{ signature || '还没有签名，写一句给自己的话吧' }}
@@ -65,7 +64,6 @@
           </div>
         </div>
 
-        <!-- 关键数据：等宽大数字 + 灰标签，分隔线用发丝线 -->
         <div class="hero-stats">
           <div class="stat">
             <span class="stat-num mono">{{ statistics?.solvedCount ?? '—' }}</span>
@@ -87,7 +85,7 @@
       </div>
     </div>
 
-    <!-- 刷题热力图：近 26 周逐日提交密度 -->
+    <!-- 刷题热力图：全宽。月份标签与格子同栅格对齐（修复重叠），格子定宽横向滚动 -->
     <div class="card heatmap-card">
       <div class="card-head">
         <h2>刷题热力图</h2>
@@ -103,8 +101,13 @@
       </div>
       <div class="heatmap-scroll" v-loading="heatmapLoading">
         <div v-if="grid" class="heatmap" role="img" aria-label="近 26 周提交热力图">
-          <div class="month-row">
-            <span v-for="(m, i) in grid.monthLabels" :key="i" class="month" :style="{ gridColumn: `${m.column + 1}` }">
+          <div class="month-row" :style="gridTemplateStyle">
+            <span
+              v-for="(m, i) in grid.monthLabels"
+              :key="i"
+              class="month"
+              :style="{ gridColumnStart: m.column + 1 }"
+            >
               {{ m.label }}
             </span>
           </div>
@@ -112,7 +115,7 @@
             <div class="weekday-col" aria-hidden="true">
               <span>日</span><span class="wk-blank" /><span>二</span><span class="wk-blank" /><span>四</span><span class="wk-blank" /><span>六</span>
             </div>
-            <div class="heat-grid" :style="{ gridTemplateColumns: `repeat(${grid.columns.length}, 1fr)` }">
+            <div class="heat-grid" :style="gridTemplateStyle">
               <div v-for="(col, ci) in grid.columns" :key="ci" class="heat-col">
                 <span
                   v-for="cell in col"
@@ -130,26 +133,41 @@
     </div>
 
     <div class="profile-grid">
-      <!-- 左列：语言分布 -->
-      <div class="card lang-card">
-        <div class="card-head">
-          <h2>语言分布</h2>
-          <router-link class="more-link" to="/statistics">完整统计 →</router-link>
-        </div>
-        <div v-if="langDist.length" class="lang-list">
-          <div v-for="row in langDist" :key="row.language" class="lang-row">
-            <span class="lang-name mono">{{ langLabel(row.language) }}</span>
-            <div class="lang-bar-track">
-              <div
-                class="lang-bar"
-                :style="{ width: `${langPercent(row.total)}%` }"
-                :aria-label="`${row.language} ${row.total} 次`"
-              />
+      <!-- 左列：解题进度（难度条）+ 语言分布，两卡叠放填满列高 -->
+      <div class="col-stack">
+        <div class="card">
+          <div class="card-head">
+            <h2>解题进度</h2>
+            <router-link class="more-link" to="/statistics">完整统计 →</router-link>
+          </div>
+          <div class="diff-list">
+            <div v-for="d in difficultyRows" :key="d.difficulty" class="diff-row">
+              <span class="oj-diff" :class="`diff-${d.difficulty}`">{{ d.label }}</span>
+              <div class="diff-bar-track">
+                <div class="diff-bar" :class="`bar-${d.difficulty}`" :style="{ width: `${d.percent}%` }" />
+              </div>
+              <span class="diff-count mono tabular">
+                {{ d.solved }}<span class="of">/{{ d.total }}</span>
+              </span>
             </div>
-            <span class="lang-count mono tabular">{{ row.total }} 次 · AC {{ row.accepted }}</span>
           </div>
         </div>
-        <el-empty v-else description="还没有提交记录" :image-size="72" />
+
+        <div class="card">
+          <div class="card-head">
+            <h2>语言分布</h2>
+          </div>
+          <div v-if="langDist.length" class="lang-list">
+            <div v-for="row in langDist" :key="row.language" class="lang-row">
+              <span class="lang-name mono">{{ langLabel(row.language) }}</span>
+              <div class="lang-bar-track">
+                <div class="lang-bar" :style="{ width: `${langPercent(row.total)}%` }" />
+              </div>
+              <span class="lang-count mono tabular">{{ row.total }} 次 · AC {{ row.accepted }}</span>
+            </div>
+          </div>
+          <el-empty v-else description="还没有提交记录" :image-size="64" />
+        </div>
       </div>
 
       <!-- 右列：最近动态 -->
@@ -248,8 +266,8 @@
 </template>
 
 <script setup lang="ts">
-// 个人主页（论文表 3-1 个人信息维护 + 活动总览）。
-// 数据源：auth/info + statistics + trend(182 天热力图) + languages + pageMy(最近 8 条) + favorites。
+// 个人主页：布局参照 LeetCode 个人页（头部 → 难度进度 → 热力图 → 最近提交）。
+// 数据源全部来自真实接口：auth/info + statistics + trend(182 天) + languages + pageMy + favorites。
 import { computed, onMounted, reactive, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
@@ -294,7 +312,31 @@ const initial = computed(() => (userStore.username || '?').slice(0, 1).toUpperCa
 const avatarUrl = computed(() => userStore.avatar || info.value?.avatar || '')
 const signature = computed(() => info.value?.signature || '')
 
-/** 语言 code → 显示名（Language 枚举口径） */
+/** 热力图网格：格子 11px 定宽 + 3px 间距，与月份标签行共用同一栅格模板 */
+const gridTemplateStyle = computed(() => ({
+  display: 'grid',
+  gridTemplateColumns: `repeat(${grid.value?.columns.length ?? 0}, 11px)`,
+  columnGap: '3px',
+}))
+
+/** 难度解题进度：solvedCount / totalCount（题库口径），三条固定 */
+const difficultyRows = computed(() => {
+  const byD = statistics.value?.byDifficulty ?? []
+  const LABELS: Record<number, string> = { 1: '简单', 2: '中等', 3: '困难' }
+  return [1, 2, 3].map((difficulty) => {
+    const row = byD.find((x) => x.difficulty === difficulty)
+    const solved = row?.solvedCount ?? 0
+    const total = row?.totalCount ?? 0
+    return {
+      difficulty,
+      label: LABELS[difficulty],
+      solved,
+      total,
+      percent: total > 0 ? Math.round((solved / total) * 100) : 0,
+    }
+  })
+})
+
 const LANG_LABELS: Record<string, string> = {
   c: 'C', cpp: 'C++', java: 'Java', python3: 'Python', js: 'JavaScript',
 }
@@ -307,12 +349,10 @@ function langPercent(total: number) {
 }
 
 onMounted(async () => {
-  // refreshUserInfo 同时同步顶栏头像（store），并拿回签名/邮箱/注册时间
   info.value = await userStore.refreshUserInfo()
   emailForm.email = info.value.email || ''
   heatmapLoading.value = true
   try {
-    // 五路数据互不依赖，并行拉取；任何一路失败不影响其它区块（Promise.allSettled）
     const [stat, trend, langs, recentPage, favs] = await Promise.allSettled([
       getStatistics(),
       getTrend(182),
@@ -353,7 +393,6 @@ async function saveSig() {
   }
 }
 
-/** 选图 → 居中裁剪 256px → webp 压缩 → data URL 上传（API.md v1.8 §1.5b） */
 async function onAvatarFile(e: Event) {
   const input = e.target as HTMLInputElement
   const file = input.files?.[0]
@@ -442,12 +481,16 @@ async function savePassword() {
   grid-template-columns: 1fr 1fr;
   gap: 16px;
   margin-top: 16px;
-  align-items: start;
+  align-items: stretch;
 }
-@media (max-width: 860px) {
-  .profile-grid {
-    grid-template-columns: 1fr;
-  }
+.col-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  min-width: 0;
+}
+.col-stack .card {
+  flex: 1;
 }
 .card-head {
   display: flex;
@@ -533,7 +576,6 @@ async function savePassword() {
 .avatar-box:focus-visible .avatar-mask {
   display: flex;
 }
-
 .hero-id {
   min-width: 0;
   flex: 1;
@@ -603,11 +645,8 @@ async function savePassword() {
 .meta .dot {
   color: var(--oj-gray-300);
 }
-
-/* 关键数据：数字说话，位置代替色块 */
 .hero-stats {
   display: flex;
-  gap: 0;
   align-self: stretch;
   align-items: center;
   flex-shrink: 0;
@@ -682,18 +721,15 @@ async function savePassword() {
   min-height: 120px;
 }
 .heatmap {
-  min-width: 620px;
+  min-width: 480px;
 }
+/* 月份标签行与格子共用同一栅格模板（同列宽同间距）→ 标签严格对齐所在列 */
 .month-row {
-  position: relative;
+  margin-left: 24px;
   height: 16px;
   font-size: 11px;
   color: var(--oj-text-weak);
-  margin-left: 26px;
-}
-.month {
-  position: absolute;
-  transform: translateX(2px);
+  white-space: nowrap;
 }
 .heat-body {
   display: flex;
@@ -714,26 +750,60 @@ async function savePassword() {
   visibility: hidden;
 }
 .heat-grid {
-  display: grid;
-  gap: 3px;
-  flex: 1;
+  row-gap: 3px;
 }
 .heat-col {
   display: grid;
   grid-template-rows: repeat(7, 11px);
   row-gap: 3px;
+  width: 11px;
 }
 .cell {
   width: 11px;
   height: 11px;
   border-radius: 2px;
-  background: var(--oj-gray-100);
 }
 .cell.lv-0 { background: var(--oj-gray-100); }
 .cell.lv-1 { background: #c6e6c9; }
 .cell.lv-2 { background: #7fce8a; }
 .cell.lv-3 { background: #3aa04b; }
 .cell.lv-4 { background: var(--oj-success); }
+
+/* ---------- 解题进度 ---------- */
+.diff-list {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.diff-row {
+  display: grid;
+  grid-template-columns: 60px 1fr auto;
+  align-items: center;
+  gap: 12px;
+}
+.diff-bar-track {
+  height: 8px;
+  border-radius: 4px;
+  background: var(--oj-gray-100);
+  overflow: hidden;
+}
+.diff-bar {
+  height: 100%;
+  border-radius: 4px;
+  transition: width 0.3s var(--oj-ease);
+}
+.bar-1 { background: var(--oj-success); }
+.bar-2 { background: var(--oj-warning); }
+.bar-3 { background: var(--oj-danger); }
+.diff-count {
+  font-size: 12.5px;
+  color: var(--oj-text);
+  min-width: 44px;
+  text-align: right;
+}
+.diff-count .of {
+  color: var(--oj-text-weak);
+}
 
 /* ---------- 语言分布 ---------- */
 .lang-list {
@@ -779,7 +849,7 @@ async function savePassword() {
   display: flex;
   align-items: center;
   gap: 10px;
-  padding: 9px 0;
+  padding: 10px 0;
 }
 .activity-row + .activity-row {
   border-top: 1px solid var(--oj-gray-100);
