@@ -1,6 +1,6 @@
 # CodeOJ 项目进度文档
 
-> 最后更新：2026-11-17 00:50 ｜ 维护：成员 B ｜ 更新纪律：每完成一个里程碑/修复一批 bug，更新本文档
+> 最后更新：2026-11-18 ｜ 维护：成员 B ｜ 更新纪律：每完成一个里程碑/修复一批 bug，更新本文档
 > 配套文档：[API.md](./API.md)（接口契约 v1.3）｜ [CONTRACT.md](./CONTRACT.md)（模块契约 v1.1）｜ [COLLABORATION.md](./COLLABORATION.md)（分工+分支规则，§3 已改为新手可跟做版）｜ [HANDOFF-A.md](./HANDOFF-A.md)（A 侧交接，新增 §0 上手第一步）｜ [PROGRESS.md](./PROGRESS.md)（本文档）
 
 ---
@@ -13,7 +13,7 @@
 | 分工 | 方案 A（已固化）：成员 A = 评测链路（oj-judge real 引擎/judge-images）；成员 B = 业务与前端（oj-server/oj-web/联调/测试） |
 | 技术栈 | JDK17 / Spring Boot 3.2.5 / MyBatis-Plus / RabbitMQ / Redis / MySQL 8 / docker-java / Vue3+Vite+TS+Pinia+EP+Monaco / ECharts / SockJS+STOMP / Web Worker 沙箱 |
 | 仓库 | github.com/huayuehua15-netizen/codeoj ｜ 分支：**main**（发布快照）/ **dev**（集成）/ **niuzj**（成员 B 个人分支）/ feat/*（成员 A） |
-| 交付状态 | **B 侧功能 100% 交付 + 复审修复 + 三大数据页专业化 + 提交链路三页 UI 专业化 + judge_case 演示明细**；A 侧 real 引擎待开工（材料就绪） |
+| 交付状态 | **B 侧功能 100% 交付 + 复审修复 + 三大数据页专业化 + 提交链路三页 UI 专业化 + judge_case 演示明细 + review 40 项建议落地（§19）**；A 侧 real 引擎待开工（材料就绪） |
 
 ---
 
@@ -873,5 +873,86 @@ fi
 |---|---|---|
 | P2 | 云端校验 | 钩子是本地的，`--no-verify` 可绕过。要彻底杜绝需 GitHub Actions 或服务端钩子 |
 | P3 | 历史提交规范化 | 39 条非方括号提交保持原样，改写公共历史风险大于收益 |
+
+---
+
+## 19. 复审修复轮：review 40 项建议落地 + 设计体系收口（2026-11-18）
+
+> 依据 `review/backend.md`（P0-2 项 + P1-14 项 + P2-40 项）与 `review/frontend.md`
+> （P0-6 + P1-12 + P2-20 项）做的一轮系统化修复。review 目录为本地工作材料，不入库。
+
+### 19.1 后端修复（oj-server，本轮全部完成）
+
+| 来源 | 修复 | 位置 |
+|---|---|---|
+| P2-1/4 | 登出拉黑下沉 service；注册不再白签 JWT | AuthController / AuthServiceImpl |
+| P2-5 | 删除不生效的 MetaObjectHandler（实体无 fill 声明） | MybatisPlusConfig |
+| P2-7 | `validate` 从接口收窄为 private | SubmissionService(Impl) |
+| P2-10~12 | 未使用 import 清理；登录失败键走 `RedisKeys.rate`（CONTRACT §5） | SecurityConfig / AuthServiceImpl / QueueMonitorServiceImpl |
+| P2-13/14 | 42901 与 40000 手写码改枚举 | SubmissionServiceImpl / AnnouncementController |
+| P2-16 | 限流阈值全部走 `oj.rate-limit.*`，改配置不再重编译 | AuthServiceImpl / application.yml |
+| P2-17/18 | 竞赛列表 N+1 → GROUP BY 一次取全；详情 N+1 → selectBatchIds | ContestMapper / ContestServiceImpl |
+| P2-19 | 对账任务 N 次 score() → rangeWithScores 一次取全 | LeaderboardReconcileTask |
+| P2-22~25 | 分页下限夹取：新增 PageUtils（含 5 个单测），排行榜脏 member 跳过 | LeaderboardServiceImpl / AdminUserController / ProblemServiceImpl / SubmissionServiceImpl |
+| P2-29~31 | 参数类异常逐类兜 40000（JSON/类型/缺参/超限）；兜底打请求上下文；JwtUtil 失败 debug 日志 | GlobalExceptionHandler / JwtUtil |
+| P2-32/33 | 无效配置删除（logic-delete-field、mapper-locations） | application.yml |
+| P2-34 | 队列不存在降级 0 + warn（新部署常态，不再 50000） | QueueMonitorServiceImpl |
+| P2-35 | `cachedAt` → `queriedAt`（API.md v1.7 先行），改 LocalDateTime 走全局序列化，修掉 UTC「Z」格式 | QueueStatusVO / QueueMonitorServiceImpl / admin.ts / QueueMonitorView |
+| P2-36~38 | 收藏并发双击幂等成功；收藏/详情同口径校验上架；注册并发撞唯一键转 40000 | FavoriteController / AuthServiceImpl |
+| P2-39 | 禁止降掉最后一个管理员（40300 + 4 个单测） | AdminUserController |
+| P2-40 | 语言白名单以 Language 枚举为唯一权威（DTO 正则会漂移；5 个单测） | ProblemServiceImpl |
+
+P2-3（`incr` 无调用点）**有意保留**：写入属 oj-judge 职责（CONTRACT §7），保留是为接口语义完整，
+已加注释说明。P2-26/27/28、P2-6/9、P2-15 部分在早前提交已落地；P2-21 无选课表、语义为全站口径，
+已在 CourseMapper 注释标明为已知限制。
+
+### 19.2 前端修复与设计（oj-web，本轮全部完成）
+
+| 来源 | 修复 |
+|---|---|
+| P2-1/2/3 | 越权重定向给 ElMessage 提示；`router.afterEach` 消费 meta.title；补 `scrollBehavior` |
+| P2-4/9 | 详情页 watch 路由参数重载；路由 id 数字校验（题/竞赛/提交/用例四处） |
+| P2-5 | 全部 `ElMessageBox.confirm` 吞取消分支 |
+| P2-6/7/8 | 提交筛选 NaN 防御；标签选项全量来源；统计条口径改排行榜全表聚合 |
+| P2-10~16 | size=200 截断、冗余动态 import、ws.ts 复用 userStore 取 token、未用导入清理、onLanguageChange 补确认与回退 |
+| P2-17 | logo/竞赛标题改 router-link/真按钮 + 全站 aria/focus-visible |
+| P2-18 | SFC 硬编码色值 117 处 → 6 处（余下为 mask 蒙版与 cssVar 兜底值，属合理用法）；token 体系扩充语义色/奖牌/代码面板/渐变/品牌前景 |
+| P2-19 | `npm run typecheck`（vue-tsc）+ `npm test`（node:test 直跑，18 用例，覆盖状态映射与时间格式口径） |
+| P2-20 | EP 全局 locale zh-cn |
+
+**设计体系收口（对应「前端设计也要优化」）**：
+- 登录/注册改用 `AuthShell` 双栏品牌页（渐变深底 + 网格纹理 + 特性列表，窄屏收成单栏）
+- 404 从静默重定向改为 `NotFoundView`（`</>404` 渐变字 + 返回入口 + 显示原始地址）
+- MainLayout：管理端五项收进二级菜单（一级 10 → 6 项）、用户区头像 + 角色徽章 + 真按钮、
+  路由切换 page 过渡、页脚、窄屏降级
+- 编辑器 IDE 化补完（等宽字体/行高/平滑光标）、Monaco worker、`prefers-reduced-motion`、
+  favicon（内联 SVG，图形与 logo 同源）、`theme-color`、noscript
+- 全部 18 个路由视图单根校验通过（v-if/v-else 链合法），page 过渡可正常工作
+
+### 19.3 数据与文档
+
+- `sql/schema.sql` + [20261118 覆盖索引迁移](../sql/migrations/20261118_submission_covering_indexes.sql)：
+  `idx_submission_status_user(status,user_id,problem_id)`（对账聚合）、
+  `idx_submission_problem_user(problem_id,user_id)`（课程统计去重），可重复执行；README 部署段已更新
+- API.md v1.6 → **v1.7**：队列监控 `cachedAt` → `queriedAt`（语义修正 + 时间示例对齐 §0.1）
+- 竞赛排行明细串去 emoji（`A AC 85min (-1)` 纯文本，前端 mono 原样渲染）
+
+### 19.4 回归验证（全绿）
+
+| 检查 | 结果 |
+|---|---|
+| `mvn -B verify`（含新增 11 个后端单测） | ✅ exit 0 |
+| `oj-web npm run build` | ✅ 1m20s |
+| `oj-web npm run typecheck`（vue-tsc） | ✅ exit 0 |
+| `oj-web npm test`（18 用例） | ✅ 18 pass / 0 fail |
+
+### 19.5 仍未做（继承自 §8，本轮未动）
+
+| 级别 | 项 |
+|---|---|
+| P0 | A 侧 real 判题引擎（HANDOFF-A.md 就绪） |
+| P1 | 论文文档同步（§8 列表） |
+| P2 | JMeter 并发复测、恶意样例库 10 例、compose 部署验证（需 Linux/Docker 环境，本机 Docker 未启动） |
+| P3 | ESLint/Prettier 接入（已有 typecheck/test 兜底）、Pyodide 控制台、题解区 |
 
 ---
