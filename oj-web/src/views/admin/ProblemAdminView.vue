@@ -1,29 +1,36 @@
 <template>
-  <div class="page-container">
-    <div class="card">
-      <header class="oj-page-head">
-        <div>
-          <h1 class="oj-page-title">题目管理</h1>
-          <p class="oj-page-sub">新增、编辑、上下架题目，并维护测试用例与公告</p>
-        </div>
-        <div class="oj-toolbar">
-          <el-input
-            v-model="keyword"
-            placeholder="按标题搜索"
-            style="width: 220px"
-            clearable
-            @keyup.enter="load"
-            @clear="load"
-          />
-          <el-button @click="load">搜索</el-button>
-          <el-button @click="noticeVisible = true; loadNotices()">公告管理</el-button>
-          <el-button type="primary" @click="openCreate">新建题目</el-button>
-        </div>
-      </header>
+  <AdminShell
+    title="题目管理"
+    section="PROBLEMS · 题库维护"
+    description="新增、编辑、上下架题目，并维护测试用例与公告。"
+  >
+    <template #actions>
+      <el-input
+        v-model="keyword"
+        placeholder="按标题搜索"
+        style="width: 210px"
+        clearable
+        @keyup.enter="load"
+        @clear="load"
+      />
+      <el-button @click="load">搜索</el-button>
+      <el-button @click="noticeVisible = true; loadNotices()">公告管理</el-button>
+      <el-button type="primary" @click="openCreate">新建题目</el-button>
+    </template>
+
+    <div class="admin-table-shell">
       <el-table :data="problems" v-loading="loading" empty-text="还没有题目，点右上角「新建题目」开始">
-        <el-table-column prop="id" label="#" width="70" />
+        <el-table-column prop="id" label="ID" width="64">
+          <template #default="{ row }">
+            <span class="mono id-cell">{{ String(row.id).padStart(3, '0') }}</span>
+          </template>
+        </el-table-column>
         <el-table-column prop="title" label="标题" min-width="240" />
-        <el-table-column prop="difficulty" label="难度" width="90" />
+        <el-table-column prop="difficulty" label="难度" width="90">
+          <template #default="{ row }">
+            <span class="oj-diff" :class="`diff-${row.difficulty}`">{{ ({ 1: '简单', 2: '中等', 3: '困难' } as Record<number, string>)[row.difficulty] || '—' }}</span>
+          </template>
+        </el-table-column>
         <el-table-column label="状态" width="90">
           <template #default="{ row }">
             <el-tag :type="row.enabled ? 'success' : 'info'" size="small">
@@ -44,9 +51,10 @@
         :page-size="size"
         :total="total"
         layout="prev, pager, next"
-        style="margin-top: 16px; justify-content: flex-end"
+        class="admin-pager"
         @current-change="load"
       />
+    </div>
 
       <!-- 题目表单（含 Markdown 实时预览，论文 5.7） -->
       <el-dialog v-model="dialogVisible" :title="editingId ? '编辑题目' : '新建题目'" width="860px">
@@ -125,8 +133,7 @@
           </el-table-column>
         </el-table>
       </el-dialog>
-    </div>
-  </div>
+  </AdminShell>
 </template>
 
 <script setup lang="ts">
@@ -134,6 +141,7 @@ import { onMounted, reactive, ref } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { pageProblems, getProblem, createProblem, updateProblem, deleteProblem, type Problem } from '@/api/problem'
 import MarkdownPreview from '@/components/MarkdownPreview.vue'
+import AdminShell from '@/components/AdminShell.vue'
 import { publishAnnouncement, deleteAnnouncement, listAnnouncements, type AnnouncementItem } from '@/api/announcement'
 
 const problems = ref<Problem[]>([])
@@ -290,6 +298,15 @@ onMounted(load)
 </script>
 
 <style scoped>
+.id-cell {
+  font-size: 11px;
+  color: var(--oj-text-weak);
+}
+.admin-pager {
+  margin: 0;
+  padding: 10px 16px;
+  justify-content: flex-end;
+}
 .md-editor {
   width: 100%;
   display: flex;
@@ -309,15 +326,16 @@ onMounted(load)
   min-width: 0;
 }
 .md-pane-title {
-  font-size: 12px;
-  color: var(--oj-gray-400);
+  font-family: var(--oj-font-mono);
+  font-size: 9px;
+  letter-spacing: 0.1em;
+  color: var(--oj-text-weak);
   margin-bottom: 6px;
 }
 .md-pane.preview {
   background: var(--oj-bg);
   border: 1px solid var(--oj-border);
-  border-radius: var(--oj-radius-sm);
-  padding: 10px;
+  padding: 12px;
   max-height: 260px;
   overflow: auto;
 }

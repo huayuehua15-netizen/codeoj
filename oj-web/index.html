@@ -4,18 +4,15 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-    <!--
-      品牌图标：内联 SVG data URI（朱底白「判」方印），
-      与 MainLayout / AuthShell 的方印词标同源，不额外产生 /favicon.ico 请求。
-    -->
+    <!-- 品牌图标：深色终端方标 + 蓝色提示符，与 MainLayout / AuthShell 的 </> 方标同源。 -->
     <link
       rel="icon"
       type="image/svg+xml"
-      href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='12' fill='%235e6ad2'/%3E%3Ctext x='32' y='45' font-family='Segoe UI, PingFang SC, sans-serif' font-size='36' font-weight='700' fill='%23f7f8f8' text-anchor='middle'%3E判%3C/text%3E%3C/svg%3E"
+      href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='12' fill='%23101828'/%3E%3Ctext x='32' y='42' font-family='ui-monospace, Menlo, Consolas, monospace' font-size='26' font-weight='700' fill='%232855ff' text-anchor='middle'%3E%3E_%3C/text%3E%3C/svg%3E"
     />
 
-    <!-- 移动端地址栏/状态栏跟随页面底色，避免割裂 -->
-    <meta name="theme-color" content="#08090a" />
+    <!-- 移动端地址栏/状态栏跟随工作台底色 -->
+    <meta name="theme-color" content="#f4f6f9" />
     <meta
       name="description"
       content="CodeOJ —— 在线代码评测与编程练习平台。支持 C / C++ / Java / Python / JavaScript 五种语言在线编写与提交，用例级判题结果实时推送。"

@@ -1,5 +1,5 @@
 <template>
-  <AuthShell title="创建账号" subtitle="注册后即可提交代码。判题结果实时推送，无需手动刷新。">
+  <AuthShell mode="register" title="创建账号" subtitle="注册后即可提交代码。判题结果实时推送，无需手动刷新。">
     <el-form :model="form" label-width="0" @keyup.enter="handleRegister">
       <el-form-item>
         <el-input

@@ -1,0 +1,436 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>CodeOJ — Workbench</title>
+<style>
+  :root{
+    --bg:#f4f6f9;
+    --surface:#ffffff;
+    --surface-2:#f9fafb;
+    --ink:#101828;
+    --ink-2:#344054;
+    --sub:#667085;
+    --weak:#98a2b3;
+    --line:#e4e8ee;
+    --line-strong:#cfd6e0;
+    --blue:#2855ff;
+    --blue-deep:#1d43d8;
+    --blue-soft:#eef2ff;
+    --green:#0e9f6e;
+    --green-soft:#e8f7f0;
+    --red:#e5484d;
+    --amber:#d97706;
+    --terminal:#0d1117;
+    --terminal-2:#151b24;
+    --mono:"Cascadia Mono","Consolas","SFMono-Regular",monospace;
+    --sans:"Segoe UI","Microsoft YaHei",system-ui,sans-serif;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0}
+  body{
+    background:var(--bg);
+    color:var(--ink);
+    font-family:var(--sans);
+    font-size:14px;
+    -webkit-font-smoothing:antialiased;
+  }
+  a{color:inherit;text-decoration:none}
+  .wrap{max-width:1240px;margin:0 auto;padding:0 32px}
+  .mono{font-family:var(--mono);font-variant-numeric:tabular-nums}
+
+  /* ---------- top bar ---------- */
+  .topbar{
+    height:62px;
+    background:rgba(255,255,255,.92);
+    border-bottom:1px solid var(--line);
+    position:sticky;top:0;z-index:10;
+  }
+  .topbar .wrap{height:100%;display:flex;align-items:center;gap:34px}
+  .brand{display:flex;align-items:center;gap:10px;flex-shrink:0}
+  .mark{
+    width:30px;height:30px;border-radius:7px;background:var(--ink);
+    color:#fff;display:flex;align-items:center;justify-content:center;
+    font-family:var(--mono);font-size:11px;font-weight:600;letter-spacing:-.08em;
+  }
+  .wordmark{font-size:18px;font-weight:700;letter-spacing:-.03em}
+  .wordmark span{color:var(--blue)}
+  .brand-sub{
+    font-family:var(--mono);font-size:9px;letter-spacing:.14em;color:var(--weak);
+    border-left:1px solid var(--line-strong);padding-left:11px;margin-left:2px;line-height:1.5;
+  }
+  .nav{display:flex;align-items:center;gap:2px;flex:1}
+  .nav a{
+    padding:7px 12px;border-radius:6px;font-size:13px;color:var(--sub);
+    transition:color .15s ease,background .15s ease;white-space:nowrap;
+  }
+  .nav a:hover{color:var(--ink);background:#f2f4f7}
+  .nav a.active{color:var(--ink);background:#eef1f5;font-weight:600}
+  .nav .sep{width:1px;height:14px;background:var(--line);margin:0 8px}
+  .top-actions{display:flex;align-items:center;gap:14px;flex-shrink:0}
+  .login{font-size:13px;color:var(--sub);padding:6px 2px}
+  .login:hover{color:var(--ink)}
+  .btn-dark{
+    background:var(--ink);color:#fff;font-size:12.5px;font-weight:600;
+    padding:8px 15px;border-radius:6px;border:1px solid var(--ink);
+  }
+  .btn-dark:hover{background:#1d2939;border-color:#1d2939}
+
+  /* ---------- hero ---------- */
+  .hero{
+    display:grid;grid-template-columns:minmax(0,1.02fr) minmax(0,.98fr);
+    gap:68px;align-items:center;padding:66px 0 44px;
+  }
+  .statusline{
+    display:flex;align-items:center;gap:8px;
+    font-family:var(--mono);font-size:10px;letter-spacing:.12em;color:var(--sub);
+  }
+  .status-dot{width:6px;height:6px;border-radius:50%;background:var(--green);box-shadow:0 0 0 3px rgba(14,159,110,.1)}
+  .statusline .slash{color:var(--line-strong)}
+  h1{
+    margin:18px 0 0;font-size:64px;line-height:1.08;letter-spacing:-.055em;font-weight:750;
+  }
+  h1 .muted{color:var(--ink-2)}
+  h1 .blue{color:var(--blue)}
+  .lede{
+    margin:22px 0 0;max-width:31em;color:var(--sub);font-size:14.5px;line-height:1.85;
+  }
+  .lede b{color:var(--ink-2);font-weight:600}
+  .cta{display:flex;align-items:center;gap:10px;margin-top:28px}
+  .btn-primary{
+    display:inline-flex;align-items:center;gap:9px;
+    background:var(--blue);border:1px solid var(--blue);color:#fff;
+    font-size:13px;font-weight:600;padding:11px 18px;border-radius:7px;
+    box-shadow:0 1px 2px rgba(16,24,40,.08);
+  }
+  .btn-primary:hover{background:var(--blue-deep);border-color:var(--blue-deep)}
+  .btn-primary svg{width:14px;height:14px}
+  .btn-secondary{
+    display:inline-flex;align-items:center;gap:8px;
+    border:1px solid var(--line-strong);background:var(--surface);color:var(--ink-2);
+    font-size:13px;font-weight:600;padding:11px 18px;border-radius:7px;
+  }
+  .btn-secondary:hover{border-color:#aeb8c5;color:var(--ink)}
+  .footnote{margin:16px 0 0;font-family:var(--mono);font-size:10px;letter-spacing:.05em;color:var(--weak)}
+
+  /* ---------- terminal ---------- */
+  .terminal{
+    background:var(--terminal);
+    border:1px solid #232b36;
+    border-radius:10px;
+    box-shadow:0 24px 50px -22px rgba(16,24,40,.45),0 2px 6px rgba(16,24,40,.08);
+    overflow:hidden;
+    position:relative;
+  }
+  .terminal::before{
+    content:"";position:absolute;inset:0 0 auto;height:2px;
+    background:linear-gradient(90deg,var(--blue),#6d8bff 40%,transparent 92%);
+    opacity:.9;
+  }
+  .term-head{
+    height:42px;display:flex;align-items:center;gap:10px;
+    padding:0 14px;border-bottom:1px solid #202833;
+    font-family:var(--mono);font-size:10px;color:#7f8b9d;letter-spacing:.05em;
+  }
+  .term-dots{display:flex;gap:5px}
+  .term-dots i{width:6px;height:6px;border-radius:50%;background:#3b4552}
+  .term-title{color:#aab4c3}
+  .term-lang{
+    margin-left:auto;color:#8ea6ff;border:1px solid rgba(142,166,255,.25);
+    background:rgba(40,85,255,.1);padding:2px 7px;border-radius:3px;font-size:9px;
+  }
+  .term-body{padding:18px 18px 14px;font-family:var(--mono);font-size:12px;line-height:1.9;color:#c7d0dc}
+  .term-body p{margin:0}
+  .prompt{color:#8ea6ff;margin-right:8px}
+  .arg{color:#ffd18a}
+  .dim{color:#7c8899}
+  .hash{color:#9aa7b8}
+  .ok{color:#57d9a3}
+  .time{color:#8d99aa}
+  .rule{height:1px;background:#202833;margin:10px 0}
+  .case{display:grid;grid-template-columns:1fr 1fr auto;gap:12px;color:#aeb9c7}
+  .case .num{color:#7c8899;font-size:10.5px;text-align:right}
+  .verdict{
+    margin-top:14px;padding:12px 12px;border:1px solid rgba(87,217,163,.22);
+    background:rgba(87,217,163,.07);border-radius:6px;
+    display:flex;align-items:center;justify-content:space-between;gap:14px;
+  }
+  .verdict-left{display:flex;align-items:center;gap:9px}
+  .check{
+    width:20px;height:20px;border-radius:50%;background:rgba(87,217,163,.14);
+    color:#57d9a3;display:flex;align-items:center;justify-content:center;font-size:11px;
+  }
+  .verdict-word{font-size:15px;font-weight:700;color:#6ee7b7;letter-spacing:-.01em}
+  .perf{font-size:10px;color:#7c8899}
+  .term-foot{
+    display:flex;align-items:center;justify-content:space-between;
+    padding:11px 14px;border-top:1px solid #202833;
+    font-family:var(--mono);font-size:9.5px;color:#6b7687;letter-spacing:.04em;
+    background:#0a0e14;
+  }
+  .term-foot a{color:#8ea6ff}
+
+  /* ---------- metrics ---------- */
+  .metrics{
+    background:var(--surface);border:1px solid var(--line);border-radius:10px;
+    display:grid;grid-template-columns:repeat(4,1fr);
+    box-shadow:0 1px 2px rgba(16,24,40,.03);
+    overflow:hidden;
+  }
+  .metric{padding:18px 22px;border-right:1px solid var(--line);position:relative}
+  .metric:last-child{border-right:0}
+  .metric-label{font-family:var(--mono);font-size:9px;letter-spacing:.13em;color:var(--weak);text-transform:uppercase}
+  .metric-value{margin-top:7px;font-family:var(--mono);font-size:28px;line-height:1;font-weight:600;letter-spacing:-.03em}
+  .metric-value small{font-size:11px;font-weight:500;color:var(--sub);margin-left:3px;letter-spacing:0}
+  .metric-delta{font-family:var(--mono);font-size:9px;color:var(--green);margin-top:6px}
+  .metric-delta.gray{color:var(--weak)}
+
+  /* ---------- section ---------- */
+  .section-head{display:flex;align-items:flex-end;justify-content:space-between;gap:16px;margin:38px 0 14px}
+  .section-title{font-size:22px;font-weight:700;letter-spacing:-.03em;margin:0}
+  .section-sub{font-size:11px;color:var(--sub);margin:6px 0 0}
+  .section-link{font-size:12px;color:var(--blue);font-weight:600}
+  .section-link:hover{color:var(--blue-deep)}
+
+  .lower{display:grid;grid-template-columns:minmax(0,1.42fr) minmax(0,1fr);gap:24px}
+  .card{background:var(--surface);border:1px solid var(--line);border-radius:10px;box-shadow:0 1px 2px rgba(16,24,40,.03);overflow:hidden}
+  .card-head{display:flex;align-items:center;justify-content:space-between;padding:16px 20px;border-bottom:1px solid var(--line)}
+  .card-title{font-size:14px;font-weight:700;letter-spacing:-.01em}
+  .card-meta{font-family:var(--mono);font-size:9px;color:var(--weak);letter-spacing:.08em}
+  .prob-head,.prob-row{
+    display:grid;grid-template-columns:50px minmax(0,1fr) 78px 116px 48px;
+    gap:14px;align-items:center;padding:0 20px;
+  }
+  .prob-head{height:34px;font-family:var(--mono);font-size:9px;letter-spacing:.1em;color:var(--weak);border-bottom:1px solid var(--line);background:var(--surface-2)}
+  .prob-row{min-height:58px;border-bottom:1px solid var(--line);transition:background .15s ease}
+  .prob-row:last-child{border-bottom:0}
+  .prob-row:hover{background:#fafbfc}
+  .prob-id{font-family:var(--mono);font-size:11px;color:var(--weak)}
+  .prob-title{font-size:13.5px;font-weight:600;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .prob-tags{display:flex;gap:5px;margin-top:5px;flex-wrap:wrap}
+  .tag{font-family:var(--mono);font-size:9px;color:var(--sub);background:#f2f4f7;border:1px solid #e7ebf0;padding:1px 5px;border-radius:3px;line-height:1.5}
+  .diff{font-size:11.5px;font-weight:600;display:inline-flex;align-items:center;gap:6px}
+  .diff i{width:5px;height:5px;border-radius:50%;display:inline-block}
+  .diff.easy{color:var(--green)} .diff.easy i{background:var(--green)}
+  .diff.mid{color:var(--amber)} .diff.mid i{background:var(--amber)}
+  .diff.hard{color:var(--red)} .diff.hard i{background:var(--red)}
+  .acc{display:flex;align-items:center;gap:8px}
+  .acc-bar{width:46px;height:3px;background:#edf0f4;border-radius:99px;overflow:hidden}
+  .acc-bar i{display:block;height:100%;background:#8da2b5;border-radius:99px}
+  .acc-num{font-family:var(--mono);font-size:10px;color:var(--sub);width:34px;text-align:right}
+  .prob-go{text-align:right;color:var(--weak);font-size:15px}
+  .prob-row:hover .prob-go{color:var(--blue)}
+
+  .rank-list{padding:4px 0}
+  .rank-row{display:grid;grid-template-columns:28px 30px minmax(0,1fr) 56px;gap:10px;align-items:center;padding:11px 20px;border-bottom:1px solid var(--line)}
+  .rank-row:last-child{border-bottom:0}
+  .rank-no{font-family:var(--mono);font-size:11px;color:var(--weak)}
+  .rank-row:first-child .rank-no{color:var(--blue);font-weight:700}
+  .avatar{width:26px;height:26px;border-radius:5px;background:#eef1f5;color:var(--ink-2);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700}
+  .rank-row:first-child .avatar{background:var(--blue-soft);color:var(--blue)}
+  .rank-name{font-size:12.5px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .rank-name small{display:block;font-family:var(--mono);font-size:8.5px;color:var(--weak);font-weight:400;margin-top:2px}
+  .rank-ac{font-family:var(--mono);font-size:11px;color:var(--ink-2);text-align:right}
+  .rank-ac small{font-size:8.5px;color:var(--weak)}
+
+  .features{
+    margin:24px 0 0;background:var(--surface);border:1px solid var(--line);border-radius:10px;
+    display:grid;grid-template-columns:repeat(4,1fr);overflow:hidden;
+  }
+  .feature{padding:20px 22px 22px;border-right:1px solid var(--line)}
+  .feature:last-child{border-right:0}
+  .feature-top{display:flex;align-items:center;justify-content:space-between}
+  .feature-icon{width:30px;height:30px;border:1px solid var(--line);border-radius:6px;display:flex;align-items:center;justify-content:center;color:var(--sub)}
+  .feature-icon svg{width:14px;height:14px}
+  .feature-no{font-family:var(--mono);font-size:9px;color:var(--weak)}
+  .feature h3{font-size:13px;font-weight:700;margin:14px 0 6px;letter-spacing:-.01em}
+  .feature p{font-size:11px;line-height:1.7;color:var(--sub);margin:0}
+
+  footer{margin-top:56px;border-top:1px solid var(--line);background:#fff}
+  .footer-inner{max-width:1240px;margin:0 auto;padding:24px 32px 28px;display:flex;align-items:center;gap:20px;flex-wrap:wrap}
+  .footer-brand{display:flex;align-items:center;gap:10px}
+  .footer-brand .mark{width:24px;height:24px;font-size:9px;border-radius:5px}
+  .footer-brand span{font-size:12px;font-weight:700}
+  .footer-meta{font-family:var(--mono);font-size:9.5px;color:var(--weak);letter-spacing:.04em}
+  .footer-links{display:flex;gap:18px;margin-left:auto;font-size:11px;color:var(--sub)}
+  .footer-links a:hover{color:var(--ink)}
+</style>
+</head>
+<body>
+  <header class="topbar">
+    <div class="wrap">
+      <a class="brand" href="#">
+        <span class="mark">&lt;/&gt;</span>
+        <span class="wordmark">Code<span>OJ</span></span>
+        <span class="brand-sub">ONLINE<br/>JUDGE</span>
+      </a>
+      <nav class="nav">
+        <a class="active" href="#">首页</a>
+        <a href="#">题库</a>
+        <a href="#">提交记录</a>
+        <a href="#">错题本</a>
+        <a href="#">统计</a>
+        <span class="sep"></span>
+        <a href="#">竞赛</a>
+        <a href="#">排行榜</a>
+        <a href="#">公告</a>
+      </nav>
+      <div class="top-actions">
+        <a class="login" href="#">登录</a>
+        <a class="btn-dark" href="#">注册</a>
+      </div>
+    </div>
+  </header>
+
+  <main class="wrap">
+    <section class="hero">
+      <div class="hero-copy">
+        <div class="statusline"><span class="status-dot"></span> SYSTEM ONLINE <span class="slash">/</span> v1.0</div>
+        <h1>提交。<span class="muted">编译。</span><span class="blue">判定。</span></h1>
+        <p class="lede">
+          五种语言沙箱编译，测试点级结果、<b>耗时与内存</b>逐条返回。<br/>
+          从按下提交到看见判定，只差几秒。
+        </p>
+        <div class="cta">
+          <a class="btn-primary" href="#">
+            浏览题库
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+          </a>
+          <a class="btn-secondary" href="#">查看排行榜</a>
+        </div>
+        <p class="footnote">NO LOGIN REQUIRED TO READ · REAL-TIME VERDICT PUSH</p>
+      </div>
+
+      <div class="terminal" aria-label="判题记录示例">
+        <div class="term-head">
+          <span class="term-dots"><i></i><i></i><i></i></span>
+          <span class="term-title">codeoj / submission</span>
+          <span class="term-lang">C++17</span>
+        </div>
+        <div class="term-body">
+          <p><span class="prompt">$</span> codeoj submit <span class="arg">1001</span> --lang cpp</p>
+          <p class="dim">→ queued <span class="hash">#4821</span></p>
+          <p class="dim">→ compiling g++ -O2 -std=c++17</p>
+          <p class="ok">✓ compile <span class="time">0.42s</span></p>
+          <div class="rule"></div>
+          <p class="case"><span>case 01</span><span class="ok">✓ Accepted</span><span class="num">12ms · 2.1MB</span></p>
+          <p class="case"><span>case 02</span><span class="ok">✓ Accepted</span><span class="num">18ms · 2.4MB</span></p>
+          <p class="case"><span>case 03</span><span class="ok">✓ Accepted</span><span class="num">15ms · 2.2MB</span></p>
+          <p class="case"><span>case 04</span><span class="ok">✓ Accepted</span><span class="num">21ms · 2.6MB</span></p>
+          <p class="case"><span>case 05</span><span class="ok">✓ Accepted</span><span class="num">16ms · 2.3MB</span></p>
+          <div class="verdict">
+            <div class="verdict-left"><span class="check">✓</span><span class="verdict-word">Accepted</span></div>
+            <span class="perf">45ms · 6.7MB · 5/5</span>
+          </div>
+        </div>
+        <div class="term-foot"><span>submission #4821 · 2026-11-19 20:14:02</span><a href="#">查看判定明细 →</a></div>
+      </div>
+    </section>
+
+    <section class="metrics" aria-label="平台数据">
+      <div class="metric">
+        <div class="metric-label">Problems</div>
+        <div class="metric-value">128<small>题</small></div>
+        <div class="metric-delta">本周 +6</div>
+      </div>
+      <div class="metric">
+        <div class="metric-label">Solvers</div>
+        <div class="metric-value">486<small>人</small></div>
+        <div class="metric-delta">活跃 132</div>
+      </div>
+      <div class="metric">
+        <div class="metric-label">Submissions</div>
+        <div class="metric-value">12,840<small>次</small></div>
+        <div class="metric-delta gray">过去 24h 318</div>
+      </div>
+      <div class="metric">
+        <div class="metric-label">Acceptance</div>
+        <div class="metric-value">68.4<small>%</small></div>
+        <div class="metric-delta">全站通过率</div>
+      </div>
+    </section>
+
+    <div class="section-head">
+      <div>
+        <h2 class="section-title">继续做题</h2>
+        <p class="section-sub">按难度和标签筛选，读题、写码、提交都在一个页面完成。</p>
+      </div>
+      <a class="section-link" href="#">全部题目 →</a>
+    </div>
+
+    <section class="lower">
+      <div class="card">
+        <div class="card-head"><span class="card-title">题目列表</span><span class="card-meta">SORTED BY ID</span></div>
+        <div class="prob-head"><span>ID</span><span>题目</span><span>难度</span><span>通过率</span><span></span></div>
+        <div class="prob-row">
+          <span class="prob-id">#1001</span>
+          <span><span class="prob-title">A + B Problem</span><span class="prob-tags"><span class="tag">入门</span><span class="tag">模拟</span></span></span>
+          <span class="diff easy"><i></i>简单</span>
+          <span class="acc"><span class="acc-bar"><i style="width:82%"></i></span><span class="acc-num">82.4%</span></span>
+          <span class="prob-go">→</span>
+        </div>
+        <div class="prob-row">
+          <span class="prob-id">#1002</span>
+          <span><span class="prob-title">最长递增子序列</span><span class="prob-tags"><span class="tag">DP</span><span class="tag">二分</span></span></span>
+          <span class="diff mid"><i></i>中等</span>
+          <span class="acc"><span class="acc-bar"><i style="width:56%"></i></span><span class="acc-num">56.1%</span></span>
+          <span class="prob-go">→</span>
+        </div>
+        <div class="prob-row">
+          <span class="prob-id">#1003</span>
+          <span><span class="prob-title">区间第 K 小</span><span class="prob-tags"><span class="tag">主席树</span><span class="tag">离散化</span></span></span>
+          <span class="diff hard"><i></i>困难</span>
+          <span class="acc"><span class="acc-bar"><i style="width:28%"></i></span><span class="acc-num">27.8%</span></span>
+          <span class="prob-go">→</span>
+        </div>
+        <div class="prob-row">
+          <span class="prob-id">#1004</span>
+          <span><span class="prob-title">最短路径计数</span><span class="prob-tags"><span class="tag">图论</span><span class="tag">Dijkstra</span></span></span>
+          <span class="diff mid"><i></i>中等</span>
+          <span class="acc"><span class="acc-bar"><i style="width:44%"></i></span><span class="acc-num">43.6%</span></span>
+          <span class="prob-go">→</span>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-head"><span class="card-title">本周榜单</span><span class="card-meta">TOP 5</span></div>
+        <div class="rank-list">
+          <div class="rank-row"><span class="rank-no">01</span><span class="avatar">L</span><span class="rank-name">lightwave<small>图论 / 动态规划</small></span><span class="rank-ac">128 <small>AC</small></span></div>
+          <div class="rank-row"><span class="rank-no">02</span><span class="avatar">K</span><span class="rank-name">kite<small>数据结构</small></span><span class="rank-ac">121 <small>AC</small></span></div>
+          <div class="rank-row"><span class="rank-no">03</span><span class="avatar">M</span><span class="rank-name">mori<small>字符串 / 搜索</small></span><span class="rank-ac">119 <small>AC</small></span></div>
+          <div class="rank-row"><span class="rank-no">04</span><span class="avatar">Z</span><span class="rank-name">zero<small>数学 / 构造</small></span><span class="rank-ac">104 <small>AC</small></span></div>
+          <div class="rank-row"><span class="rank-no">05</span><span class="avatar">N</span><span class="rank-name">nano<small>贪心 / 排序</small></span><span class="rank-ac">98 <small>AC</small></span></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="features">
+      <div class="feature">
+        <div class="feature-top"><span class="feature-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><polyline points="8 6 3 12 8 18"/><polyline points="16 6 21 12 16 18"/><line x1="14" y1="4" x2="10" y2="20"/></svg></span><span class="feature-no">01</span></div>
+        <h3>五语言沙箱</h3><p>C / C++ / Java / Python / JavaScript，独立镜像编译执行。</p>
+      </div>
+      <div class="feature">
+        <div class="feature-top"><span class="feature-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg></span><span class="feature-no">02</span></div>
+        <h3>用例级判定</h3><p>每个测试点的状态、耗时、内存逐条呈现，错在哪个用例一眼可见。</p>
+      </div>
+      <div class="feature">
+        <div class="feature-top"><span class="feature-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M13 2 4 14h7l-1 8 9-12h-7l1-8z"/></svg></span><span class="feature-no">03</span></div>
+        <h3>实时推送</h3><p>排队、编译、判题、出结果，状态自动推进，不用刷新页面。</p>
+      </div>
+      <div class="feature">
+        <div class="feature-top"><span class="feature-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M8 21h8M12 17v4"/><path d="M7 4h10v5a5 5 0 0 1-10 0V4z"/><path d="M17 5h3v2a4 4 0 0 1-4 4M7 5H4v2a4 4 0 0 0 4 4"/></svg></span><span class="feature-no">04</span></div>
+        <h3>竞赛与复盘</h3><p>ACM 赛制实时排名，错题本与热力图把每次练习沉淀下来。</p>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <div class="footer-inner">
+      <div class="footer-brand"><span class="mark">&lt;/&gt;</span><span>CodeOJ</span></div>
+      <span class="footer-meta">SPRING BOOT 3 · VUE 3 · DOCKER</span>
+      <div class="footer-links"><a href="#">使用说明</a><a href="#">公告</a><a href="#">排行榜</a><a href="#">GitHub</a></div>
+    </div>
+  </footer>
+</body>
+</html>

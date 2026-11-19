@@ -1,91 +1,97 @@
 <template>
-  <div class="page-container">
-    <header class="oj-stage">
+  <div class="submission-page">
+    <header class="page-head log-head">
       <div>
-        <h1 class="oj-stage-title">提交记录</h1>
-        <p class="oj-stage-sub">每一次提交都有完整判题明细——错在哪里，用例说了算</p>
+        <p class="kicker">SUBMISSIONS</p>
+        <h1 class="page-head-title">提交记录</h1>
+        <p class="page-head-sub">每一次提交都有完整判题明细。按题目、状态或时间筛选，点开查看用例级结果。</p>
       </div>
-    </header>
-    <!-- 顶部概览：个人提交全景（来自 /api/submissions/statistics，全表聚合，不随筛选变化） -->
-    <section class="oj-banner card" aria-label="个人提交概览">
-      <div class="oj-banner-item">
-        <span class="oj-banner-num">{{ summary.totalSubmit }}</span>
-        <span class="oj-banner-label">累计提交</span>
-      </div>
-      <div class="oj-banner-divider" aria-hidden="true"></div>
-      <div class="oj-banner-item">
-        <span class="oj-banner-num">{{ summary.totalAccepted }}</span>
-        <span class="oj-banner-label">判题通过</span>
-      </div>
-      <div class="oj-banner-divider" aria-hidden="true"></div>
-      <div class="oj-banner-item">
-        <span class="oj-banner-num">{{ summary.acceptRate }}<small>%</small></span>
-        <span class="oj-banner-label">通过率</span>
-      </div>
-      <div class="oj-banner-divider" aria-hidden="true"></div>
-      <div class="oj-banner-item">
-        <span class="oj-banner-num">{{ summary.solvedCount }}</span>
-        <span class="oj-banner-label">已解题目</span>
-      </div>
-      <p class="oj-banner-note">保持节奏<br />每一道 AC 都算数</p>
-    </section>
-
-    <div class="card">
-      <header class="head">
-        <div>
-          <h2>提交记录</h2>
-          <p class="sub">
-            按题目、判题状态与时间范围筛选
-            <template v-if="hasFilter">（<button type="button" class="link-btn" @click="reset">清除筛选</button>）</template>
-          </p>
+      <dl class="log-totals" aria-label="个人提交概览">
+        <div class="total-item">
+          <dt>SUBMITS</dt>
+          <dd>{{ summary.totalSubmit }}</dd>
         </div>
-      </header>
+        <div class="total-item">
+          <dt>ACCEPTED</dt>
+          <dd>{{ summary.totalAccepted }}</dd>
+        </div>
+        <div class="total-item">
+          <dt>AC RATE</dt>
+          <dd>{{ summary.acceptRate }}<small>%</small></dd>
+        </div>
+        <div class="total-item">
+          <dt>SOLVED</dt>
+          <dd>{{ summary.solvedCount }}</dd>
+        </div>
+      </dl>
+    </header>
 
-      <div class="filter-bar">
+    <!-- 筛选：一张横向的工具条 -->
+    <section class="query-bar" aria-label="筛选提交记录">
+      <div class="query-field query-pid">
+        <label class="query-label" for="pid">题目编号</label>
         <el-input
+          id="pid"
           v-model="problemId"
-          placeholder="题目 ID"
-          class="pid-input"
+          placeholder="如 1001"
           clearable
           @keyup.enter="search"
           @clear="search"
         />
-        <el-select v-model="status" placeholder="判题状态" class="status-select" clearable @change="search">
+      </div>
+      <div class="query-field query-status">
+        <label class="query-label">判题状态</label>
+        <el-select v-model="status" placeholder="全部状态" clearable @change="search">
           <el-option v-for="(v, k) in STATUS_MAP" :key="k" :label="v.label" :value="Number(k)" />
         </el-select>
-        <div class="quick-range" role="group" aria-label="快捷时间范围">
-          <button
-            v-for="p in QUICK_RANGES"
-            :key="p.key"
-            class="quick-btn"
-            :class="{ active: activePreset === p.key }"
-            :aria-pressed="activePreset === p.key"
-            type="button"
-            @click="applyPreset(p.key)"
-          >
-            {{ p.label }}
-          </button>
-        </div>
+      </div>
+      <div class="query-field query-range">
+        <label class="query-label">时间范围</label>
         <el-date-picker
           v-model="timeRange"
           type="datetimerange"
           start-placeholder="开始时间"
           end-placeholder="结束时间"
           value-format="YYYY-MM-DDTHH:mm:ss"
-          class="range-picker"
           @change="activePreset = ''"
         />
+      </div>
+      <div class="query-presets" role="group" aria-label="快捷时间范围">
+        <button
+          v-for="p in QUICK_RANGES"
+          :key="p.key"
+          class="quick-btn"
+          :class="{ active: activePreset === p.key }"
+          :aria-pressed="activePreset === p.key"
+          type="button"
+          @click="applyPreset(p.key)"
+        >
+          {{ p.label }}
+        </button>
+      </div>
+      <div class="query-actions">
         <el-button type="primary" @click="search">筛选</el-button>
+        <button v-if="hasFilter" type="button" class="reset-link" @click="reset">清除</button>
+      </div>
+    </section>
+
+    <section class="table-card">
+      <div class="list-head">
+        <div class="list-title-block">
+          <span class="kicker">LOG</span>
+          <h2 class="list-title">全部记录</h2>
+        </div>
+        <p class="list-meta">按提交时间倒序 · 共 {{ total }} 条</p>
       </div>
 
-      <el-table :data="records" v-loading="loading" row-key="id" class="sub-table" empty-text="没有符合条件的提交记录">
-        <el-table-column prop="id" label="编号" width="84">
+      <el-table :data="records" v-loading="loading" row-key="id" class="log-table" empty-text="没有符合条件的提交记录">
+        <el-table-column label="编号" width="96">
           <template #default="{ row }">
-            <span class="mono dim">#{{ row.id }}</span>
+            <span class="id-cell mono">#{{ String(row.id).padStart(5, '0') }}</span>
           </template>
         </el-table-column>
 
-        <el-table-column label="题目" min-width="230">
+        <el-table-column label="题目" min-width="250">
           <template #default="{ row }">
             <div class="problem-cell">
               <span class="oj-badge-id">{{ row.problemId }}</span>
@@ -96,13 +102,13 @@
           </template>
         </el-table-column>
 
-        <el-table-column label="语言" width="112">
+        <el-table-column label="语言" width="104">
           <template #default="{ row }">
-            <span class="lang-chip">{{ languageLabel(row.language) }}</span>
+            <span class="lang-text mono">{{ languageLabel(row.language) }}</span>
           </template>
         </el-table-column>
 
-        <el-table-column label="状态" width="118">
+        <el-table-column label="状态" width="128">
           <template #default="{ row }">
             <span class="status-cell" :style="{ color: statusColor(row.status) }">
               <span class="status-dot" :style="{ background: statusColor(row.status) }" aria-hidden="true" />
@@ -113,13 +119,13 @@
 
         <el-table-column label="耗时" width="100" align="right">
           <template #default="{ row }">
-            <span class="mono" :class="{ dim: row.timeUsedMs == null }">{{ formatTimeUsed(row.timeUsedMs) }}</span>
+            <span class="mono num" :class="{ dim: row.timeUsedMs == null }">{{ formatTimeUsed(row.timeUsedMs) }}</span>
           </template>
         </el-table-column>
 
-        <el-table-column label="内存" width="108" align="right">
+        <el-table-column label="内存" width="104" align="right">
           <template #default="{ row }">
-            <span class="mono" :class="{ dim: row.memoryUsedKb == null }">{{ formatMemory(row.memoryUsedKb) }}</span>
+            <span class="mono num" :class="{ dim: row.memoryUsedKb == null }">{{ formatMemory(row.memoryUsedKb) }}</span>
           </template>
         </el-table-column>
 
@@ -129,29 +135,29 @@
           </template>
         </el-table-column>
 
-        <el-table-column label="操作" width="86" align="center">
+        <el-table-column label="" width="48" align="right">
           <template #default="{ row }">
-            <el-button link type="primary" @click="$router.push(`/submissions/${row.id}`)">
-              详情<svg class="arrow" viewBox="0 0 24 24" width="12" height="12" fill="none" aria-hidden="true">
-                <path d="M9 6 L15 12 L9 18" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" />
+            <router-link class="row-go" :to="`/submissions/${row.id}`" :aria-label="`查看提交 ${row.id} 详情`">
+              <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M5 12 L19 12 M13 6 L19 12 L13 18" />
               </svg>
-            </el-button>
+            </router-link>
           </template>
         </el-table-column>
       </el-table>
 
-      <el-pagination
-        v-if="total > size"
-        v-model:current-page="page"
-        v-model:page-size="size"
-        :page-sizes="[10, 20, 50]"
-        :total="total"
-        layout="total, prev, pager, next, sizes"
-        class="pager"
-        @current-change="load"
-        @size-change="search"
-      />
-    </div>
+      <div v-if="total > 0" class="table-foot">
+        <el-pagination
+          v-model:current-page="page"
+          v-model:page-size="size"
+          :page-sizes="[10, 20, 50]"
+          :total="total"
+          layout="total, prev, pager, next, sizes"
+          @current-change="load"
+          @size-change="search"
+        />
+      </div>
+    </section>
   </div>
 </template>
 
@@ -213,7 +219,7 @@ function languageLabel(lang?: string) {
 async function load() {
   loading.value = true
   try {
-    // P2-6：输入框允许任意字符，Number('abc') 是 NaN，直接传给后端会得到 40000。
+    // 输入框允许任意字符，Number('abc') 是 NaN，直接传给后端会得到 40000。
     // 只有解析出正整数才作为筛选条件，否则视为"未筛选"。
     const pid = Number(problemId.value)
     const data = await pageSubmissions({
@@ -267,79 +273,171 @@ onMounted(() => {
 </script>
 
 <style scoped>
-.oj-banner-num small {
-  font-size: 14px;
-  margin-left: 1px;
+.submission-page {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 44px 32px 64px;
 }
 
-.head h2 {
-  margin: 0;
+.log-head {
+  align-items: flex-end;
 }
-.head .sub {
-  margin: 6px 0 0;
-  font-size: 12.5px;
+.log-totals {
+  display: flex;
+  margin: 0;
+  padding: 0;
+  flex-shrink: 0;
+}
+.total-item {
+  padding: 0 20px;
+  border-left: 1px solid var(--oj-border);
+  text-align: right;
+}
+.total-item:last-child {
+  padding-right: 0;
+}
+.total-item dt {
+  font-family: var(--oj-font-mono);
+  font-size: 8.5px;
+  letter-spacing: 0.1em;
+  color: var(--oj-text-weak);
+}
+.total-item dd {
+  margin: 5px 0 0;
+  font-family: var(--oj-font-mono);
+  font-size: 25px;
+  line-height: 1;
+  font-weight: 600;
+  letter-spacing: -0.04em;
+}
+.total-item dd small {
+  margin-left: 1px;
+  font-size: 11px;
   color: var(--oj-text-sub);
 }
-.link-btn {
-  border: none;
-  background: none;
-  padding: 0;
-  font: inherit;
-  color: var(--oj-primary);
-  cursor: pointer;
-  text-decoration: underline;
-  text-underline-offset: 2px;
-}
 
-.filter-bar {
+/* 筛选工具条 */
+.query-bar {
   display: flex;
-  align-items: center;
+  align-items: flex-end;
   flex-wrap: wrap;
-  gap: 10px;
-  padding: 12px;
-  margin: 14px 0 16px;
-  background: var(--oj-gray-50);
+  gap: 12px;
+  padding: 16px 18px;
+  margin-bottom: 18px;
+  background: var(--oj-card);
   border: 1px solid var(--oj-border);
-  border-radius: var(--oj-radius-md);
+  border-radius: 10px;
+  box-shadow: var(--oj-shadow-sm);
 }
-.pid-input {
-  width: 120px;
-}
-.status-select {
-  width: 140px;
-}
-.range-picker {
-  width: 360px;
-}
-
-.quick-range {
+.query-field {
   display: flex;
-  gap: 6px;
+  flex-direction: column;
+  gap: 5px;
+}
+.query-label {
+  font-family: var(--oj-font-mono);
+  font-size: 8.5px;
+  letter-spacing: 0.08em;
+  color: var(--oj-text-weak);
+}
+.query-pid {
+  width: 118px;
+}
+.query-status {
+  width: 138px;
+}
+.query-range {
+  width: 330px;
+}
+.query-range :deep(.el-date-editor) {
+  width: 100%;
+}
+.query-presets {
+  display: flex;
+  gap: 4px;
+  padding-bottom: 1px;
 }
 .quick-btn {
+  padding: 6px 10px;
   border: 1px solid var(--oj-border);
-  background: var(--oj-gray-100);
-  color: var(--oj-gray-600);
+  border-radius: 5px;
+  background: var(--oj-gray-50);
+  color: var(--oj-text-sub);
   font-family: inherit;
-  font-size: 12.5px;
-  padding: 5px 12px;
-  border-radius: var(--oj-radius-pill);
+  font-size: 10.5px;
   cursor: pointer;
-  transition: color var(--oj-duration) var(--oj-ease),
-    border-color var(--oj-duration) var(--oj-ease),
+  transition: color var(--oj-duration) var(--oj-ease), border-color var(--oj-duration) var(--oj-ease),
     background var(--oj-duration) var(--oj-ease);
 }
 .quick-btn:hover {
-  color: var(--oj-primary);
-  border-color: var(--el-color-primary-light-5);
+  border-color: var(--oj-border-strong);
+  color: var(--oj-text);
 }
 .quick-btn.active {
-  background: var(--oj-primary);
-  border-color: var(--oj-primary);
-  color: var(--oj-white);
+  background: var(--oj-primary-soft);
+  border-color: var(--oj-info-border);
+  color: var(--oj-primary);
   font-weight: 600;
 }
+.query-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-left: auto;
+  padding-bottom: 1px;
+}
+.reset-link {
+  border: 0;
+  background: none;
+  padding: 0;
+  font-family: inherit;
+  font-size: 10.5px;
+  color: var(--oj-text-sub);
+  cursor: pointer;
+}
+.reset-link:hover {
+  color: var(--oj-primary);
+}
 
+/* 表卡 */
+.table-card {
+  background: var(--oj-card);
+  border: 1px solid var(--oj-border);
+  border-radius: 10px;
+  box-shadow: var(--oj-shadow-sm);
+  overflow: hidden;
+}
+.list-head {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 16px 18px 13px;
+  border-bottom: 1px solid var(--oj-border);
+}
+.list-title {
+  margin: 4px 0 0;
+  font-size: 19px;
+  font-weight: 750;
+  letter-spacing: -0.03em;
+}
+.list-meta {
+  font-family: var(--oj-font-mono);
+  font-size: 8.5px;
+  letter-spacing: 0.05em;
+  color: var(--oj-text-weak);
+}
+
+.log-table {
+  width: 100%;
+}
+.log-table :deep(.el-table__inner-wrapper::before) {
+  display: none;
+}
+.id-cell {
+  font-size: 10px;
+  color: var(--oj-text-weak);
+}
 .problem-cell {
   display: flex;
   align-items: center;
@@ -353,55 +451,79 @@ onMounted(() => {
 .title-link:hover {
   color: var(--oj-primary);
 }
-.lang-chip {
-  display: inline-flex;
-  align-items: center;
-  padding: 2px 10px;
-  border-radius: var(--oj-radius-pill);
-  background: var(--oj-gray-50);
-  border: 1px solid var(--oj-border);
-  color: var(--oj-gray-600);
-  font-size: 12px;
+.lang-text {
+  font-size: 10.5px;
+  color: var(--oj-text-sub);
 }
 .status-cell {
   display: inline-flex;
   align-items: center;
   gap: 6px;
+  font-size: 11px;
   font-weight: 600;
-  font-size: 13px;
 }
 .status-dot {
-  width: 7px;
-  height: 7px;
+  width: 5px;
+  height: 5px;
   border-radius: 50%;
   flex-shrink: 0;
 }
-.mono {
-  font-family: var(--oj-font-mono);
-  font-size: 13px;
-  font-variant-numeric: tabular-nums;
+.num {
+  font-size: 10.5px;
+  color: var(--oj-gray-700);
 }
-.mono.dim,
+.num.dim,
 .dim {
   color: var(--oj-text-weak);
 }
 .submit-time {
+  font-size: 11px;
   color: var(--oj-text-sub);
-  font-size: 13px;
 }
-.arrow {
-  margin-left: 2px;
+.row-go {
+  display: inline-flex;
+  color: var(--oj-text-weak);
+  transition: color var(--oj-duration) var(--oj-ease), transform var(--oj-duration) var(--oj-ease);
 }
-.pager {
-  margin-top: 16px;
+.row-go:hover {
+  color: var(--oj-primary);
+  transform: translateX(2px);
+}
+.table-foot {
+  display: flex;
   justify-content: flex-end;
+  padding: 14px 18px;
+  border-top: 1px solid var(--oj-border);
 }
 
 @media (max-width: 900px) {
-  .pid-input,
-  .status-select,
-  .range-picker {
+  .submission-page {
+    padding: 28px 18px 52px;
+  }
+  .log-totals {
     width: 100%;
+    margin-top: 16px;
+    padding-top: 14px;
+    border-top: 1px solid var(--oj-border);
+  }
+  .total-item:first-child {
+    padding-left: 0;
+    border-left: 0;
+    text-align: left;
+  }
+  .query-pid,
+  .query-status,
+  .query-range {
+    width: 100%;
+  }
+  .query-actions {
+    margin-left: 0;
+  }
+  .query-presets {
+    width: 100%;
+  }
+  .list-meta {
+    display: none;
   }
 }
 </style>

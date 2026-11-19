@@ -1,5 +1,5 @@
 <template>
-  <AuthShell title="欢迎回来" subtitle="登录后即可提交代码，判题结果会实时推送到当前页面。">
+  <AuthShell mode="login" title="欢迎回来" subtitle="登录后即可提交代码，判题结果会实时推送到当前页面。">
     <el-form :model="form" label-width="0" @keyup.enter="handleLogin">
       <el-form-item>
         <el-input

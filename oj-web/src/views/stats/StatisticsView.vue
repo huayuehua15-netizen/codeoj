@@ -1,81 +1,123 @@
 <template>
-  <div class="page-container">
-    <header class="oj-stage">
-      <div>
-        <h1 class="oj-stage-title">学习统计</h1>
-        <p class="oj-stage-sub">难度覆盖、状态分布与七日趋势——数据不会说谎</p>
+  <div class="report">
+    <header class="report-head">
+      <div class="report-title-block">
+        <p class="kicker">STATISTICS</p>
+        <h1 class="page-head-title">学习统计</h1>
+        <p class="page-head-sub">难度覆盖、判题状态与七日趋势。数据按全部历史提交统计。</p>
       </div>
-    </header>
-    <!-- 顶部概览 -->
-    <div class="card oj-banner">
-      <div class="oj-banner-item">
-        <span class="oj-banner-num">{{ stat.acceptRate }}%</span>
-        <span class="oj-banner-label">总通过率</span>
-      </div>
-      <div class="oj-banner-divider" aria-hidden="true" />
-      <div class="oj-banner-item">
-        <span class="oj-banner-num">{{ stat.solvedCount }}</span>
-        <span class="oj-banner-label">已解决题目</span>
-      </div>
-      <div class="oj-banner-divider" aria-hidden="true" />
-      <div class="oj-banner-item">
-        <span class="oj-banner-num">{{ coverageRate }}%</span>
-        <span class="oj-banner-label">题目覆盖率</span>
-      </div>
-      <div class="oj-banner-divider" aria-hidden="true" />
-      <div class="oj-banner-item">
-        <span class="oj-banner-num">{{ submitPerSolved }}</span>
-        <span class="oj-banner-label">次 / 解决一题</span>
-      </div>
-      <div class="oj-banner-note">
-        通过 {{ stat.totalAccepted }} / 提交 {{ stat.totalSubmit }}<br />
-        全站 {{ totalProblems }} 道可用题 · 尝试过 {{ stat.attemptedCount }} 道
-      </div>
-    </div>
-
-    <section class="card">
-      <h2 class="sec-head">难度攻克情况</h2>
-      <p class="hint">每张卡片的进度条表示该难度下「已在架且已通过」的题占该难度在架题总数的比例</p>
-      <div class="diff-cards">
-        <div v-for="d in stat.byDifficulty" :key="d.difficulty" class="diff-card" :class="`diff-${d.difficulty}`">
-          <div class="diff-head">
-            <span class="oj-diff" :class="`diff-${d.difficulty}`">{{ d.difficultyLabel }}</span>
-            <span class="diff-count">{{ d.availableSolvedCount }} / {{ d.totalCount }} 道在架题</span>
-          </div>
-          <el-progress
-            :percentage="d.totalCount ? Math.round((d.availableSolvedCount / d.totalCount) * 100) : 0"
-            :stroke-width="10"
-            :color="DIFFICULTY_MAP[d.difficulty]?.color"
-          />
-          <div class="diff-foot">
-            <span>提交 <b class="tabular">{{ d.submit }}</b></span>
-            <span>通过 <b class="tabular">{{ d.accepted }}</b></span>
-            <span>通过率 <b :class="rateClass(d.acceptRate)">{{ d.acceptRate }}%</b></span>
-          </div>
+      <dl class="report-meta">
+        <div class="meta-row">
+          <dt>SCOPE</dt>
+          <dd>全部历史提交</dd>
         </div>
+        <div class="meta-row">
+          <dt>PROBLEMS</dt>
+          <dd class="mono">{{ totalProblems }} 道</dd>
+        </div>
+        <div class="meta-row">
+          <dt>ATTEMPTED</dt>
+          <dd class="mono">{{ stat.attemptedCount }} 道</dd>
+        </div>
+      </dl>
+    </header>
+
+    <!-- 摘要：四个读数 -->
+    <section class="summary" aria-label="数据摘要">
+      <div class="summary-item">
+        <span class="summary-label">AC RATE</span>
+        <span class="summary-value serif-num">{{ stat.acceptRate }}<small>%</small></span>
+        <span class="summary-note">通过 {{ stat.totalAccepted }} / 提交 {{ stat.totalSubmit }}</span>
+      </div>
+      <div class="summary-item">
+        <span class="summary-label">SOLVED</span>
+        <span class="summary-value serif-num">{{ stat.solvedCount }}</span>
+        <span class="summary-note">在所有在架题中</span>
+      </div>
+      <div class="summary-item">
+        <span class="summary-label">COVERAGE</span>
+        <span class="summary-value serif-num">{{ coverageRate }}<small>%</small></span>
+        <span class="summary-note">已解 / 全站题数</span>
+      </div>
+      <div class="summary-item">
+        <span class="summary-label">SUBMITS / SOLVE</span>
+        <span class="summary-value serif-num">{{ submitPerSolved }}</span>
+        <span class="summary-note">次提交 / 解决一题</span>
       </div>
     </section>
 
-    <div class="two-col">
-      <section class="card">
-        <h2 class="sec-head">判题状态分布</h2>
-        <p class="hint">一眼看出短板类型：WA 多说明逻辑有问题，TLE 多说明算法复杂度不够</p>
+    <!-- 01 难度攻克 -->
+    <section class="block">
+      <div class="block-head">
+        <span class="block-no">01</span>
+        <h2 class="block-title">难度覆盖</h2>
+        <span class="block-line" aria-hidden="true"></span>
+        <span class="block-en">DIFFICULTY</span>
+      </div>
+      <p class="block-hint">进度条表示该难度下已通过的题占该难度在架题总数的比例。</p>
+
+      <div class="diff-list">
+        <div v-for="d in stat.byDifficulty" :key="d.difficulty" class="diff-row">
+          <span class="diff-name">
+            <span class="oj-diff" :class="`diff-${d.difficulty}`">{{ d.difficultyLabel }}</span>
+          </span>
+          <span class="diff-figure serif-num">
+            {{ d.availableSolvedCount }}<i>/</i><small>{{ d.totalCount }}</small>
+          </span>
+          <span class="diff-track" aria-hidden="true">
+            <span
+              class="diff-fill"
+              :class="`fill-${d.difficulty}`"
+              :style="{ width: `${d.totalCount ? Math.round((d.availableSolvedCount / d.totalCount) * 100) : 0}%` }"
+            />
+          </span>
+          <span class="diff-stats">
+            <span>提交 <b class="tabular">{{ d.submit }}</b></span>
+            <span>通过 <b class="tabular">{{ d.accepted }}</b></span>
+            <span>通过率 <b :class="rateClass(d.acceptRate)" class="tabular">{{ d.acceptRate }}%</b></span>
+          </span>
+        </div>
+        <el-empty v-if="!stat.byDifficulty.length && !loading" description="暂无难度数据" />
+      </div>
+    </section>
+
+    <!-- 02/03 图表 -->
+    <div class="chart-grid">
+      <section class="block">
+        <div class="block-head">
+          <span class="block-no">02</span>
+          <h2 class="block-title">判题状态分布</h2>
+          <span class="block-line" aria-hidden="true"></span>
+          <span class="block-en">VERDICTS</span>
+        </div>
+        <p class="block-hint">WA 多说明逻辑有问题，TLE 多说明复杂度不够。</p>
         <div v-show="stat.byStatus.length" ref="statusChart" class="chart"></div>
         <el-empty
           v-if="!loading && !stat.byStatus.length"
-          description="还没有判题结果，提交一次代码后就这里会显示分布"
+          description="还没有判题结果，提交一次代码后这里会显示分布"
         />
       </section>
 
-      <section class="card">
-        <h2 class="sec-head">近 7 天提交趋势</h2>
-        <p class="hint">柱状为提交数，折线为通过数</p>
+      <section class="block">
+        <div class="block-head">
+          <span class="block-no">03</span>
+          <h2 class="block-title">近 7 天提交趋势</h2>
+          <span class="block-line" aria-hidden="true"></span>
+          <span class="block-en">7 DAYS</span>
+        </div>
+        <p class="block-hint">柱状为提交数，折线为通过数。</p>
         <div ref="trendChart" class="chart"></div>
       </section>
     </div>
 
-    <section class="card">
-      <h2 class="sec-head">难度对比明细</h2>
+    <!-- 04 明细 -->
+    <section class="block table-block">
+      <div class="block-head">
+        <span class="block-no">04</span>
+        <h2 class="block-title">难度明细</h2>
+        <span class="block-line" aria-hidden="true"></span>
+        <span class="block-en">DETAIL</span>
+      </div>
       <el-table :data="stat.byDifficulty" v-loading="loading" row-key="difficulty" empty-text="暂无难度数据">
         <el-table-column prop="difficultyLabel" label="难度" width="100">
           <template #default="{ row }">
@@ -89,16 +131,12 @@
         </el-table-column>
         <el-table-column prop="submit" label="提交次数" width="110" />
         <el-table-column prop="accepted" label="通过次数" width="110" />
-        <el-table-column label="通过率" min-width="200">
+        <el-table-column label="通过率" min-width="220">
           <template #default="{ row }">
             <div class="tbl-rate">
-              <el-progress
-                :percentage="row.acceptRate"
-                :stroke-width="10"
-                :color="rateColor(row.acceptRate)"
-                :show-text="false"
-                class="tbl-bar"
-              />
+              <span class="rate-track" aria-hidden="true">
+                <span class="rate-fill" :style="{ width: `${row.acceptRate}%`, background: rateColor(row.acceptRate) }" />
+              </span>
               <span :class="rateClass(row.acceptRate)" class="tabular">{{ row.acceptRate }}%</span>
             </div>
           </template>
@@ -112,7 +150,7 @@
 import { computed, nextTick, onMounted, onUnmounted, ref } from 'vue'
 import * as echarts from 'echarts'
 import { getStatistics, getTrend, type Statistics } from '@/api/submission'
-import { DIFFICULTY_MAP, cssVar } from '@/utils/status'
+import { cssVar } from '@/utils/status'
 
 const emptyStat = (): Statistics => ({
   byDifficulty: [],
@@ -154,9 +192,9 @@ function rateClass(rate: number) {
 
 /** 通过率三级配色值：图表需要真实色值，从设计 token 读，避免在 JS 里再写一份色板 */
 function rateColor(rate: number) {
-  if (rate >= 60) return cssVar('--oj-success', '#4cb782')
-  if (rate >= 30) return cssVar('--oj-warning', '#eab308')
-  return cssVar('--oj-danger', '#f87171')
+  if (rate >= 60) return cssVar('--oj-success', '#2c6b4b')
+  if (rate >= 30) return cssVar('--oj-warning', '#9a681e')
+  return cssVar('--oj-danger', '#a33326')
 }
 
 /** 各判题状态的配色：与 utils/status.ts 的 STATUS_COLOR 语义保持一致 */
@@ -174,9 +212,9 @@ function statusChartColor(status: number): string {
 }
 
 function renderCharts(trend: { date: string; total: number; accepted: number }[]) {
-  const axisLine = cssVar('--oj-border', 'rgba(255, 255, 255, 0.08)')
-  const labelColor = cssVar('--oj-text-sub', '#8a8f98')
-  const cardBg = cssVar('--oj-white', '#ffffff')
+  const axisLine = cssVar('--oj-border', '#e4e8ee')
+  const labelColor = cssVar('--oj-text-sub', '#667085')
+  const cardBg = cssVar('--oj-card', '#ffffff')
 
   // 状态分布：环形图（比柱状更省空间，且适合看占比）
   if (statusChart.value && stat.value.byStatus.length) {
@@ -186,19 +224,20 @@ function renderCharts(trend: { date: string; total: number; accepted: number }[]
       legend: {
         bottom: 0,
         icon: 'circle',
-        itemWidth: 9,
-        itemHeight: 9,
-        textStyle: { fontSize: 12, color: labelColor },
+        itemWidth: 8,
+        itemHeight: 8,
+        itemGap: 14,
+        textStyle: { fontSize: 11, color: labelColor },
       },
       series: [
         {
           type: 'pie',
-          radius: ['42%', '66%'],
-          center: ['50%', '44%'],
+          radius: ['44%', '68%'],
+          center: ['50%', '43%'],
           avoidLabelOverlap: true,
-          itemStyle: { borderRadius: 6, borderColor: cardBg, borderWidth: 2 },
+          itemStyle: { borderRadius: 0, borderColor: cardBg, borderWidth: 2 },
           label: { show: false },
-          emphasis: { label: { show: true, fontSize: 14, fontWeight: 'bold' } },
+          emphasis: { label: { show: true, fontSize: 13, fontWeight: 'bold' } },
           data: stat.value.byStatus.map((s) => ({
             name: s.statusDesc,
             value: s.count,
@@ -218,32 +257,32 @@ function renderCharts(trend: { date: string; total: number; accepted: number }[]
       legend: {
         data: ['提交', '通过'],
         top: 0,
-        icon: 'roundRect',
-        itemWidth: 12,
-        itemHeight: 8,
-        textStyle: { color: labelColor },
+        icon: 'rect',
+        itemWidth: 10,
+        itemHeight: 6,
+        textStyle: { color: labelColor, fontSize: 11 },
       },
-      grid: { left: 44, right: 20, top: 40, bottom: 28 },
+      grid: { left: 40, right: 16, top: 36, bottom: 24 },
       xAxis: {
         type: 'category',
         data: dates,
         axisTick: { show: false },
         axisLine: { lineStyle: { color: axisLine } },
-        axisLabel: { color: labelColor },
+        axisLabel: { color: labelColor, fontSize: 10 },
       },
       yAxis: {
         type: 'value',
         minInterval: 1,
-        axisLabel: { color: labelColor },
-        splitLine: { lineStyle: { color: axisLine } },
+        axisLabel: { color: labelColor, fontSize: 10 },
+        splitLine: { lineStyle: { color: axisLine, type: 'dotted' } },
       },
       series: [
         {
           name: '提交',
           type: 'bar',
           data: trend.map((t) => t.total),
-          barWidth: '42%',
-          itemStyle: { color: cssVar('--oj-primary-hover'), borderRadius: [4, 4, 0, 0] },
+          barWidth: '36%',
+          itemStyle: { color: cssVar('--oj-primary'), borderRadius: 0 },
         },
         {
           name: '通过',
@@ -251,9 +290,9 @@ function renderCharts(trend: { date: string; total: number; accepted: number }[]
           data: trend.map((t) => t.accepted),
           smooth: true,
           symbol: 'circle',
-          symbolSize: 6,
+          symbolSize: 5,
           itemStyle: { color: cssVar('--oj-success') },
-          lineStyle: { width: 3 },
+          lineStyle: { width: 2 },
         },
       ],
     })
@@ -290,125 +329,277 @@ onUnmounted(() => {
 </script>
 
 <style scoped>
-.two-col,
-.diff-cards {
-  margin-top: 4px;
-}
-.two-col {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 16px;
-  margin-top: 16px;
-}
-.two-col .card {
-  margin: 0;
+.report {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 44px 32px 64px;
 }
 
-/* 章节标题：左侧强调竖条，与题面章节一致 */
-.sec-head {
+.report-head {
   display: flex;
-  align-items: center;
-  gap: 8px;
-  margin: 0 0 6px;
-  font-size: 16px;
-  font-weight: 600;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 32px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--oj-border);
+  margin-bottom: 18px;
 }
-.sec-head::before {
-  content: '';
-  width: 4px;
-  height: 15px;
-  border-radius: 2px;
-  background: var(--oj-primary);
+.report-title-block {
+  min-width: 0;
+}
+.report-meta {
+  display: flex;
+  margin: 0;
+  padding: 0;
+  border-left: 1px solid var(--oj-border);
+  flex-shrink: 0;
+}
+.meta-row {
+  padding: 0 18px;
+  border-right: 1px solid var(--oj-border);
+}
+.meta-row:last-child {
+  border-right: 0;
+  padding-right: 0;
+}
+.meta-row dt {
+  font-family: var(--oj-font-mono);
+  font-size: 9px;
+  letter-spacing: 0.12em;
+  color: var(--oj-text-weak);
+}
+.meta-row dd {
+  margin: 5px 0 0;
+  font-size: 12px;
+  color: var(--oj-gray-800);
+  white-space: nowrap;
 }
 
-.hint {
-  margin: 0 0 14px;
-  font-size: 12.5px;
+.summary {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  overflow: hidden;
+  background: var(--oj-card);
+  border: 1px solid var(--oj-border);
+  border-radius: 10px;
+  box-shadow: var(--oj-shadow-sm);
+}
+.summary-item {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 18px 22px 16px;
+  border-right: 1px solid var(--oj-border);
+}
+.summary-item:last-child {
+  border-right: 0;
+}
+.summary-item + .summary-item {
+  border-left: 0;
+}
+.summary-label {
+  font-family: var(--oj-font-mono);
+  font-size: 9px;
+  letter-spacing: 0.1em;
+  color: var(--oj-text-weak);
+}
+.summary-value {
+  font-size: 34px;
+  line-height: 1.05;
+  color: var(--oj-text);
+}
+.summary-value small {
+  font-size: 14px;
+  color: var(--oj-text-sub);
+  margin-left: 2px;
+}
+.summary-note {
+  font-size: 10px;
   color: var(--oj-text-weak);
 }
 
-.diff-cards {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-  gap: 14px;
-}
-.diff-card {
-  background: var(--oj-gray-50);
+.block {
+  margin-top: 18px;
+  padding: 18px 20px 20px;
+  background: var(--oj-card);
   border: 1px solid var(--oj-border);
-  border-radius: var(--oj-radius-md);
-  padding: 16px 18px;
-  transition: border-color var(--oj-duration) var(--oj-ease),
-    box-shadow var(--oj-duration) var(--oj-ease);
-}
-.diff-card:hover {
+  border-radius: 10px;
   box-shadow: var(--oj-shadow-sm);
 }
-.diff-card.diff-1:hover {
-  border-color: var(--oj-success-border);
-}
-.diff-card.diff-2:hover {
-  border-color: var(--oj-warning-border);
-}
-.diff-card.diff-3:hover {
-  border-color: var(--oj-danger-border);
-}
-.diff-head {
+.block-head {
   display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 12px;
+  align-items: baseline;
+  gap: 12px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--oj-border);
 }
-.diff-count {
-  font-size: 12.5px;
-  color: var(--oj-gray-600);
-  font-weight: 600;
-  font-variant-numeric: tabular-nums;
+.block-no {
+  font-family: var(--oj-font-mono);
+  font-size: 10px;
+  color: var(--oj-primary);
 }
-.diff-foot {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 14px;
-  margin-top: 12px;
-  font-size: 12px;
-  color: var(--oj-text-sub);
+.block-title {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 750;
+  letter-spacing: -0.03em;
 }
-.diff-foot b {
-  font-weight: 700;
-  color: var(--oj-text);
-  font-variant-numeric: tabular-nums;
+.block-line {
+  flex: 1;
+  border-top: 1px solid var(--oj-border);
 }
-.diff-foot b.rate-good,
-.diff-foot b.rate-mid,
-.diff-foot b.rate-low {
-  font-weight: 700;
+.block-en {
+  font-family: var(--oj-font-mono);
+  font-size: 9px;
+  letter-spacing: 0.16em;
+  color: var(--oj-text-weak);
 }
-.diff-foot b.rate-good {
-  color: var(--oj-success);
-}
-.diff-foot b.rate-mid {
-  color: var(--oj-warning);
-}
-.diff-foot b.rate-low {
-  color: var(--oj-danger);
+.block-hint {
+  margin: 8px 0 20px;
+  font-size: 11.5px;
+  color: var(--oj-text-weak);
 }
 
+/* 难度：条状读数 */
+.diff-list {
+  border-top: 0;
+}
+.diff-row {
+  display: grid;
+  grid-template-columns: 80px 110px minmax(0, 1fr) 260px;
+  gap: 24px;
+  align-items: center;
+  padding: 13px 0;
+  border-bottom: 1px solid var(--oj-border);
+}
+.diff-row:last-child {
+  border-bottom: 0;
+}
+.diff-name {
+  font-size: 12.5px;
+}
+.diff-figure {
+  font-size: 24px;
+  line-height: 1;
+  color: var(--oj-text);
+}
+.diff-figure i {
+  font-style: normal;
+  color: var(--oj-gray-300);
+  margin: 0 3px;
+  font-size: 14px;
+}
+.diff-figure small {
+  font-size: 13px;
+  color: var(--oj-text-sub);
+}
+.diff-track {
+  height: 6px;
+  border-radius: 99px;
+  background: var(--oj-gray-100);
+  display: block;
+  overflow: hidden;
+}
+.diff-fill {
+  display: block;
+  height: 100%;
+  border-radius: 99px;
+  transition: width 0.3s var(--oj-ease);
+}
+.fill-1 { background: var(--oj-success); }
+.fill-2 { background: var(--oj-warning); }
+.fill-3 { background: var(--oj-danger); }
+.diff-stats {
+  display: flex;
+  justify-content: flex-end;
+  gap: 14px;
+  font-size: 10px;
+  color: var(--oj-text-sub);
+}
+.diff-stats b {
+  font-weight: 600;
+  color: var(--oj-text);
+}
+
+.chart-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 18px;
+  margin-top: 0;
+}
+.chart-grid .block {
+  margin-top: 18px;
+}
 .chart {
   width: 100%;
   height: 300px;
 }
+.table-block {
+  padding: 0;
+  overflow: hidden;
+}
+.table-block .block-head {
+  padding: 16px 20px 12px;
+}
+
 .tbl-rate {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 12px;
 }
-.tbl-bar {
+.rate-track {
   flex: 1;
-  max-width: 130px;
+  max-width: 150px;
+  height: 2px;
+  background: var(--oj-gray-200);
+}
+.rate-fill {
+  display: block;
+  height: 100%;
 }
 
-@media (max-width: 900px) {
-  .two-col {
+@media (max-width: 1000px) {
+  .report-head {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  .report-meta {
+    border-left: 0;
+    border-top: 1px solid var(--oj-border);
+    padding-top: 12px;
+    width: 100%;
+    justify-content: space-between;
+  }
+  .meta-row {
+    padding: 0 12px 0 0;
+  }
+  .summary {
+    grid-template-columns: 1fr 1fr;
+  }
+  .summary-item:nth-child(2) {
+    border-right: 0;
+  }
+  .summary-item:nth-child(3) {
+    border-top: 1px solid var(--oj-border);
+  }
+  .summary-item:nth-child(4) {
+    border-top: 1px solid var(--oj-border);
+    border-right: 0;
+  }
+  .diff-row {
+    grid-template-columns: 70px 1fr;
+    gap: 10px 16px;
+  }
+  .diff-track {
+    grid-column: 2;
+  }
+  .diff-stats {
+    grid-column: 2;
+    justify-content: flex-start;
+  }
+  .chart-grid {
     grid-template-columns: 1fr;
+    gap: 0;
   }
 }
 </style>

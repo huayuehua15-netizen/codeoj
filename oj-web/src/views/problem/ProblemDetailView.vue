@@ -1,21 +1,24 @@
 <template>
-  <!-- 加载失败空态：题目不存在/已下架/后端不可用时不要白屏 -->
+  <!-- 加载失败空态：题目不存在/已下架/后端不可用时不白屏 -->
   <div v-if="!problem" class="page-container">
-    <div class="card">
+    <div class="card empty-sheet">
       <el-empty :description="loadError ? '题目不存在或已下架' : '题目加载中…'">
         <el-button v-if="loadError" type="primary" @click="$router.push('/problems')">返回题库</el-button>
       </el-empty>
     </div>
   </div>
 
-  <div v-else class="page-container problem-detail">
-    <div class="left">
-      <div class="card">
-        <!-- 头部：题号徽章 + 标题 + 难度软标签 + 收藏 -->
-        <header class="prob-head">
-          <span class="oj-badge-id">{{ problem.id }}</span>
+  <div v-else class="problem-detail">
+    <!-- 左：题面 -->
+    <article class="statement">
+      <header class="prob-head">
+        <div class="prob-topline">
+          <span class="kicker">PROBLEM #{{ String(problem.id).padStart(4, '0') }}</span>
+          <span class="folio">STATEMENT</span>
+        </div>
+
+        <div class="title-row">
           <h1 class="prob-title">{{ problem.title }}</h1>
-          <span class="oj-diff" :class="`diff-${problem.difficulty}`">{{ difficultyInfo.label }}</span>
           <button
             v-if="userStore.isLoggedIn"
             class="fav-btn"
@@ -24,174 +27,206 @@
             :aria-pressed="favorited"
             @click="toggleFav"
           >
-            <svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true"
+            <svg viewBox="0 0 24 24" width="13" height="13" aria-hidden="true"
               :fill="favorited ? 'currentColor' : 'none'"
-              stroke="currentColor" stroke-width="2" stroke-linejoin="round">
+              stroke="currentColor" stroke-width="1.8" stroke-linejoin="round">
               <path d="M12 3.2 L14.7 8.7 L20.8 9.6 L16.4 13.9 L17.4 20 L12 17.2 L6.6 20 L7.6 13.9 L3.2 9.6 L9.3 8.7 Z" />
             </svg>
             {{ favorited ? '已收藏' : '收藏' }}
           </button>
-        </header>
-
-        <!-- 限制与元信息：内联 SVG 图标 + 等宽数值 -->
-        <div class="limits">
-          <span class="limit-tag">
-            <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
-              <circle cx="12" cy="12" r="9" /><path d="M12 7 L12 12 L15.5 14.5" />
-            </svg>
-            {{ limitTime }}
-          </span>
-          <span class="limit-tag">
-            <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true">
-              <rect x="6" y="6" width="12" height="12" rx="1.5" /><rect x="10" y="10" width="4" height="4" />
-              <path d="M9 2v4M15 2v4M9 18v4M15 18v4M2 9h4M2 15h4M18 9h4M18 15h4" />
-            </svg>
-            {{ problem.memoryLimitMb }} MB
-          </span>
-          <span class="limit-tag rate" :class="rateClass">
-            通过率 {{ passRate }}%（{{ problem.acceptedCount }}/{{ problem.submitCount }}）
-          </span>
-          <span v-for="l in allowedLanguages" :key="l.value" class="limit-tag lang">{{ l.label }}</span>
-          <span v-for="t in problem.tags || []" :key="t" class="limit-tag lang">{{ t }}</span>
         </div>
 
-        <MarkdownPreview :content="problem.description" />
+        <dl class="prob-meta">
+          <div class="meta-item">
+            <dt>难度</dt>
+            <dd><span class="oj-diff" :class="`diff-${problem.difficulty}`">{{ difficultyInfo.label }}</span></dd>
+          </div>
+          <div class="meta-item">
+            <dt>时间限制</dt>
+            <dd class="mono">{{ limitTime }}</dd>
+          </div>
+          <div class="meta-item">
+            <dt>内存限制</dt>
+            <dd class="mono">{{ problem.memoryLimitMb }} MB</dd>
+          </div>
+          <div class="meta-item">
+            <dt>通过率</dt>
+            <dd class="mono" :class="rateClass">{{ passRate }}%<span class="meta-frac">{{ problem.acceptedCount }}/{{ problem.submitCount }}</span></dd>
+          </div>
+        </dl>
 
-        <template v-if="problem.samples && problem.samples.length">
-          <h2 class="sec-title">样例</h2>
-          <div v-for="(s, i) in problem.samples" :key="i" class="sample">
+        <div class="prob-tags">
+          <span class="tag-caption">支持语言</span>
+          <span v-for="l in allowedLanguages" :key="l.value" class="tag tag-lang">{{ l.label }}</span>
+          <span v-for="t in problem.tags || []" :key="t" class="tag">{{ t }}</span>
+        </div>
+      </header>
+
+      <section class="statement-section">
+        <div class="section-label">
+          <h2>题目描述</h2>
+          <span>DESCRIPTION</span>
+        </div>
+        <div class="statement-body">
+          <MarkdownPreview :content="problem.description" />
+        </div>
+      </section>
+
+      <section v-if="problem.samples && problem.samples.length" class="statement-section">
+        <div class="section-label">
+          <h2>样例</h2>
+          <span>SAMPLES</span>
+        </div>
+        <div class="samples">
+          <div v-for="(s, i) in problem.samples" :key="i" class="sample-set">
             <div class="sample-item">
               <div class="sample-head">
-                <span class="sample-title">输入 {{ i + 1 }}</span>
-                <button class="copy-btn" type="button" @click="copyText(s.input)">
-                  <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                    <rect x="9" y="9" width="12" height="12" rx="2" /><path d="M5 15 L4 15 A2 2 0 0 1 2 13 L2 4 A2 2 0 0 1 4 2 L13 2 A2 2 0 0 1 15 4 L15 5" />
-                  </svg>
-                  复制
-                </button>
+                <span class="sample-title">INPUT {{ String(i + 1).padStart(2, '0') }}</span>
+                <button class="copy-btn" type="button" @click="copyText(s.input)">复制</button>
               </div>
               <pre>{{ s.input }}</pre>
             </div>
             <div class="sample-item">
               <div class="sample-head">
-                <span class="sample-title">输出 {{ i + 1 }}</span>
-                <button class="copy-btn" type="button" @click="copyText(s.output)">
-                  <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                    <rect x="9" y="9" width="12" height="12" rx="2" /><path d="M5 15 L4 15 A2 2 0 0 1 2 13 L2 4 A2 2 0 0 1 4 2 L13 2 A2 2 0 0 1 15 4 L15 5" />
-                  </svg>
-                  复制
-                </button>
+                <span class="sample-title">OUTPUT {{ String(i + 1).padStart(2, '0') }}</span>
+                <button class="copy-btn" type="button" @click="copyText(s.output)">复制</button>
               </div>
               <pre>{{ s.output }}</pre>
             </div>
           </div>
-        </template>
-      </div>
-    </div>
-
-    <div class="right">
-      <div class="card editor-card">
-        <!-- 深色 IDE 风格工具条：与 Monaco 编辑器、控制台连成一体 -->
-        <div class="editor-shell">
-          <div class="editor-toolbar">
-            <span class="editor-label">
-              <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                <path d="M8 6 L3 12 L8 18 M16 6 L21 12 L16 18" />
-              </svg>
-              代码编辑
-            </span>
-            <el-select v-model="language" class="lang-select" aria-label="编程语言" @change="onLanguageChange">
-              <el-option v-for="lang in allowedLanguages" :key="lang.value" :label="lang.label" :value="lang.value" />
-            </el-select>
-            <div class="toolbar-actions">
-              <el-button v-if="language === 'js'" :disabled="running" @click="runConsole">
-                <svg class="btn-icon" viewBox="0 0 24 24" width="12" height="12" fill="currentColor" aria-hidden="true">
-                  <path d="M8 5 L19 12 L8 19 Z" />
-                </svg>
-                运行
-              </el-button>
-              <el-button type="primary" :loading="submitting" :disabled="!userStore.isLoggedIn || !code.trim()" @click="handleSubmit">
-                {{ userStore.isLoggedIn ? '提交代码' : '登录后提交' }}
-              </el-button>
-            </div>
-          </div>
-          <CodeEditor v-model="code" :language="language" />
         </div>
+      </section>
+    </article>
 
-        <!-- 控制台（JS 题目：浏览器沙箱自测运行） -->
-        <div v-if="language === 'js'" class="console-panel">
-          <div class="console-head">
-            <span class="console-title">
-              <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                <rect x="3" y="4" width="18" height="12" rx="2" /><path d="M8 20 L16 20 M12 16 L12 20" />
-              </svg>
-              控制台（自测运行）
-            </span>
-            <el-button size="small" type="success" :loading="running" @click="runConsole">
-              <svg v-if="!running" class="btn-icon" viewBox="0 0 24 24" width="12" height="12" fill="currentColor" aria-hidden="true">
+    <!-- 右：代码台 -->
+    <aside class="workspace">
+      <div class="editor-card">
+        <div class="editor-toolbar">
+          <span class="editor-label">
+            <span class="editor-dot" aria-hidden="true"></span>
+            CODE
+          </span>
+          <el-select v-model="language" class="lang-select" aria-label="编程语言" @change="onLanguageChange">
+            <el-option v-for="lang in allowedLanguages" :key="lang.value" :label="lang.label" :value="lang.value" />
+          </el-select>
+          <div class="toolbar-actions">
+            <el-button v-if="language === 'js'" :disabled="running" class="tool-btn" @click="runConsole">
+              <svg class="btn-icon" viewBox="0 0 24 24" width="11" height="11" fill="currentColor" aria-hidden="true">
                 <path d="M8 5 L19 12 L8 19 Z" />
               </svg>
               运行
             </el-button>
+            <el-button type="primary" class="submit-btn" :loading="submitting" :disabled="!userStore.isLoggedIn || !code.trim()" @click="handleSubmit">
+              {{ userStore.isLoggedIn ? '提交代码' : '登录后提交' }}
+            </el-button>
           </div>
-          <el-input
-            v-model="consoleInput"
-            type="textarea"
-            :rows="3"
-            placeholder="自定义测试输入（留空则使用样例 1 输入）"
-            class="console-input"
-          />
-          <div v-if="consoleResult" class="console-out" :class="{ err: !!consoleResult.error }">
-            <div v-if="consoleResult.error" class="console-err">
-              <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true">
-                <path d="M6 6 L18 18 M18 6 L6 18" />
-              </svg>
-              {{ consoleResult.error }}
-            </div>
-            <pre class="console-stdout">{{ consoleResult.stdout || '(无输出)' }}</pre>
-            <div class="console-meta">
-              耗时 {{ consoleResult.elapsedMs }}ms ｜ 浏览器沙箱运行（仅 JS）
-            </div>
+        </div>
+        <CodeEditor v-model="code" :language="language" />
+        <div class="editor-foot">
+          <span>{{ language.toUpperCase() }} · SYNTAX HIGHLIGHT</span>
+          <span>Ctrl / ⌘ + C COPY</span>
+        </div>
+      </div>
+
+      <!-- 控制台（JS 题目：浏览器沙箱自测运行） -->
+      <div v-if="language === 'js'" class="console-panel">
+        <div class="console-head">
+          <span class="console-title">CONSOLE / 自测运行</span>
+          <button class="console-run" type="button" :disabled="running" @click="runConsole">
+            {{ running ? '运行中…' : '▶ 运行' }}
+          </button>
+        </div>
+        <el-input
+          v-model="consoleInput"
+          type="textarea"
+          :rows="3"
+          placeholder="自定义测试输入（留空则使用样例 1 输入）"
+          class="console-input"
+        />
+        <div v-if="consoleResult" class="console-out" :class="{ err: !!consoleResult.error }">
+          <div v-if="consoleResult.error" class="console-err">✕ {{ consoleResult.error }}</div>
+          <pre class="console-stdout">{{ consoleResult.stdout || '(无输出)' }}</pre>
+          <div class="console-meta">耗时 {{ consoleResult.elapsedMs }}ms · 浏览器沙箱（仅 JS）</div>
+        </div>
+      </div>
+
+      <!-- 判题状态机：IDLE→SUBMITTING→QUEUED→JUDGING→FINISHED -->
+      <section v-if="judgeState !== 'IDLE'" class="judge-card" aria-live="polite">
+        <div class="judge-head">
+          <span class="judge-title">判题状态</span>
+          <span class="folio">JUDGEMENT</span>
+        </div>
+
+        <el-steps
+          v-if="judgeState !== 'FINISHED'"
+          :active="stepIndex"
+          align-center
+          class="judge-steps"
+          finish-status="success"
+          :process-status="judgeState === 'JUDGING' ? 'process' : 'wait'"
+        >
+          <el-step title="提交" />
+          <el-step title="排队" />
+          <el-step title="判题" />
+          <el-step title="结果" />
+        </el-steps>
+
+        <div v-else-if="result" class="verdict" :class="result.status === 2 ? 'is-ok' : 'is-bad'">
+          <span class="verdict-icon" aria-hidden="true">{{ result.status === 2 ? '✓' : '✗' }}</span>
+          <div class="verdict-text">
+            <p class="verdict-label">{{ statusLabel(result.status) }}</p>
+            <p class="verdict-meta">{{ resultSubTitle || '判题结果已推送' }}</p>
+          </div>
+          <div class="verdict-actions">
+            <el-button size="small" @click="$router.push(`/submissions/${result.submissionId}`)">查看明细</el-button>
+            <el-button size="small" type="primary" @click="resetJudge">再交一次</el-button>
           </div>
         </div>
 
-        <!-- 判题状态机（论文 5.7：IDLE→SUBMITTING→QUEUED→JUDGING→FINISHED）步骤条呈现 -->
-        <section v-if="judgeState !== 'IDLE'" class="judge-status" aria-live="polite">
-          <el-steps
-            v-if="judgeState !== 'FINISHED'"
-            :active="stepIndex"
-            align-center
-            class="judge-steps"
-            finish-status="success"
-            :process-status="judgeState === 'JUDGING' ? 'process' : 'wait'"
-          >
-            <el-step title="提交代码" />
-            <el-step title="排队中" />
-            <el-step title="判题中" />
-            <el-step title="出结果" />
-          </el-steps>
-          <el-result
-            v-else-if="result"
-            :icon="resultIcon"
-            :title="statusLabel(result.status)"
-            :sub-title="resultSubTitle"
-          >
-            <template #extra>
-              <el-button type="primary" @click="$router.push(`/submissions/${result.submissionId}`)">
-                查看判题详情
-              </el-button>
-              <el-button @click="resetJudge">再提交一次</el-button>
-            </template>
-          </el-result>
-          <!-- 中止出口：排队/判题异常耗时过久时，允许用户主动退出并去看记录 -->
-          <div v-if="judgeState === 'QUEUED' || judgeState === 'JUDGING'" class="judge-abort">
-            <el-button link type="info" size="small" @click="abortJudge">
-              暂时不看结果（可稍后在提交记录中查看）
-            </el-button>
+        <div v-if="judgeState === 'QUEUED' || judgeState === 'JUDGING'" class="judge-abort">
+          <button type="button" class="abort-link" @click="abortJudge">隐藏本次进度（结果可在提交记录查看）</button>
+        </div>
+      </section>
+
+      <!-- 未提交时的常驻说明：让右栏不是一块空白 -->
+      <section v-if="judgeState === 'IDLE'" class="judge-card judge-idle">
+        <div class="judge-head">
+          <span class="judge-title">判题流程</span>
+          <span class="folio">JUDGEMENT</span>
+        </div>
+        <div class="idle-flow">
+          <div class="idle-step">
+            <span class="idle-no">01</span>
+            <div>
+              <strong>提交入队</strong>
+              <span>代码进入判题队列</span>
+            </div>
           </div>
-        </section>
-      </div>
-    </div>
+          <div class="idle-step">
+            <span class="idle-no">02</span>
+            <div>
+              <strong>编译构建</strong>
+              <span>在沙箱内编译当前语言</span>
+            </div>
+          </div>
+          <div class="idle-step">
+            <span class="idle-no">03</span>
+            <div>
+              <strong>逐用例运行</strong>
+              <span>限制时间与内存并比对输出</span>
+            </div>
+          </div>
+          <div class="idle-step">
+            <span class="idle-no">04</span>
+            <div>
+              <strong>实时判定</strong>
+              <span>结果推送到本页并留存记录</span>
+            </div>
+          </div>
+        </div>
+        <p class="idle-note">提交后无需手动刷新。评测机空闲时通常几秒内返回；高峰期请以队列状态为准。</p>
+      </section>
+    </aside>
   </div>
 </template>
 
@@ -243,14 +278,12 @@ const passRate = computed(() => {
   return Math.round(((p.acceptedCount || 0) / p.submitCount) * 100)
 })
 
-/** 通过率分级配色（与列表页/排行榜一致）：>=60 绿、>=30 橙、否则红 */
+/** 通过率分级配色：>=60 绿、>=30 橙、否则红 */
 const rateClass = computed(() => {
   if (passRate.value >= 60) return 'rate-good'
   if (passRate.value >= 30) return 'rate-mid'
   return 'rate-low'
 })
-
-const resultIcon = computed(() => (result.value?.status === 2 ? 'success' : 'error'))
 
 const resultSubTitle = computed(() => {
   const s = result.value
@@ -302,7 +335,7 @@ async function copyText(text: string) {
 }
 
 /** 控制台运行：浏览器沙箱执行当前代码（仅 JS 题）。
- *  输入框为空时显式填入样例 1 输入（所见即所得——用户能看到运行用了什么输入）。 */
+ *  输入框为空时显式填入样例 1 输入（所见即所得）。 */
 async function runConsole() {
   if (!problem.value) return
   if (!consoleInput.value.trim() && problem.value.samples?.[0]?.input) {
@@ -333,7 +366,7 @@ async function toggleFav() {
   }
 }
 
-/** 切换语言后统一收尾：换模板 + 重新预填样例 1（P2-16：两个分支行为必须一致） */
+/** 切换语言后统一收尾：换模板 + 重新预填样例 1 */
 function applyLanguage(lang: string) {
   code.value = CODE_TEMPLATES[lang] ?? ''
   prevLanguage.value = lang
@@ -343,7 +376,7 @@ function applyLanguage(lang: string) {
 }
 
 function onLanguageChange(lang: string) {
-  // 论文 5.7：切换语言载入对应模板代码。
+  // 切换语言载入对应模板代码。
   // 当前内容为空或仍是任一模板（未编辑）→ 直接替换；已编辑 → 确认后替换，取消则回退。
   const label = LANGUAGE_OPTIONS.find((l) => l.value === lang)?.label ?? lang
   const untouched = !code.value.trim() || Object.values(CODE_TEMPLATES).includes(code.value)
@@ -365,7 +398,7 @@ function onLanguageChange(lang: string) {
 
 async function load() {
   const id = route.params.id
-  // P2-9：路由参数来自地址栏，可能不是数字；非正整数直接落到"不存在"空态，不发请求
+  // 路由参数来自地址栏，可能不是数字；非正整数直接落到"不存在"空态，不发请求
   if (!/^\d+$/.test(String(id))) {
     problem.value = undefined
     loadError.value = true
@@ -418,7 +451,7 @@ async function handleSubmit() {
   }
 }
 
-// WebSocket 订阅（论文 5.5）：三阶段 QUEUED/JUDGING/FINISHED 幂等推进状态机
+// WebSocket 订阅：三阶段 QUEUED/JUDGING/FINISHED 幂等推进状态机
 const unsubscribe = onJudgePush((payload) => {
   if (payload.data.submissionId !== currentSubmissionId.value || judgeState.value === 'FINISHED') return
   if (payload.type === 'JUDGE_QUEUED') {
@@ -432,7 +465,7 @@ const unsubscribe = onJudgePush((payload) => {
   }
 })
 
-// HTTP 兜底轮询：连接断开重连后以提交编号回查结果（论文 5.5）
+// HTTP 兜底轮询：连接断开重连后以提交编号回查结果
 let pollTimer: ReturnType<typeof setInterval> | null = null
 let pollStartedAt = 0
 let pollGeneration = 0
@@ -492,7 +525,7 @@ function stopPolling() {
   }
 }
 
-// P2-4：同一组件在 /problems/1 → /problems/2 之间复用，只靠 onMounted 不会重新加载
+// 同一组件在 /problems/1 → /problems/2 之间复用，只靠 onMounted 不会重新加载
 watch(
   () => route.params.id,
   () => {
@@ -512,302 +545,607 @@ onMounted(load)
 </script>
 
 <style scoped>
-.problem-detail {
-  display: flex;
-  gap: 16px;
-  align-items: flex-start;
-}
-.left {
-  flex: 1;
-  min-width: 0;
-}
-.right {
-  flex: 1;
-  min-width: 0;
-  /* 长题面滚动时编辑器保持可见 */
-  position: sticky;
-  top: 76px;
+.empty-sheet {
+  border-top: 3px solid var(--oj-primary);
 }
 
-.prob-head {
+.problem-detail {
+  max-width: 1320px;
+  margin: 0 auto;
+  padding: 34px 32px 60px;
+  display: grid;
+  grid-template-columns: minmax(0, 1.04fr) minmax(0, 0.96fr);
+  gap: 22px;
+  align-items: start;
+}
+
+/* ---------- 左：题面 ---------- */
+.statement {
+  min-width: 0;
+  background: var(--oj-card);
+  border: 1px solid var(--oj-border);
+  border-radius: 10px;
+  padding: 24px 26px 28px;
+  box-shadow: var(--oj-shadow-sm);
+}
+.prob-topline {
   display: flex;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 10px;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--oj-border);
+}
+.title-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  margin-top: 16px;
 }
 .prob-title {
   margin: 0;
-  font-size: 20px;
-  font-weight: 600;
+  flex: 1;
+  min-width: 0;
+  font-size: 28px;
+  font-weight: 750;
   line-height: 1.35;
+  letter-spacing: -0.04em;
+  color: var(--oj-text);
 }
-
-/* 收藏：星星胶囊按钮（已收藏态换琥珀色） */
 .fav-btn {
-  margin-left: auto;
   display: inline-flex;
   align-items: center;
   gap: 5px;
-  border: 1px solid var(--oj-border);
-  background: var(--oj-gray-100);
-  color: var(--oj-gray-500);
-  font-family: inherit;
-  font-size: 12.5px;
-  padding: 5px 12px;
-  border-radius: var(--oj-radius-pill);
-  cursor: pointer;
-  transition: color var(--oj-duration) var(--oj-ease),
-    border-color var(--oj-duration) var(--oj-ease),
-    background var(--oj-duration) var(--oj-ease);
   flex-shrink: 0;
+  margin-top: 5px;
+  padding: 4px 9px;
+  border: 1px solid var(--oj-border);
+  border-radius: 4px;
+  background: var(--oj-gray-50);
+  color: var(--oj-text-sub);
+  font-family: inherit;
+  font-size: 10.5px;
+  cursor: pointer;
+  transition: color var(--oj-duration) var(--oj-ease), border-color var(--oj-duration) var(--oj-ease);
 }
 .fav-btn:hover,
 .fav-btn.active {
-  color: var(--oj-warning);
-  border-color: var(--oj-warning-border);
-  background: var(--oj-warning-soft);
-}
-.fav-btn.active {
-  font-weight: 600;
+  color: var(--oj-primary);
+  border-color: var(--oj-info-border);
+  background: var(--oj-primary-soft);
 }
 
-/* 章节标题：与题面 Markdown 标题同款强调竖条 */
-.card .sec-title {
+.prob-meta {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  margin: 18px 0 0;
+  overflow: hidden;
+  border: 1px solid var(--oj-border);
+  border-radius: 7px;
+  background: var(--oj-gray-50);
+}
+.prob-meta .meta-item {
   display: flex;
-  align-items: center;
-  gap: 8px;
-  margin: 22px 0 12px;
+  flex-direction: column;
+  gap: 4px;
+  padding: 9px 12px;
+  border-right: 1px solid var(--oj-border);
 }
-.card .sec-title::before {
-  content: '';
-  width: 4px;
-  height: 16px;
-  border-radius: 2px;
-  background: var(--oj-primary);
+.prob-meta .meta-item:last-child {
+  border-right: 0;
 }
-
-.limits {
+.prob-meta dt {
+  font-family: var(--oj-font-mono);
+  font-size: 8px;
+  letter-spacing: 0.09em;
+  color: var(--oj-text-weak);
+}
+.prob-meta dd {
+  margin: 0;
+  font-size: 11.5px;
+  color: var(--oj-gray-700);
+}
+.prob-meta dd .meta-frac {
+  margin-left: 5px;
+  font-size: 8.5px;
+  color: var(--oj-text-weak);
+}
+.prob-tags {
   display: flex;
   flex-wrap: wrap;
-  gap: 8px;
-  margin: 14px 0;
-}
-.limit-tag {
-  display: inline-flex;
   align-items: center;
   gap: 5px;
-  background: var(--oj-gray-50);
-  color: var(--oj-gray-700);
+  margin-top: 12px;
+}
+.tag-caption {
+  margin-right: 2px;
+  font-family: var(--oj-font-mono);
+  font-size: 9px;
+  letter-spacing: 0.04em;
+  color: var(--oj-text-weak);
+}
+.tag {
+  padding: 1px 7px;
   border: 1px solid var(--oj-border);
-  border-radius: var(--oj-radius-pill);
-  padding: 3px 12px;
-  font-size: 12.5px;
-  font-variant-numeric: tabular-nums;
+  border-radius: 3px;
+  background: var(--oj-gray-50);
+  font-family: var(--oj-font-mono);
+  font-size: 9px;
+  line-height: 18px;
+  color: var(--oj-text-sub);
 }
-.limit-tag.lang {
-  background: var(--oj-primary-soft);
+.tag-lang {
   color: var(--oj-primary);
-  border-color: var(--el-color-primary-light-7);
-}
-.limit-tag.rate.rate-good {
-  color: var(--oj-success);
-  border-color: var(--oj-success-border);
-  background: var(--oj-success-soft);
-}
-.limit-tag.rate.rate-mid {
-  color: var(--oj-warning);
-  border-color: var(--oj-warning-border);
-  background: var(--oj-warning-soft);
-}
-.limit-tag.rate.rate-low {
-  color: var(--oj-danger);
-  border-color: var(--oj-danger-border);
-  background: var(--oj-danger-soft);
+  border-color: var(--oj-info-border);
+  background: var(--oj-primary-soft);
 }
 
-.sample {
+.statement-section {
+  margin-top: 24px;
+}
+.section-label {
   display: flex;
+  align-items: baseline;
+  justify-content: space-between;
   gap: 12px;
-  margin-bottom: 12px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--oj-border);
+  margin-bottom: 14px;
+}
+.section-label h2 {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+.section-label span {
+  font-family: var(--oj-font-mono);
+  font-size: 8.5px;
+  letter-spacing: 0.08em;
+  color: var(--oj-text-weak);
+}
+.statement-body {
+  max-width: 46em;
+}
+
+/* 样例 */
+.samples {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.sample-set {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
 }
 .sample-item {
-  flex: 1;
-  min-width: 0;
   border: 1px solid var(--oj-border);
-  border-radius: var(--oj-radius-md);
+  border-radius: 7px;
+  background: var(--oj-gray-50);
   overflow: hidden;
+  min-width: 0;
 }
 .sample-head {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 6px 12px;
-  background: var(--oj-gray-50);
+  padding: 6px 11px;
   border-bottom: 1px solid var(--oj-border);
+  background: var(--oj-card);
 }
 .sample-title {
-  font-size: 12px;
-  color: var(--oj-gray-500);
-  font-weight: 600;
+  font-family: var(--oj-font-mono);
+  font-size: 8.5px;
+  letter-spacing: 0.08em;
+  color: var(--oj-text-sub);
 }
 .copy-btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  border: none;
+  border: 0;
   background: none;
-  color: var(--oj-text-weak);
+  padding: 0;
   font-family: inherit;
-  font-size: 12px;
+  font-size: 10px;
+  color: var(--oj-text-weak);
   cursor: pointer;
-  padding: 2px 8px;
-  border-radius: 6px;
-  transition: color var(--oj-duration) var(--oj-ease),
-    background var(--oj-duration) var(--oj-ease);
 }
 .copy-btn:hover {
   color: var(--oj-primary);
-  background: var(--oj-primary-soft);
 }
 .sample-item pre {
   margin: 0;
-  padding: 12px 14px;
-  min-height: 58px;
-  background: var(--oj-code-bg);
-  color: var(--oj-code-text);
+  padding: 11px 12px;
+  min-height: 50px;
   white-space: pre-wrap;
   word-break: break-word;
   font-family: var(--oj-font-mono);
-  font-size: 13px;
-  line-height: 1.6;
+  font-size: 12px;
+  line-height: 1.65;
+  color: var(--oj-gray-800);
 }
 
-/* 编辑器：深色工具条 + Monaco 连成一体（IDE 观感） */
-.editor-shell {
-  border-radius: var(--oj-radius-md);
+/* ---------- 右：代码台 ---------- */
+.workspace {
+  position: sticky;
+  top: 84px;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.editor-card {
+  border: 1px solid var(--oj-code-border);
+  border-radius: 10px;
   overflow: hidden;
-  box-shadow: var(--oj-shadow-sm);
+  background: var(--oj-code-bg);
+  box-shadow: var(--oj-shadow);
 }
 .editor-toolbar {
   display: flex;
   align-items: center;
   gap: 10px;
-  background: var(--oj-code-bg);
   padding: 10px 12px;
+  background: var(--oj-code-bg);
+  border-bottom: 1px solid var(--oj-code-border);
 }
 .editor-label {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  color: var(--oj-code-text-sub);
-  font-size: 12.5px;
-  font-weight: 600;
+  gap: 7px;
   font-family: var(--oj-font-mono);
+  font-size: 9px;
+  letter-spacing: 0.1em;
+  color: var(--oj-code-text-sub);
+  white-space: nowrap;
+}
+.editor-dot {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: #57d9a3;
 }
 .editor-toolbar .lang-select {
-  width: 130px;
+  width: 118px;
+}
+.editor-toolbar :deep(.el-select .el-select__wrapper),
+.editor-toolbar :deep(.el-select .el-input__wrapper) {
+  background: rgba(255, 255, 255, 0.06);
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.16) inset;
+  min-height: 28px;
+}
+.editor-toolbar :deep(.el-select .el-select__placeholder),
+.editor-toolbar :deep(.el-select .el-select__selected-item),
+.editor-toolbar :deep(.el-select .el-input__inner) {
+  color: var(--oj-code-text);
+  font-family: var(--oj-font-mono);
+  font-size: 12px;
+}
+.editor-toolbar :deep(.el-select .el-select__suffix),
+.editor-toolbar :deep(.el-select .el-input__suffix) {
+  color: var(--oj-code-text-sub);
 }
 .editor-toolbar .toolbar-actions {
   margin-left: auto;
   display: flex;
   gap: 8px;
 }
-/* 深色条上的语言选择：半透明白底 + 浅色文字（兼容新旧两代 el-select 结构） */
-.editor-toolbar :deep(.el-select .el-select__wrapper),
-.editor-toolbar :deep(.el-select .el-input__wrapper) {
-  background: rgba(255, 255, 255, 0.08);
-  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.18) inset;
-  min-height: 30px;
+.editor-toolbar :deep(.el-button) {
+  height: 28px;
+  padding: 0 12px;
+  font-size: 12px;
+  border-radius: 5px;
 }
-.editor-toolbar :deep(.el-select .el-select__placeholder),
-.editor-toolbar :deep(.el-select .el-select__selected-item),
-.editor-toolbar :deep(.el-select .el-input__inner) {
+.editor-toolbar .tool-btn {
+  background: transparent;
+  border-color: rgba(255, 255, 255, 0.22);
   color: var(--oj-code-text);
 }
-.editor-toolbar :deep(.el-select .el-select__suffix),
-.editor-toolbar :deep(.el-select .el-input__suffix) {
-  color: var(--oj-code-text-sub);
+.editor-toolbar .tool-btn:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.4);
+  color: var(--oj-code-text);
+}
+.editor-toolbar .submit-btn {
+  border-color: var(--oj-primary);
+  background: var(--oj-primary);
+  color: #fff;
+}
+.editor-toolbar .submit-btn:hover {
+  background: var(--oj-primary-hover);
+  border-color: var(--oj-primary-hover);
 }
 .btn-icon {
   margin-right: 4px;
 }
+.editor-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px 12px 7px;
+  border-top: 1px solid var(--oj-code-border);
+  font-family: var(--oj-font-mono);
+  font-size: 8.5px;
+  letter-spacing: 0.05em;
+  color: var(--oj-code-comment);
+}
 
-.judge-status {
-  margin-top: 12px;
-}
-.judge-steps {
-  padding: 8px 4px 0;
-}
-.judge-abort {
-  text-align: center;
-  padding-bottom: 4px;
-}
-
+/* 控制台 */
 .console-panel {
-  margin-top: 14px;
-  border: 1px solid var(--oj-border);
-  border-radius: var(--oj-radius-md);
+  border: 1px solid var(--oj-code-border);
+  border-radius: 8px;
   overflow: hidden;
+  background: var(--oj-code-bg);
 }
 .console-head {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  background: var(--oj-code-bg);
-  color: var(--oj-code-text);
-  padding: 8px 14px;
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--oj-code-border);
 }
 .console-title {
-  display: inline-flex;
-  align-items: center;
-  gap: 7px;
-  font-size: 13px;
-  font-weight: 600;
   font-family: var(--oj-font-mono);
+  font-size: 9px;
+  letter-spacing: 0.1em;
+  color: var(--oj-code-text-sub);
+}
+.console-run {
+  border: 1px solid rgba(255, 255, 255, 0.24);
+  border-radius: 4px;
+  background: transparent;
+  color: var(--oj-code-text);
+  font-family: inherit;
+  font-size: 10.5px;
+  padding: 2px 9px;
+  cursor: pointer;
+}
+.console-run:hover {
+  border-color: var(--oj-code-text);
 }
 .console-input :deep(textarea) {
   font-family: var(--oj-font-mono);
-  font-size: 13px;
+  font-size: 12px;
+  background: var(--oj-code-bg-soft);
+  box-shadow: none;
+  color: var(--oj-code-text);
+  border-radius: 0;
+  border-bottom: 1px solid var(--oj-code-border);
 }
 .console-out {
-  background: var(--oj-code-bg);
+  padding: 10px 12px;
+  min-height: 52px;
   color: var(--oj-code-text);
-  padding: 10px 14px;
-  min-height: 60px;
 }
 .console-err {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  color: var(--oj-danger);
-  font-size: 13px;
+  color: #e08a7d;
+  font-size: 12px;
   margin-bottom: 6px;
   word-break: break-word;
 }
 .console-stdout {
   margin: 0;
   font-family: var(--oj-font-mono);
-  font-size: 13px;
+  font-size: 12px;
   white-space: pre-wrap;
   word-break: break-word;
 }
 .console-meta {
-  color: var(--oj-code-comment);
-  font-size: 11px;
   margin-top: 8px;
+  font-family: var(--oj-font-mono);
+  font-size: 8.5px;
+  letter-spacing: 0.04em;
+  color: var(--oj-code-comment);
 }
 
-/* 窄屏改单列：编辑器不再 sticky（否则会浮在题面上） */
-@media (max-width: 1024px) {
+/* 判题状态 */
+.judge-card {
+  padding: 16px 18px 14px;
+  background: var(--oj-card);
+  border: 1px solid var(--oj-border);
+  border-radius: 10px;
+  box-shadow: var(--oj-shadow-sm);
+}
+.judge-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+.judge-title {
+  font-size: 12.5px;
+  font-weight: 700;
+}
+.judge-steps {
+  padding: 4px 0 0;
+}
+.judge-steps :deep(.el-step__title) {
+  font-size: 10.5px;
+  font-weight: 500;
+  letter-spacing: 0.01em;
+}
+.judge-steps :deep(.el-step__title.is-process) {
+  color: var(--oj-primary);
+  font-weight: 600;
+}
+.judge-steps :deep(.el-step__title.is-success) {
+  color: var(--oj-success);
+}
+.judge-steps :deep(.el-step__title.is-wait) {
+  color: var(--oj-text-weak);
+}
+.judge-steps :deep(.el-step__head.is-process) {
+  color: var(--oj-primary);
+  border-color: var(--oj-primary);
+}
+.judge-steps :deep(.el-step__head.is-success) {
+  color: var(--oj-success);
+  border-color: var(--oj-success);
+}
+.judge-steps :deep(.el-step__head.is-wait) {
+  color: var(--oj-text-weak);
+  border-color: var(--oj-border-strong);
+}
+.judge-steps :deep(.el-step__line) {
+  background: var(--oj-border);
+}
+.judge-steps :deep(.el-step__icon) {
+  width: 22px;
+  height: 22px;
+  font-size: 10px;
+}
+
+/* 未提交时的常驻说明 */
+.judge-idle {
+  padding-bottom: 16px;
+}
+.idle-flow {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0 18px;
+}
+.idle-step {
+  display: flex;
+  gap: 10px;
+  padding: 10px 0;
+  border-top: 1px solid var(--oj-border);
+}
+.idle-no {
+  padding-top: 1px;
+  font-family: var(--oj-font-mono);
+  font-size: 9px;
+  letter-spacing: 0.04em;
+  color: var(--oj-text-weak);
+}
+.idle-step strong {
+  display: block;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--oj-text);
+}
+.idle-step div > span {
+  display: block;
+  margin-top: 3px;
+  font-size: 10.5px;
+  line-height: 1.5;
+  color: var(--oj-text-sub);
+}
+.idle-note {
+  margin: 10px 0 0;
+  padding-top: 11px;
+  border-top: 1px solid var(--oj-border);
+  font-size: 10.5px;
+  line-height: 1.65;
+  color: var(--oj-text-sub);
+}
+
+.verdict {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 13px 14px;
+  border: 1px solid var(--oj-border);
+  border-radius: 7px;
+  background: var(--oj-gray-50);
+}
+.verdict.is-ok {
+  border-left: 3px solid var(--oj-success);
+  background: var(--oj-success-soft);
+}
+.verdict.is-bad {
+  border-left: 3px solid var(--oj-danger);
+  background: var(--oj-danger-soft);
+}
+.verdict-icon {
+  width: 34px;
+  height: 34px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--oj-font-mono);
+  font-size: 16px;
+  font-weight: 700;
+  border: 1px solid currentColor;
+}
+.verdict.is-ok .verdict-icon {
+  color: var(--oj-success);
+}
+.verdict.is-bad .verdict-icon {
+  color: var(--oj-danger);
+}
+.verdict-text {
+  flex: 1;
+  min-width: 0;
+}
+.verdict-label {
+  font-size: 18px;
+  font-weight: 750;
+  line-height: 1.2;
+  letter-spacing: -0.02em;
+}
+.verdict.is-ok .verdict-label {
+  color: var(--oj-success);
+}
+.verdict.is-bad .verdict-label {
+  color: var(--oj-danger);
+}
+.verdict-meta {
+  margin: 3px 0 0;
+  font-family: var(--oj-font-mono);
+  font-size: 9.5px;
+  color: var(--oj-text-sub);
+}
+.verdict-actions {
+  display: flex;
+  gap: 6px;
+  flex-shrink: 0;
+}
+.judge-abort {
+  margin-top: 9px;
+  text-align: center;
+}
+.abort-link {
+  border: 0;
+  background: none;
+  padding: 0;
+  font-family: inherit;
+  font-size: 10.5px;
+  color: var(--oj-text-weak);
+  cursor: pointer;
+}
+.abort-link:hover {
+  color: var(--oj-text-sub);
+}
+
+@media (max-width: 1080px) {
   .problem-detail {
-    flex-direction: column;
+    grid-template-columns: 1fr;
+    padding: 24px 20px 52px;
   }
-  .right {
+  .workspace {
     position: static;
-    width: 100%;
   }
-  .sample {
-    flex-direction: column;
+  .sample-set {
+    grid-template-columns: 1fr;
+  }
+}
+@media (max-width: 620px) {
+  .prob-meta {
+    grid-template-columns: 1fr 1fr;
+  }
+  .prob-meta .meta-item:nth-child(2) {
+    border-right: 0;
+  }
+  .prob-meta .meta-item:nth-child(n + 3) {
+    border-top: 1px solid var(--oj-border);
+  }
+  .verdict {
+    flex-wrap: wrap;
+  }
+  .verdict-actions {
+    width: 100%;
+    padding-left: 48px;
   }
 }
 </style>

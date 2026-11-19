@@ -1,22 +1,30 @@
 <template>
-  <div class="page-container">
-    <div class="card">
-      <header class="oj-page-head">
-        <div>
-          <h1 class="oj-page-title">用户管理</h1>
-          <p class="oj-page-sub">调整用户角色、封禁或解封账号，以及重置密码</p>
-        </div>
-      </header>
-      <div class="oj-toolbar toolbar-gap">
-        <el-input v-model="keyword" placeholder="按用户名搜索" style="width: 220px" clearable @keyup.enter="load" />
-        <el-button @click="load">搜索</el-button>
-        <span class="hint">封禁后账号立即无法登录，既有登录态同时失效</span>
-      </div>
+  <AdminShell
+    title="用户管理"
+    section="USERS · 账号与权限"
+    description="调整用户角色、封禁或解封账号，以及重置密码。"
+  >
+    <template #actions>
+      <el-input v-model="keyword" placeholder="按用户名搜索" style="width: 210px" clearable @keyup.enter="load" />
+      <el-button @click="load">搜索</el-button>
+    </template>
+
+    <p class="admin-hint">封禁后账号立即无法登录，既有登录态同时失效。</p>
+
+    <div class="admin-table-shell">
       <el-table :data="users" v-loading="loading" empty-text="没有匹配的用户，试试换个用户名">
-        <el-table-column prop="id" label="#" width="60" />
+        <el-table-column prop="id" label="ID" width="60">
+          <template #default="{ row }">
+            <span class="mono id-cell">{{ String(row.id).padStart(3, '0') }}</span>
+          </template>
+        </el-table-column>
         <el-table-column prop="username" label="用户名" min-width="160" />
-        <el-table-column prop="email" label="邮箱" min-width="180" />
-        <el-table-column label="角色" width="110">
+        <el-table-column prop="email" label="邮箱" min-width="180">
+          <template #default="{ row }">
+            <span class="email-cell">{{ row.email || '—' }}</span>
+          </template>
+        </el-table-column>
+        <el-table-column label="角色" width="100">
           <template #default="{ row }">
             <el-tag :type="row.role === 1 ? 'warning' : 'info'" size="small">
               {{ row.role === 1 ? '教师' : '学生' }}
@@ -31,7 +39,9 @@
           </template>
         </el-table-column>
         <el-table-column label="注册时间" width="170">
-          <template #default="{ row }">{{ formatDateTime(row.createdAt) }}</template>
+          <template #default="{ row }">
+            <span class="mono time-cell">{{ formatDateTime(row.createdAt) }}</span>
+          </template>
         </el-table-column>
         <el-table-column label="操作" width="260">
           <template #default="{ row }">
@@ -50,11 +60,11 @@
         :page-size="size"
         :total="total"
         layout="prev, pager, next"
-        style="margin-top: 16px; justify-content: flex-end"
+        class="admin-pager"
         @current-change="load"
       />
     </div>
-  </div>
+  </AdminShell>
 </template>
 
 <script setup lang="ts">
@@ -63,6 +73,7 @@ import { onMounted, ref } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { pageAdminUsers, changeUserRole, changeUserStatus, resetUserPassword, type AdminUserItem } from '@/api/adminUser'
 import { formatDateTime } from '@/utils/datetime'
+import AdminShell from '@/components/AdminShell.vue'
 
 const users = ref<AdminUserItem[]>([])
 const keyword = ref('')
@@ -120,13 +131,27 @@ onMounted(load)
 </script>
 
 <style scoped>
-/* 搜索行放在页面头部下方，与头部保持 16px 间距 */
-.toolbar-gap {
-  margin-bottom: 16px;
+.admin-hint {
+  margin: 0 0 3px;
+  font-size: 10.5px;
+  color: var(--oj-text-weak);
 }
-.hint {
+.id-cell {
+  font-size: 11px;
+  color: var(--oj-text-weak);
+}
+.email-cell {
+  font-family: var(--oj-font-mono);
+  font-size: 11px;
   color: var(--oj-text-sub);
-  font-size: 12px;
-  margin-left: auto;
+}
+.time-cell {
+  font-size: 10px;
+  color: var(--oj-text-sub);
+}
+.admin-pager {
+  margin: 0;
+  padding: 10px 16px;
+  justify-content: flex-end;
 }
 </style>

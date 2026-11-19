@@ -1,66 +1,100 @@
 <template>
-  <div class="page-container about-page">
-    <header class="oj-stage">
+  <div class="colophon">
+    <header class="page-head">
       <div>
-        <h1 class="oj-stage-title">帮助与关于</h1>
-        <p class="oj-stage-sub">三分钟上手 CodeOJ：怎么提交、状态怎么看、出错了找谁</p>
+        <p class="kicker">DOCS</p>
+        <h1 class="page-head-title">帮助与关于</h1>
+        <p class="page-head-sub">三分钟上手 CodeOJ：怎么提交、状态怎么看、出错了找谁。</p>
       </div>
     </header>
 
-    <div class="about-grid">
-      <!-- 使用指南 -->
-      <div class="card">
-        <h2>如何提交第一道题</h2>
-        <ol class="steps">
-          <li v-for="(s, i) in STEPS" :key="i" class="step">
-            <span class="step-no mono">{{ i + 1 }}</span>
-            <div>
-              <p class="step-title">{{ s.title }}</p>
-              <p class="step-desc">{{ s.desc }}</p>
+    <div class="colophon-body">
+      <aside class="toc" aria-label="页内目录">
+        <p class="toc-title">DOCS INDEX</p>
+        <a href="#guide" class="toc-link"><span>01</span>如何提交第一道题</a>
+        <a href="#status" class="toc-link"><span>02</span>判题状态对照</a>
+        <a href="#faq" class="toc-link"><span>03</span>常见问题</a>
+        <a href="#about" class="toc-link"><span>04</span>关于与致谢</a>
+        <p class="toc-note">CodeOJ<br />Spring Boot 3 · Vue 3</p>
+      </aside>
+
+      <main class="chapters">
+        <section id="guide" class="chapter">
+          <div class="chapter-head">
+            <span class="chapter-no">01</span>
+            <h2>如何提交第一道题</h2>
+            <span class="chapter-line" aria-hidden="true"></span>
+          </div>
+          <ol class="steps">
+            <li v-for="(s, i) in STEPS" :key="i" class="step">
+              <span class="step-no serif-num">{{ String(i + 1).padStart(2, '0') }}</span>
+              <div class="step-main">
+                <p class="step-title">{{ s.title }}</p>
+                <p class="step-desc">{{ s.desc }}</p>
+              </div>
+            </li>
+          </ol>
+        </section>
+
+        <section id="status" class="chapter">
+          <div class="chapter-head">
+            <span class="chapter-no">02</span>
+            <h2>判题状态对照表</h2>
+            <span class="chapter-line" aria-hidden="true"></span>
+            <span class="chapter-meta">9 种判题状态 · 与判题机一致</span>
+          </div>
+          <div class="status-table">
+            <div class="status-head" aria-hidden="true">
+              <span>CODE</span>
+              <span>状态</span>
+              <span>说明</span>
             </div>
-          </li>
-        </ol>
-      </div>
+            <div v-for="(s, code) in STATUS_MAP" :key="code" class="status-row">
+              <span class="status-code mono">{{ code }}</span>
+              <span class="status-name">
+                <span class="status-dot" :style="{ background: statusColor(Number(code)) }" aria-hidden="true" />
+                {{ s.label }}
+              </span>
+              <span class="status-desc">{{ STATUS_DESC[String(code)] }}</span>
+            </div>
+          </div>
+        </section>
 
-      <!-- 判题状态对照 -->
-      <div class="card">
-        <h2>判题状态对照表</h2>
-        <p class="card-sub">与论文表 4-8 的状态机一致，共九态</p>
-        <ul class="status-list">
-          <li v-for="(s, code) in STATUS_MAP" :key="code" class="status-row">
-            <span class="status-code mono">{{ code }}</span>
-            <span class="status-dot" :style="{ background: statusColor(Number(code)) }" />
-            <span class="status-name">{{ s.label }}</span>
-            <span class="status-desc">{{ STATUS_DESC[code] }}</span>
-          </li>
-        </ul>
-      </div>
+        <section id="faq" class="chapter">
+          <div class="chapter-head">
+            <span class="chapter-no">03</span>
+            <h2>常见问题</h2>
+            <span class="chapter-line" aria-hidden="true"></span>
+          </div>
+          <el-collapse class="faq">
+            <el-collapse-item v-for="(q, i) in FAQ" :key="i" :title="q.q">
+              <p class="faq-a">{{ q.a }}</p>
+            </el-collapse-item>
+          </el-collapse>
+        </section>
 
-      <!-- 常见问题 -->
-      <div class="card">
-        <h2>常见问题</h2>
-        <el-collapse class="faq">
-          <el-collapse-item v-for="(q, i) in FAQ" :key="i" :title="q.q">
-            <p class="faq-a">{{ q.a }}</p>
-          </el-collapse-item>
-        </el-collapse>
-      </div>
-
-      <!-- 关于平台 -->
-      <div class="card">
-        <h2>关于 CodeOJ</h2>
-        <p class="about-p">
-          CodeOJ 是一个基于 Spring Boot 3 + Vue 3 + Docker 的在线代码评测与编程练习平台，
-          由判题服务消费消息队列、调度 Docker 沙箱完成真实编译与运行，业务侧提供题库、竞赛、
-          统计与错题本等学习闭环。项目同时是一份毕业设计，设计文档见仓库 README。
-        </p>
-        <ul class="stack-list">
-          <li v-for="t in STACK" :key="t.name" class="stack-row">
-            <span class="stack-name">{{ t.name }}</span>
-            <span class="stack-desc">{{ t.desc }}</span>
-          </li>
-        </ul>
-      </div>
+        <section id="about" class="chapter">
+          <div class="chapter-head">
+            <span class="chapter-no">04</span>
+            <h2>关于 CodeOJ</h2>
+            <span class="chapter-line" aria-hidden="true"></span>
+          </div>
+          <p class="about-p">
+            CodeOJ 是一个基于 Spring Boot 3 + Vue 3 + Docker 的在线代码评测与编程练习平台：
+            判题服务消费消息队列、调度 Docker 沙箱完成真实编译与运行，业务侧提供题库、竞赛、
+            统计与错题本等学习闭环。项目同时是一份毕业设计，设计文档见仓库 README。
+          </p>
+          <dl class="stack">
+            <div v-for="t in STACK" :key="t.name" class="stack-row">
+              <dt>{{ t.name }}</dt>
+              <dd>{{ t.desc }}</dd>
+            </div>
+          </dl>
+          <p class="colophon-end">
+            CodeOJ · 在线判题系统 · 用代码验证想法
+          </p>
+        </section>
+      </main>
     </div>
   </div>
 </template>
@@ -105,21 +139,120 @@ const STACK = [
 </script>
 
 <style scoped>
-.about-grid {
+.colophon {
+  max-width: 1160px;
+  margin: 0 auto;
+  padding: 44px 32px 64px;
+}
+
+.colophon-body {
   display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 16px;
+  grid-template-columns: 200px minmax(0, 1fr);
+  gap: 22px;
   align-items: start;
+  margin-top: 22px;
 }
-@media (max-width: 860px) {
-  .about-grid {
-    grid-template-columns: 1fr;
-  }
+
+/* 文档导航 */
+.toc {
+  position: sticky;
+  top: 92px;
+  padding: 14px 12px 12px;
+  background: var(--oj-card);
+  border: 1px solid var(--oj-border);
+  border-radius: 10px;
+  box-shadow: var(--oj-shadow-sm);
 }
-.card-sub {
-  margin: 0 0 10px;
-  font-size: 12.5px;
+.toc-title {
+  margin: 0 0 8px;
+  padding: 0 6px;
+  font-family: var(--oj-font-mono);
+  font-size: 8px;
+  letter-spacing: 0.1em;
+  color: var(--oj-text-weak);
+}
+.toc-link {
+  display: flex;
+  gap: 8px;
+  padding: 7px 6px;
+  border-radius: 5px;
+  font-size: 12px;
   color: var(--oj-text-sub);
+  transition: all var(--oj-duration) var(--oj-ease);
+}
+.toc-link span {
+  font-family: var(--oj-font-mono);
+  font-size: 8.5px;
+  color: var(--oj-gray-400);
+  padding-top: 2px;
+}
+.toc-link:hover {
+  background: var(--oj-primary-soft);
+  color: var(--oj-primary);
+}
+.toc-note {
+  margin: 14px 0 0;
+  padding: 11px 6px 0;
+  border-top: 1px solid var(--oj-border);
+  font-family: var(--oj-font-mono);
+  font-size: 8.5px;
+  line-height: 1.8;
+  color: var(--oj-text-weak);
+}
+
+.chapters {
+  min-width: 0;
+}
+.chapter {
+  padding: 18px 20px 20px;
+  margin-bottom: 12px;
+  background: var(--oj-card);
+  border: 1px solid var(--oj-border);
+  border-radius: 10px;
+  box-shadow: var(--oj-shadow-sm);
+}
+.chapter:last-child {
+  margin-bottom: 0;
+}
+.chapter-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding-bottom: 10px;
+  margin-bottom: 12px;
+  border-bottom: 1px solid var(--oj-border);
+}
+.chapter-no {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 22px;
+  height: 18px;
+  padding: 0 5px;
+  border-radius: 4px;
+  background: var(--oj-primary-soft);
+  font-family: var(--oj-font-mono);
+  font-size: 8.5px;
+  font-weight: 600;
+  color: var(--oj-primary);
+}
+.chapter-head h2 {
+  margin: 0;
+  font-size: 17px;
+  font-weight: 750;
+  letter-spacing: -0.03em;
+  white-space: nowrap;
+}
+.chapter-line {
+  display: none;
+}
+.chapter-meta {
+  margin-left: auto;
+  font-family: var(--oj-font-mono);
+  font-size: 8.5px;
+  letter-spacing: 0.04em;
+  color: var(--oj-text-weak);
+  white-space: nowrap;
 }
 
 /* 步骤 */
@@ -129,122 +262,200 @@ const STACK = [
   padding: 0;
 }
 .step {
-  display: flex;
-  gap: 14px;
-  padding: 10px 0;
+  display: grid;
+  grid-template-columns: 28px minmax(0, 1fr);
+  gap: 12px;
+  padding: 11px 0;
+  border-top: 1px solid var(--oj-border);
 }
-.step + .step {
-  border-top: 1px solid var(--oj-gray-100);
+.step:first-child {
+  border-top: 0;
+  padding-top: 2px;
+}
+.step:last-child {
+  padding-bottom: 2px;
 }
 .step-no {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 26px;
-  height: 26px;
-  border-radius: 4px;
-  background: var(--oj-primary);
-  color: var(--oj-white);
-  font-size: 13px;
+  width: 24px;
+  height: 24px;
+  border-radius: 5px;
+  background: var(--oj-gray-100);
+  font-family: var(--oj-font-mono);
+  font-size: 9.5px;
   font-weight: 600;
-  flex-shrink: 0;
+  color: var(--oj-text-sub);
 }
 .step-title {
   margin: 0;
-  font-size: 14px;
-  font-weight: 600;
+  font-size: 13px;
+  font-weight: 650;
   color: var(--oj-text);
 }
 .step-desc {
-  margin: 4px 0 0;
-  font-size: 12.5px;
-  line-height: 1.7;
+  margin: 3px 0 0;
+  font-size: 11.5px;
+  line-height: 1.8;
   color: var(--oj-text-sub);
 }
 
 /* 状态表 */
-.status-list {
-  list-style: none;
-  margin: 0;
-  padding: 0;
+.status-table {
+  border: 1px solid var(--oj-border);
+  border-radius: 7px;
+  overflow: hidden;
+}
+.status-head {
+  display: grid;
+  grid-template-columns: 52px 118px minmax(0, 1fr);
+  gap: 14px;
+  padding: 7px 10px;
+  border-bottom: 1px solid var(--oj-border);
+  background: var(--oj-gray-50);
+  font-family: var(--oj-font-mono);
+  font-size: 8px;
+  letter-spacing: 0.08em;
+  color: var(--oj-text-weak);
 }
 .status-row {
-  display: flex;
+  display: grid;
+  grid-template-columns: 52px 118px minmax(0, 1fr);
+  gap: 14px;
   align-items: center;
-  gap: 10px;
-  padding: 7px 0;
+  padding: 7px 10px;
+  border-bottom: 1px solid var(--oj-border);
 }
-.status-row + .status-row {
-  border-top: 1px solid var(--oj-gray-100);
+.status-row:last-child {
+  border-bottom: 0;
 }
 .status-code {
-  font-size: 11.5px;
+  font-size: 10px;
   color: var(--oj-text-weak);
-  width: 16px;
-  text-align: right;
-  flex-shrink: 0;
+}
+.status-name {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--oj-text);
 }
 .status-dot {
-  width: 8px;
-  height: 8px;
+  width: 5px;
+  height: 5px;
   border-radius: 50%;
   flex-shrink: 0;
 }
-.status-name {
-  font-size: 13px;
-  font-weight: 600;
-  color: var(--oj-text);
-  width: 64px;
-  flex-shrink: 0;
-}
 .status-desc {
-  font-size: 12.5px;
+  font-size: 11px;
+  line-height: 1.7;
   color: var(--oj-text-sub);
-  min-width: 0;
 }
 
 /* FAQ */
 .faq :deep(.el-collapse-item__header) {
+  font-family: var(--oj-font-sans);
+  font-size: 13px;
   font-weight: 600;
   color: var(--oj-text);
+  height: 44px;
+}
+.faq :deep(.el-collapse-item__header.is-active) {
+  color: var(--oj-primary);
+}
+.faq :deep(.el-collapse-item__wrap) {
+  border-bottom-color: var(--oj-border);
 }
 .faq-a {
   margin: 0;
-  font-size: 13px;
-  line-height: 1.8;
+  padding-bottom: 4px;
+  font-size: 11.5px;
+  line-height: 1.85;
   color: var(--oj-text-sub);
 }
 
 /* 关于 */
 .about-p {
   margin: 0 0 14px;
-  font-size: 13.5px;
+  font-size: 12px;
   line-height: 1.9;
   color: var(--oj-text-sub);
 }
-.stack-list {
-  list-style: none;
+.stack {
   margin: 0;
   padding: 0;
+  border-top: 1px solid var(--oj-border);
 }
 .stack-row {
-  display: flex;
+  display: grid;
+  grid-template-columns: 88px minmax(0, 1fr);
   gap: 14px;
   padding: 7px 0;
+  border-bottom: 1px solid var(--oj-border);
 }
-.stack-row + .stack-row {
-  border-top: 1px solid var(--oj-gray-100);
-}
-.stack-name {
-  font-size: 13px;
+.stack-row dt {
+  font-size: 11px;
   font-weight: 600;
   color: var(--oj-text);
-  width: 76px;
-  flex-shrink: 0;
 }
-.stack-desc {
-  font-size: 12.5px;
+.stack-row dd {
+  margin: 0;
+  font-size: 11px;
   line-height: 1.7;
   color: var(--oj-text-sub);
+}
+.colophon-end {
+  margin: 18px 0 0;
+  padding-top: 12px;
+  text-align: center;
+  border-top: 1px solid var(--oj-border);
+  font-family: var(--oj-font-mono);
+  font-size: 8.5px;
+  letter-spacing: 0.06em;
+  color: var(--oj-text-weak);
+}
+
+@media (max-width: 800px) {
+  .colophon {
+    padding: 30px 18px 52px;
+  }
+  .colophon-body {
+    grid-template-columns: 1fr;
+    gap: 14px;
+    margin-top: 18px;
+  }
+  .toc {
+    position: static;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 2px 6px;
+    padding: 10px;
+  }
+  .toc-title {
+    width: 100%;
+    margin-bottom: 2px;
+  }
+  .toc-link {
+    padding: 5px 7px;
+  }
+  .toc-note {
+    display: none;
+  }
+  .chapter-head h2 {
+    font-size: 16px;
+    white-space: normal;
+  }
+  .chapter-meta {
+    display: none;
+  }
+  .status-head,
+  .status-row {
+    grid-template-columns: 36px 100px minmax(0, 1fr);
+    gap: 9px;
+    padding-left: 8px;
+    padding-right: 8px;
+  }
 }
 </style>
