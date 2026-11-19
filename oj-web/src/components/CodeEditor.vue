@@ -92,8 +92,9 @@ onUnmounted(() => {
 
 <style scoped>
 .code-editor {
-  height: 420px;
-  border-radius: var(--oj-radius-sm);
+  height: 440px;
+  border-radius: 8px;
   overflow: hidden;
+  background: var(--oj-code-bg);
 }
 </style>

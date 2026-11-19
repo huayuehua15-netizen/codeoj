@@ -32,6 +32,10 @@ Thumbs.db
 .tmp-build/
 review/
 
+# 设计迭代中间截图（保留 A/B/C 方向样张与最终 v7 验收图）
+oj-web/design/preview/v6-*
+oj-web/design/preview/*.txt
+
 # 头像等运行时上传文件（compose 持久卷挂载点；本地默认落在仓库根的 uploads/）
 uploads/
 

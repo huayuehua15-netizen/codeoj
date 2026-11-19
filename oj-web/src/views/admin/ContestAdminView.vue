@@ -1,34 +1,44 @@
 <template>
-  <div class="page-container">
-    <div class="card">
-      <div class="page-head">
-        <div>
-          <h2>竞赛管理</h2>
-          <p class="sub">创建、编辑、删除竞赛，维护起止时间与题目集</p>
-        </div>
-        <el-button type="primary" @click="openCreate">创建竞赛</el-button>
-      </div>
+  <AdminShell
+    title="竞赛管理"
+    section="CONTESTS · 赛程维护"
+    description="创建、编辑、删除竞赛，维护起止时间与题目集。"
+  >
+    <template #actions>
+      <el-button type="primary" @click="openCreate">创建竞赛</el-button>
+    </template>
+
+    <div class="admin-table-shell">
       <el-table :data="contests" v-loading="loading" empty-text="还没有竞赛，点右上角「创建竞赛」开始">
-        <el-table-column prop="id" label="#" width="60" />
+        <el-table-column prop="id" label="ID" width="56">
+          <template #default="{ row }">
+            <span class="mono id-cell">{{ String(row.id).padStart(3, '0') }}</span>
+          </template>
+        </el-table-column>
         <el-table-column prop="title" label="比赛名称" min-width="200" />
         <el-table-column label="时间" min-width="280">
           <template #default="{ row }">
-            {{ formatDateTime(row.startTime) }} ~ {{ formatDateTime(row.endTime) }}
+            <span class="mono time-cell">{{ formatDateTime(row.startTime) }} — {{ formatDateTime(row.endTime) }}</span>
           </template>
         </el-table-column>
-        <el-table-column label="状态" width="90">
+        <el-table-column label="状态" width="86">
           <template #default="{ row }">
             <el-tag :type="statusInfo(row.status).type" size="small">{{ statusInfo(row.status).label }}</el-tag>
           </template>
         </el-table-column>
-        <el-table-column prop="problemCount" label="题数" width="70" />
-        <el-table-column label="操作" width="140">
+        <el-table-column prop="problemCount" label="题数" width="64" align="right">
+          <template #default="{ row }">
+            <span class="mono tabular">{{ row.problemCount }}</span>
+          </template>
+        </el-table-column>
+        <el-table-column label="操作" width="130">
           <template #default="{ row }">
             <el-button link type="primary" @click="openEdit(row)">编辑</el-button>
             <el-button link type="danger" @click="remove(row)">删除</el-button>
           </template>
         </el-table-column>
       </el-table>
+    </div>
 
       <el-dialog v-model="dialogVisible" :title="editingId ? '编辑竞赛' : '创建竞赛'" width="620px">
         <el-form :model="form" label-width="90px">
@@ -50,8 +60,7 @@
           <el-button type="primary" :loading="saving" @click="save">保存</el-button>
         </template>
       </el-dialog>
-    </div>
-  </div>
+  </AdminShell>
 </template>
 
 <script setup lang="ts">
@@ -64,6 +73,7 @@ import {
 } from '@/api/contest'
 import { pageProblems, type Problem } from '@/api/problem'
 import { formatDateTime, serverTimeToPicker, toBodyDateTime } from '@/utils/datetime'
+import AdminShell from '@/components/AdminShell.vue'
 
 const contests = ref<ContestVO[]>([])
 const allProblems = ref<Problem[]>([])
@@ -162,19 +172,12 @@ onMounted(() => {
 </script>
 
 <style scoped>
-.page-head {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 16px;
-  margin-bottom: 16px;
+.id-cell {
+  font-size: 11px;
+  color: var(--oj-text-weak);
 }
-.page-head h2 {
-  margin: 0;
-}
-.sub {
-  color: var(--oj-gray-400);
-  font-size: 12.5px;
-  margin: 4px 0 0;
+.time-cell {
+  font-size: 10px;
+  color: var(--oj-text-sub);
 }
 </style>

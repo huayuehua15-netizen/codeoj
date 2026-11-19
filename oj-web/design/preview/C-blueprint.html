@@ -1,0 +1,300 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>CodeOJ — Blueprint</title>
+<style>
+  :root{
+    --bg:#eaf2f8;
+    --panel:#fbfdff;
+    --panel-2:#f4f9fd;
+    --ink:#0b2a45;
+    --ink-2:#24445f;
+    --sub:#52708a;
+    --weak:#7e97ad;
+    --line:#c4d6e4;
+    --line-strong:#9ebbd0;
+    --blue:#145c9e;
+    --blue-deep:#0d467c;
+    --blue-soft:#e4f0fa;
+    --orange:#ff5a1f;
+    --orange-soft:#fff0e9;
+    --green:#0b7a53;
+    --green-soft:#e7f5ee;
+    --red:#c93b32;
+    --amber:#a86a00;
+    --mono:"Cascadia Mono","Consolas","SFMono-Regular",monospace;
+    --sans:"Segoe UI","Microsoft YaHei",system-ui,sans-serif;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0}
+  body{
+    color:var(--ink);
+    font-family:var(--sans);
+    font-size:14px;
+    -webkit-font-smoothing:antialiased;
+    background-color:var(--bg);
+    background-image:
+      linear-gradient(rgba(20,92,158,.055) 1px,transparent 1px),
+      linear-gradient(90deg,rgba(20,92,158,.055) 1px,transparent 1px);
+    background-size:28px 28px;
+  }
+  a{color:inherit;text-decoration:none}
+  .wrap{max-width:1240px;margin:0 auto;padding:0 32px}
+  .mono{font-family:var(--mono);font-variant-numeric:tabular-nums}
+
+  .topbar{height:64px;background:rgba(235,244,250,.9);border-bottom:1px solid var(--line-strong);position:sticky;top:0;z-index:10;backdrop-filter:blur(10px)}
+  .topbar .wrap{height:100%;display:flex;align-items:center;gap:32px}
+  .brand{display:flex;align-items:center;gap:11px;flex-shrink:0}
+  .mark{
+    width:30px;height:30px;border:1px solid var(--ink);position:relative;
+    display:flex;align-items:center;justify-content:center;
+    font-family:var(--mono);font-size:11px;font-weight:700;color:var(--ink);
+  }
+  .mark::before,.mark::after{content:"";position:absolute;width:5px;height:1px;background:var(--orange)}
+  .mark::before{left:-4px;top:50%}
+  .mark::after{right:-4px;top:50%}
+  .wordmark{font-size:16px;font-weight:800;letter-spacing:.12em}
+  .wordmark span{font-weight:500;color:var(--blue)}
+  .brand-sub{font-family:var(--mono);font-size:8px;letter-spacing:.14em;color:var(--weak);line-height:1.6;border-left:1px solid var(--line-strong);padding-left:11px}
+  .nav{display:flex;align-items:center;gap:2px;flex:1}
+  .nav a{padding:8px 11px;font-size:12.5px;color:var(--sub);white-space:nowrap;border-bottom:1px solid transparent}
+  .nav a:hover{color:var(--ink)}
+  .nav a.active{color:var(--blue);font-weight:700;border-bottom-color:var(--orange)}
+  .nav .sep{width:1px;height:13px;background:var(--line);margin:0 7px}
+  .top-actions{display:flex;align-items:center;gap:14px;flex-shrink:0}
+  .login{font-size:12.5px;color:var(--sub)}
+  .login:hover{color:var(--ink)}
+  .btn-top{border:1px solid var(--ink);background:var(--ink);color:#fff;font-size:12px;font-weight:700;padding:7px 14px;letter-spacing:.04em}
+  .btn-top:hover{background:var(--blue-deep);border-color:var(--blue-deep)}
+
+  .hero{display:grid;grid-template-columns:minmax(0,1.02fr) minmax(0,.98fr);gap:64px;align-items:center;padding:62px 0 44px}
+  .kicker{display:flex;align-items:center;gap:9px;font-family:var(--mono);font-size:9px;letter-spacing:.14em;color:var(--sub)}
+  .kicker .box{border:1px solid var(--line-strong);background:var(--panel);padding:2px 6px;color:var(--blue);font-size:8px}
+  h1{margin:20px 0 0;font-size:58px;line-height:1.13;letter-spacing:-.05em;font-weight:780;color:var(--ink)}
+  h1 .line2{display:inline-block;position:relative}
+  h1 .line2::after{
+    content:"";position:absolute;left:0;right:-2px;bottom:2px;height:4px;background:var(--orange);
+  }
+  h1 .line2 span{position:relative;z-index:1}
+  .lede{margin:22px 0 0;max-width:30em;font-size:14.5px;line-height:1.85;color:var(--sub)}
+  .lede b{color:var(--ink-2);font-weight:600}
+  .cta{display:flex;align-items:center;gap:10px;margin-top:29px}
+  .btn-primary{display:inline-flex;align-items:center;gap:9px;background:var(--orange);color:#fff;border:1px solid var(--orange);font-size:12.5px;font-weight:700;padding:11px 18px;letter-spacing:.02em}
+  .btn-primary svg{width:14px;height:14px}
+  .btn-secondary{display:inline-flex;align-items:center;border:1px solid var(--ink);color:var(--ink);font-size:12.5px;font-weight:600;padding:11px 18px;background:rgba(251,253,255,.5)}
+  .btn-secondary:hover{background:var(--panel)}
+  .spec-line{display:flex;align-items:center;gap:9px;margin-top:18px;font-family:var(--mono);font-size:8.5px;letter-spacing:.09em;color:var(--weak)}
+  .spec-line .tick{width:14px;height:1px;background:var(--orange)}
+  .spec-line span:not(:last-child)::after{content:"/";margin-left:9px;color:var(--line-strong)}
+
+  .pipeline{background:var(--panel);border:1px solid var(--line-strong);box-shadow:8px 8px 0 rgba(20,92,158,.06);position:relative}
+  .pipe-head{height:40px;padding:0 15px;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;font-family:var(--mono);font-size:9px;letter-spacing:.1em;color:var(--sub)}
+  .pipe-head .run{color:var(--blue);border:1px solid var(--line);background:var(--panel-2);padding:2px 6px;font-size:8px}
+  .pipe-body{padding:14px 16px 10px;position:relative}
+  .pipe-rail{position:absolute;left:35px;top:27px;bottom:88px;width:1px;background:var(--line)}
+  .pipe-step{position:relative;display:grid;grid-template-columns:22px minmax(0,1fr) auto;gap:12px;align-items:center;min-height:38px}
+  .pipe-no{
+    position:relative;z-index:1;width:22px;height:22px;border-radius:50%;
+    border:1px solid var(--line-strong);background:var(--panel);color:var(--weak);
+    display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:8px;
+  }
+  .pipe-step.done .pipe-no{border-color:var(--green);color:var(--green);background:var(--green-soft)}
+  .pipe-step.active .pipe-no{border-color:var(--orange);color:var(--orange);background:var(--orange-soft);box-shadow:0 0 0 3px rgba(255,90,31,.08)}
+  .pipe-main{display:flex;align-items:baseline;gap:8px;min-width:0}
+  .pipe-main b{font-family:var(--mono);font-size:10px;letter-spacing:.08em;color:var(--ink-2)}
+  .pipe-main small{font-family:var(--mono);font-size:8.5px;color:var(--weak);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .pipe-time{font-family:var(--mono);font-size:8.5px;color:var(--weak);text-align:right}
+  .pipe-step.done .pipe-time{color:var(--green)}
+  .pipe-step.active .pipe-time{color:var(--orange)}
+  .pipe-verdict{
+    margin-top:6px;border:1px solid var(--line);background:var(--panel-2);
+    padding:12px 14px;display:grid;grid-template-columns:1fr auto;align-items:center;gap:10px;
+    border-left:3px solid var(--green);
+  }
+  .v-label{font-family:var(--mono);font-size:8px;letter-spacing:.12em;color:var(--weak)}
+  .v-word{display:block;font-family:var(--mono);font-size:20px;font-weight:700;letter-spacing:-.02em;color:var(--green);line-height:1.2;margin-top:2px}
+  .v-meta{font-family:var(--mono);font-size:8.5px;color:var(--sub);text-align:right;line-height:1.7}
+  .pipe-foot{height:32px;padding:0 15px;border-top:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;font-family:var(--mono);font-size:8px;letter-spacing:.06em;color:var(--weak)}
+  .pipe-foot a{color:var(--blue)}
+
+  .readouts{display:grid;grid-template-columns:repeat(4,1fr);border:1px solid var(--line-strong);background:var(--panel)}
+  .readout{padding:17px 20px 16px;border-right:1px solid var(--line);position:relative}
+  .readout:last-child{border-right:0}
+  .readout::before,.readout::after{content:"";position:absolute;background:var(--line-strong)}
+  .readout::before{width:1px;height:7px;left:6px;top:6px}
+  .readout::after{width:7px;height:1px;left:6px;top:6px}
+  .readout-label{font-family:var(--mono);font-size:8px;letter-spacing:.13em;color:var(--weak)}
+  .readout-value{margin-top:8px;font-family:var(--mono);font-size:27px;line-height:1;font-weight:600;letter-spacing:-.04em;color:var(--ink)}
+  .readout-value small{font-size:10px;color:var(--sub);font-weight:500;margin-left:3px;letter-spacing:0}
+  .readout-note{margin-top:6px;font-family:var(--mono);font-size:8px;color:var(--weak)}
+  .readout:first-child .readout-value{color:var(--blue)}
+
+  .section-head{display:flex;align-items:flex-end;justify-content:space-between;gap:16px;margin:38px 0 14px}
+  .section-title{margin:0;font-size:21px;font-weight:800;letter-spacing:-.03em}
+  .section-title span{color:var(--orange)}
+  .section-sub{margin:6px 0 0;font-size:10.5px;color:var(--sub)}
+  .section-link{font-family:var(--mono);font-size:9px;letter-spacing:.06em;color:var(--blue);font-weight:700}
+
+  .lower{display:grid;grid-template-columns:minmax(0,1.42fr) minmax(0,1fr);gap:22px}
+  .panel{background:var(--panel);border:1px solid var(--line-strong)}
+  .panel-head{height:40px;padding:0 16px;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between}
+  .panel-title{font-size:11px;font-weight:700;letter-spacing:.04em}
+  .panel-meta{font-family:var(--mono);font-size:8px;color:var(--weak);letter-spacing:.1em}
+  .prob-head,.prob-row{display:grid;grid-template-columns:48px minmax(0,1fr) 82px 110px 24px;gap:12px;align-items:center;padding:0 16px}
+  .prob-head{height:30px;background:var(--panel-2);border-bottom:1px solid var(--line);font-family:var(--mono);font-size:8px;letter-spacing:.1em;color:var(--weak)}
+  .prob-row{min-height:54px;border-bottom:1px solid var(--line)}
+  .prob-row:last-child{border-bottom:0}
+  .prob-row:hover{background:var(--panel-2)}
+  .prob-id{font-family:var(--mono);font-size:10px;color:var(--blue)}
+  .prob-title{font-size:12.5px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .prob-tags{display:flex;gap:5px;margin-top:4px}
+  .tag{font-family:var(--mono);font-size:7.5px;color:var(--sub);border:1px solid var(--line);padding:1px 4px;background:#fff}
+  .diff{font-family:var(--mono);font-size:8.5px;font-weight:700;letter-spacing:.03em}
+  .diff.easy{color:var(--green)} .diff.mid{color:var(--amber)} .diff.hard{color:var(--red)}
+  .acc{display:flex;align-items:center;gap:7px}
+  .acc-bar{width:40px;height:3px;background:#dfeaf2;overflow:hidden}
+  .acc-bar i{display:block;height:100%;background:var(--blue)}
+  .acc-num{font-family:var(--mono);font-size:8.5px;color:var(--sub);width:30px;text-align:right}
+  .go{text-align:right;font-family:var(--mono);font-size:10px;color:var(--weak)}
+  .prob-row:hover .go{color:var(--orange)}
+
+  .rank-list{padding:0}
+  .rank-row{display:grid;grid-template-columns:34px minmax(0,1fr) 50px;gap:10px;align-items:center;padding:10px 16px;border-bottom:1px solid var(--line)}
+  .rank-row:last-child{border-bottom:0}
+  .rank-no{font-family:var(--mono);font-size:14px;color:var(--weak);font-weight:600}
+  .rank-row:first-child .rank-no{color:var(--orange);font-size:18px}
+  .rank-main{min-width:0}
+  .rank-name{font-size:11.5px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .rank-bar{height:2px;background:#e0ebf3;margin-top:5px}
+  .rank-bar i{display:block;height:100%;background:var(--blue)}
+  .rank-row:first-child .rank-bar i{background:var(--orange)}
+  .rank-ac{text-align:right;font-family:var(--mono);font-size:10px;color:var(--ink-2)}
+  .rank-ac small{font-size:7.5px;color:var(--weak);margin-left:2px}
+
+  .features{margin-top:22px;display:grid;grid-template-columns:repeat(4,1fr);border:1px solid var(--line-strong);background:var(--panel)}
+  .feature{padding:15px 17px 16px;border-right:1px solid var(--line);display:grid;grid-template-columns:26px 1fr;gap:10px}
+  .feature:last-child{border-right:0}
+  .feature-no{font-family:var(--mono);font-size:9px;color:var(--orange);font-weight:700;padding-top:1px}
+  .feature h3{margin:0;font-size:11.5px;font-weight:700}
+  .feature p{margin:4px 0 0;font-size:9.5px;line-height:1.65;color:var(--sub)}
+
+  footer{margin-top:48px;border-top:1px solid var(--line-strong);background:rgba(251,253,255,.6)}
+  .footer-inner{max-width:1240px;margin:0 auto;padding:20px 32px 24px;display:flex;align-items:center;gap:18px;flex-wrap:wrap}
+  .footer-brand{display:flex;align-items:center;gap:9px}
+  .footer-brand .mark{width:22px;height:22px;font-size:9px}
+  .footer-brand span{font-size:10px;font-weight:800;letter-spacing:.1em}
+  .footer-meta{font-family:var(--mono);font-size:8px;color:var(--weak);letter-spacing:.07em}
+  .footer-links{display:flex;gap:16px;margin-left:auto;font-size:10px;color:var(--sub)}
+  .footer-links a:hover{color:var(--orange)}
+</style>
+</head>
+<body>
+  <header class="topbar">
+    <div class="wrap">
+      <a class="brand" href="#">
+        <span class="mark">&lt;/&gt;</span>
+        <span class="wordmark">CODE<span>OJ</span></span>
+        <span class="brand-sub">JUDGE SYSTEM<br/>SPEC / 01</span>
+      </a>
+      <nav class="nav">
+        <a class="active" href="#">首页</a>
+        <a href="#">题库</a>
+        <a href="#">提交记录</a>
+        <a href="#">错题本</a>
+        <a href="#">统计</a>
+        <a href="#">竞赛</a>
+        <a href="#">排行</a>
+        <span class="sep"></span>
+        <a href="#">公告</a>
+      </nav>
+      <div class="top-actions">
+        <a class="login" href="#">登录</a>
+        <a class="btn-top" href="#">注册</a>
+      </div>
+    </div>
+  </header>
+
+  <main class="wrap">
+    <section class="hero">
+      <div>
+        <div class="kicker"><span class="box">01</span> JUDGE PIPELINE <span class="tick"></span> READOUT</div>
+        <h1>让判题，<br/><span class="line2"><span>看得见。</span></span></h1>
+        <p class="lede">五语言沙箱、逐用例判定、耗时与内存读数。<b>一次提交的每一步，都有记录。</b></p>
+        <div class="cta">
+          <a class="btn-primary" href="#">开始提交 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
+          <a class="btn-secondary" href="#">查看题库</a>
+        </div>
+        <div class="spec-line"><span>FIVE LANGUAGES</span><span>TEST-CASE GRANULARITY</span><span>REALTIME</span></div>
+      </div>
+
+      <div class="pipeline" aria-label="判题管线示例">
+        <div class="pipe-head"><span>JUDGE PIPELINE</span><span class="run">RUN #4821</span></div>
+        <div class="pipe-body">
+          <div class="pipe-rail"></div>
+          <div class="pipe-step done"><span class="pipe-no">01</span><span class="pipe-main"><b>SUBMIT</b><small>source received</small></span><span class="pipe-time">T+0.000s</span></div>
+          <div class="pipe-step done"><span class="pipe-no">02</span><span class="pipe-main"><b>QUEUE</b><small>position 3 → 1</small></span><span class="pipe-time">T+0.021s</span></div>
+          <div class="pipe-step done"><span class="pipe-no">03</span><span class="pipe-main"><b>COMPILE</b><small>g++ -O2 -std=c++17</small></span><span class="pipe-time">T+0.441s</span></div>
+          <div class="pipe-step active"><span class="pipe-no">04</span><span class="pipe-main"><b>TEST</b><small>5 cases · 0 failures</small></span><span class="pipe-time">T+0.486s</span></div>
+          <div class="pipe-step done"><span class="pipe-no">05</span><span class="pipe-main"><b>VERDICT</b><small>all cases passed</small></span><span class="pipe-time">T+0.487s</span></div>
+          <div class="pipe-verdict">
+            <div><span class="v-label">VERDICT</span><span class="v-word">ACCEPTED</span></div>
+            <div class="v-meta">5 / 5 CASES<br/>45ms · 6.7MB</div>
+          </div>
+        </div>
+        <div class="pipe-foot"><span>submission #4821 · C++17 · 2026-11-19 20:14:02</span><a href="#">DETAIL →</a></div>
+      </div>
+    </section>
+
+    <section class="readouts" aria-label="平台读数">
+      <div class="readout"><div class="readout-label">PROBLEMS</div><div class="readout-value">128<small>题</small></div><div class="readout-note">+6 THIS WEEK</div></div>
+      <div class="readout"><div class="readout-label">SOLVERS</div><div class="readout-value">486<small>人</small></div><div class="readout-note">132 ACTIVE</div></div>
+      <div class="readout"><div class="readout-label">SUBMISSIONS</div><div class="readout-value">12,840<small>次</small></div><div class="readout-note">318 / 24H</div></div>
+      <div class="readout"><div class="readout-label">AC RATE</div><div class="readout-value">68.4<small>%</small></div><div class="readout-note">ALL SUBMISSIONS</div></div>
+    </section>
+
+    <div class="section-head">
+      <div><h2 class="section-title">题目索引<span>.</span></h2><p class="section-sub">按难度和标签筛选，直接进入题面与代码台。</p></div>
+      <a class="section-link" href="#">ALL PROBLEMS →</a>
+    </div>
+
+    <section class="lower">
+      <div class="panel">
+        <div class="panel-head"><span class="panel-title">PROBLEM SET</span><span class="panel-meta">SORTED BY ID / 128 ITEMS</span></div>
+        <div class="prob-head"><span>ID</span><span>TITLE</span><span>LEVEL</span><span>AC RATE</span><span></span></div>
+        <div class="prob-row"><span class="prob-id">#1001</span><span><span class="prob-title">A + B Problem</span><span class="prob-tags"><span class="tag">INTRO</span><span class="tag">SIMULATION</span></span></span><span class="diff easy">EASY</span><span class="acc"><span class="acc-bar"><i style="width:82%"></i></span><span class="acc-num">82.4%</span></span><span class="go">→</span></div>
+        <div class="prob-row"><span class="prob-id">#1002</span><span><span class="prob-title">最长递增子序列</span><span class="prob-tags"><span class="tag">DP</span><span class="tag">BINARY</span></span></span><span class="diff mid">MEDIUM</span><span class="acc"><span class="acc-bar"><i style="width:56%"></i></span><span class="acc-num">56.1%</span></span><span class="go">→</span></div>
+        <div class="prob-row"><span class="prob-id">#1003</span><span><span class="prob-title">区间第 K 小</span><span class="prob-tags"><span class="tag">PERSISTENT</span><span class="tag">TREE</span></span></span><span class="diff hard">HARD</span><span class="acc"><span class="acc-bar"><i style="width:28%"></i></span><span class="acc-num">27.8%</span></span><span class="go">→</span></div>
+        <div class="prob-row"><span class="prob-id">#1004</span><span><span class="prob-title">最短路径计数</span><span class="prob-tags"><span class="tag">GRAPH</span><span class="tag">DIJKSTRA</span></span></span><span class="diff mid">MEDIUM</span><span class="acc"><span class="acc-bar"><i style="width:44%"></i></span><span class="acc-num">43.6%</span></span><span class="go">→</span></div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-head"><span class="panel-title">RANKING</span><span class="panel-meta">WEEK 46</span></div>
+        <div class="rank-list">
+          <div class="rank-row"><span class="rank-no">01</span><span class="rank-main"><span class="rank-name">lightwave</span><span class="rank-bar"><i style="width:98%"></i></span></span><span class="rank-ac">128<small>AC</small></span></div>
+          <div class="rank-row"><span class="rank-no">02</span><span class="rank-main"><span class="rank-name">kite</span><span class="rank-bar"><i style="width:91%"></i></span></span><span class="rank-ac">121<small>AC</small></span></div>
+          <div class="rank-row"><span class="rank-no">03</span><span class="rank-main"><span class="rank-name">mori</span><span class="rank-bar"><i style="width:87%"></i></span></span><span class="rank-ac">119<small>AC</small></span></div>
+          <div class="rank-row"><span class="rank-no">04</span><span class="rank-main"><span class="rank-name">zero</span><span class="rank-bar"><i style="width:76%"></i></span></span><span class="rank-ac">104<small>AC</small></span></div>
+          <div class="rank-row"><span class="rank-no">05</span><span class="rank-main"><span class="rank-name">nano</span><span class="rank-bar"><i style="width:72%"></i></span></span><span class="rank-ac">98<small>AC</small></span></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="features">
+      <div class="feature"><span class="feature-no">01</span><div><h3>五语言沙箱</h3><p>C / C++ / Java / Python / JS 独立编译。</p></div></div>
+      <div class="feature"><span class="feature-no">02</span><div><h3>用例级读数</h3><p>状态、耗时、内存逐条记录。</p></div></div>
+      <div class="feature"><span class="feature-no">03</span><div><h3>实时状态机</h3><p>排队到判定，状态自动推进。</p></div></div>
+      <div class="feature"><span class="feature-no">04</span><div><h3>竞赛与复盘</h3><p>ACM 排名、错题本、刷题热力图。</p></div></div>
+    </section>
+  </main>
+
+  <footer>
+    <div class="footer-inner">
+      <div class="footer-brand"><span class="mark">&lt;/&gt;</span><span>CODE OJ</span></div>
+      <span class="footer-meta">SPRING BOOT 3 · VUE 3 · DOCKER</span>
+      <div class="footer-links"><a href="#">使用说明</a><a href="#">公告</a><a href="#">排行榜</a><a href="#">GitHub</a></div>
+    </div>
+  </footer>
+</body>
+</html>

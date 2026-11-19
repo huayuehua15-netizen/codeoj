@@ -1,88 +1,122 @@
 <template>
   <!-- 加载为空态：竞赛不存在/路由 id 非法时不留白屏 -->
   <div v-if="!contest" class="page-container">
-    <div class="card">
+    <div class="card empty-sheet">
       <el-empty :description="loadError ? '竞赛不存在或尚未开放' : '加载中…'">
         <el-button v-if="loadError" type="primary" @click="$router.push('/contests')">返回竞赛列表</el-button>
       </el-empty>
     </div>
   </div>
 
-  <div v-else class="page-container">
-    <header class="head-card">
-      <div class="head-row">
-        <div class="head-main">
-          <span class="head-badge" :class="`badge-${contest.status}`">
+  <div v-else class="race">
+    <!-- 竞赛概览 -->
+    <header class="race-head">
+      <div class="race-main">
+        <div class="race-status-row">
+          <span class="race-status" :class="`race-${contest.status}`">
             <span v-if="contest.status === 1" class="pulse" aria-hidden="true" />
             {{ statusInfo(contest.status).label }}
           </span>
-          <h1 class="head-title">{{ contest.title }}</h1>
-          <p class="desc">{{ contest.description || '暂无说明' }}</p>
-          <div class="head-meta">
-            <span class="meta-item">
-              <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
-                <circle cx="12" cy="12" r="9" /><path d="M12 7v5l3 2" />
-              </svg>
-              {{ formatDateTime(contest.startTime) }} ~ {{ formatDateTime(contest.endTime) }}
-            </span>
-          </div>
+          <span class="race-no">CONTEST #{{ String(contest.id).padStart(3, '0') }}</span>
         </div>
-        <div v-if="contest.status !== 2" class="head-countdown">
-          <div class="cd-label">{{ contest.status === 1 ? '距结束' : '距开始' }}</div>
-          <div class="cd-value" aria-live="off">{{ countdown }}</div>
+        <h1 class="race-title">{{ contest.title }}</h1>
+        <p class="race-desc">{{ contest.description || '暂无说明' }}</p>
+        <div class="race-time">
+          <span>{{ formatDateTime(contest.startTime) }}</span>
+          <span class="time-sep" aria-hidden="true">→</span>
+          <span>{{ formatDateTime(contest.endTime) }}</span>
+          <span class="time-note">ACM 赛制 · 解题数优先 · 同数按罚时</span>
         </div>
+      </div>
+
+      <div v-if="contest.status !== 2" class="race-clock">
+        <span class="clock-label">{{ contest.status === 1 ? 'REMAINING' : 'START IN' }}</span>
+        <span class="clock-value" aria-live="off">{{ countdown }}</span>
+        <span class="clock-note">以服务器时间为准</span>
       </div>
     </header>
 
-    <section class="card tabs-card">
-      <el-tabs v-model="activeTab">
-        <el-tab-pane label="竞赛题目" name="problems">
-          <el-table :data="contest.problems" row-key="problemId" empty-text="本竞赛还没有配置题目">
-            <el-table-column label="题号" width="80">
-              <template #default="{ row }">
-                <span class="oj-badge-id">{{ row.label }}</span>
-              </template>
-            </el-table-column>
-            <el-table-column label="题目" min-width="280">
-              <template #default="{ row }">
-                <router-link :to="`/problems/${row.problemId}`" class="p-link">{{ row.title }}</router-link>
-              </template>
-            </el-table-column>
-            <el-table-column label="难度" width="110">
-              <template #default="{ row }">
+    <section class="race-body">
+      <div class="race-nav" role="tablist">
+        <el-tabs v-model="activeTab" class="race-tabs">
+          <el-tab-pane label="竞赛题目" name="problems">
+            <div class="tab-head">
+              <span class="kicker">PROBLEMS</span>
+              <h2>题目清单</h2>
+              <span class="tab-count">{{ contest.problems.length }} 道</span>
+            </div>
+
+            <div class="problem-head" aria-hidden="true">
+              <span>题号</span>
+              <span>题目</span>
+              <span>难度</span>
+            </div>
+            <div v-if="contest.problems.length" class="problem-list">
+              <router-link
+                v-for="row in contest.problems"
+                :key="row.problemId"
+                :to="`/problems/${row.problemId}`"
+                class="problem-row"
+              >
+                <span class="label-badge serif-num">{{ row.label }}</span>
+                <span class="problem-title">{{ row.title }}</span>
                 <span class="oj-diff" :class="`diff-${row.difficulty}`">
                   {{ DIFFICULTY_MAP[row.difficulty]?.label ?? '未知' }}
                 </span>
-              </template>
-            </el-table-column>
-          </el-table>
-          <el-alert
-            v-if="contest.status === 1"
-            title="比赛进行中：在题目页提交的代码会自动计入本赛排名"
-            type="info" :closable="false" show-icon class="live-alert" />
-        </el-tab-pane>
+                <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <path d="M5 12 L19 12 M13 6 L19 12 L13 18" />
+                </svg>
+              </router-link>
+            </div>
+            <el-empty v-else description="本竞赛还没有配置题目" :image-size="64" />
 
-        <el-tab-pane label="实时排名" name="ranking">
-          <p v-if="contest.status === 0" class="rank-hint">竞赛开始后这里会显示实时排名（ACM 赛制：解题数优先，同解题数按总罚时升序）</p>
-          <el-table :data="ranking" v-loading="rankLoading" row-key="userId" empty-text="还没有提交记录">
-            <el-table-column label="名次" width="80">
-              <template #default="{ row }">
-                <span class="rank-cell" :class="`rank-${row.rank}`">{{ row.rank }}</span>
-              </template>
-            </el-table-column>
-            <el-table-column label="用户" min-width="160">
-              <template #default="{ row }">{{ row.username || `用户 ${row.userId}` }}</template>
-            </el-table-column>
-            <el-table-column prop="solved" label="解题数" width="90" />
-            <el-table-column prop="penalty" label="总罚时(分钟)" width="120" />
-            <el-table-column label="明细" min-width="300">
-              <template #default="{ row }">
-                <span class="mono">{{ row.detail || '—' }}</span>
-              </template>
-            </el-table-column>
-          </el-table>
-        </el-tab-pane>
-      </el-tabs>
+            <el-alert
+              v-if="contest.status === 1"
+              title="比赛进行中：在题目页提交的代码会自动计入本赛排名"
+              type="info"
+              :closable="false"
+              show-icon
+              class="live-alert"
+            />
+          </el-tab-pane>
+
+          <el-tab-pane label="实时排名" name="ranking">
+            <div class="tab-head">
+              <span class="kicker">STANDINGS</span>
+              <h2>实时排名</h2>
+              <span class="tab-count">ACM 赛制</span>
+            </div>
+
+            <p v-if="contest.status === 0" class="rank-hint">
+              竞赛开始后这里会显示实时排名：解题数优先，同解题数按总罚时升序。
+            </p>
+
+            <el-table
+              :data="ranking"
+              v-loading="rankLoading"
+              row-key="userId"
+              empty-text="还没有提交记录"
+              class="rank-table"
+            >
+              <el-table-column label="名次" width="84">
+                <template #default="{ row }">
+                  <span class="rank-cell" :class="`rank-${row.rank}`">{{ String(row.rank).padStart(2, '0') }}</span>
+                </template>
+              </el-table-column>
+              <el-table-column label="参赛者" min-width="160">
+                <template #default="{ row }">{{ row.username || `用户 ${row.userId}` }}</template>
+              </el-table-column>
+              <el-table-column prop="solved" label="解题数" width="90" align="right" />
+              <el-table-column prop="penalty" label="总罚时（分钟）" width="140" align="right" />
+              <el-table-column label="判题明细" min-width="300">
+                <template #default="{ row }">
+                  <span class="mono detail-cell">{{ row.detail || '—' }}</span>
+                </template>
+              </el-table-column>
+            </el-table>
+          </el-tab-pane>
+        </el-tabs>
+      </div>
     </section>
   </div>
 </template>
@@ -166,154 +200,301 @@ onUnmounted(() => window.clearInterval(timer))
 </script>
 
 <style scoped>
-/* 竞赛详情头：墨色舞台。状态靠文字与呼吸点表达 */
-.head-card {
-  background-image:
-    radial-gradient(640px 260px at 12% -40%, rgba(94, 106, 210, 0.28), transparent 70%),
-    linear-gradient(180deg, rgba(255, 255, 255, 0.03), transparent 55%),
-    var(--oj-card);
+.empty-sheet {
+  border-radius: 10px;
+}
+
+.race {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 44px 32px 64px;
+}
+
+/* ---------- 竞赛概览 ---------- */
+.race-head {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 300px;
+  gap: 28px;
+  padding: 24px 26px;
+  background: var(--oj-card);
   border: 1px solid var(--oj-border);
   border-radius: 10px;
-  padding: 24px 28px;
-  color: var(--oj-text);
+  box-shadow: var(--oj-shadow-sm);
 }
-.head-row {
+.race-status-row {
   display: flex;
-  align-items: flex-end;
-  justify-content: space-between;
-  gap: 24px;
-}
-.head-main {
-  min-width: 0;
-}
-.head-badge {
-  display: inline-flex;
   align-items: center;
-  gap: 7px;
-  font-size: 12.5px;
-  font-weight: 600;
-  color: var(--oj-text-sub);
-  letter-spacing: 0.2px;
+  gap: 10px;
 }
-.pulse {
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background: var(--oj-pulse-dot);
-  box-shadow: 0 0 0 0 var(--oj-pulse-ring);
-  animation: pulse 1.8s infinite;
-}
-@keyframes pulse {
-  70% {
-    box-shadow: 0 0 0 6px var(--oj-pulse-ring-out);
-  }
-  100% {
-    box-shadow: 0 0 0 0 var(--oj-pulse-ring-out);
-  }
-}
-.head-title {
-  margin: 10px 0 0;
-  font-size: 24px;
-  font-weight: 600;
-  letter-spacing: -0.4px;
-  line-height: 1.3;
-  color: var(--oj-text);
-}
-.desc {
-  margin: 8px 0 0;
-  font-size: 13px;
-  color: var(--oj-text-sub);
-  line-height: 1.65;
-  max-width: 640px;
-}
-.head-meta {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 18px;
-  margin-top: 12px;
-}
-.meta-item {
+.race-status {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  font-size: 12.5px;
-  color: var(--oj-text-sub);
-}
-.head-countdown {
-  flex-shrink: 0;
-  text-align: right;
-}
-.cd-label {
-  font-size: 11.5px;
-  color: var(--oj-text-sub);
-  letter-spacing: 0.3px;
-}
-.cd-value {
-  margin-top: 2px;
+  padding: 3px 9px;
+  border-radius: 4px;
   font-family: var(--oj-font-mono);
-  font-size: 26px;
-  font-weight: 600;
-  font-variant-numeric: tabular-nums;
-  letter-spacing: 0.3px;
+  font-size: 9.5px;
+  letter-spacing: 0.04em;
+}
+.race-0 { color: var(--oj-primary); background: #eef2ff; }
+.race-1 { color: var(--oj-success); background: #e7f7f1; }
+.race-2 { color: var(--oj-text-sub); background: var(--oj-gray-100); }
+.pulse {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--oj-success);
+  box-shadow: 0 0 0 0 rgba(14, 159, 110, 0.3);
+  animation: pulse 1.8s infinite;
+}
+@keyframes pulse {
+  70% { box-shadow: 0 0 0 6px rgba(14, 159, 110, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(14, 159, 110, 0); }
+}
+.race-no {
+  font-family: var(--oj-font-mono);
+  font-size: 9px;
+  letter-spacing: 0.08em;
+  color: var(--oj-text-weak);
+}
+.race-title {
+  margin: 13px 0 0;
+  font-size: clamp(25px, 3vw, 34px);
+  font-weight: 750;
+  line-height: 1.25;
+  letter-spacing: -0.045em;
   color: var(--oj-text);
 }
-
-.tabs-card {
-  margin-top: 16px;
-  padding-bottom: 8px;
-}
-.live-alert {
-  margin-top: 12px;
-}
-.rank-hint {
-  margin: 0 0 12px;
+.race-desc {
+  margin: 9px 0 0;
+  max-width: 44em;
   font-size: 12.5px;
+  line-height: 1.8;
   color: var(--oj-text-sub);
 }
-.rank-cell {
+.race-time {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 8px;
+  margin-top: 16px;
+  font-family: var(--oj-font-mono);
+  font-size: 10px;
+  color: var(--oj-text-sub);
+}
+.time-sep {
+  color: var(--oj-gray-300);
+}
+.time-note {
+  margin-left: 6px;
+  color: var(--oj-text-weak);
+  font-size: 9px;
+  letter-spacing: 0.03em;
+}
+
+.race-clock {
+  align-self: stretch;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 16px 20px;
+  background: var(--oj-code-bg);
+  border-radius: 8px;
+  color: #f9fafb;
+}
+.clock-label {
+  font-family: var(--oj-font-mono);
+  font-size: 8.5px;
+  letter-spacing: 0.12em;
+  color: #667085;
+}
+.clock-value {
+  margin: 8px 0 6px;
+  font-size: 28px;
+  line-height: 1.2;
+  color: #f9fafb;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.03em;
+}
+.clock-note {
+  font-family: var(--oj-font-mono);
+  font-size: 8.5px;
+  letter-spacing: 0.03em;
+  color: #667085;
+}
+
+/* ---------- 题目 / 排名 ---------- */
+.race-body {
+  margin-top: 18px;
+}
+.race-tabs :deep(.el-tabs__header) {
+  margin-bottom: 12px;
+}
+.race-tabs :deep(.el-tabs__item) {
+  font-size: 13px;
+  letter-spacing: 0.01em;
+  padding: 0 16px;
+  height: 36px;
+}
+.race-tabs :deep(.el-tabs__item:first-child) {
+  padding-left: 0;
+}
+.race-tabs :deep(.el-tabs__nav-wrap::after) {
+  background: var(--oj-border);
+}
+.race-tabs :deep(.el-tabs__content) {
+  background: var(--oj-card);
+  border: 1px solid var(--oj-border);
+  border-radius: 10px;
+  padding: 18px 20px 20px;
+  box-shadow: var(--oj-shadow-sm);
+}
+
+.tab-head {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--oj-border);
+  margin-bottom: 0;
+}
+.tab-head h2 {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 750;
+  letter-spacing: -0.03em;
+}
+.tab-count {
+  margin-left: auto;
+  font-family: var(--oj-font-mono);
+  font-size: 9px;
+  letter-spacing: 0.06em;
+  color: var(--oj-text-weak);
+}
+
+.problem-head {
+  display: grid;
+  grid-template-columns: 56px minmax(0, 1fr) 80px 22px;
+  gap: 14px;
+  padding: 8px 6px 7px;
+  border-bottom: 1px solid var(--oj-border);
+  background: var(--oj-gray-50);
+  font-family: var(--oj-font-mono);
+  font-size: 8.5px;
+  letter-spacing: 0.08em;
+  color: var(--oj-text-weak);
+}
+.problem-list {
+  border-bottom: 1px solid var(--oj-border);
+}
+.problem-row {
+  display: grid;
+  grid-template-columns: 56px minmax(0, 1fr) 80px 22px;
+  gap: 14px;
+  align-items: center;
+  padding: 11px 6px;
+  border-bottom: 1px solid var(--oj-border);
+  transition: background var(--oj-duration) var(--oj-ease);
+}
+.problem-row:last-child {
+  border-bottom: 0;
+}
+.problem-row:hover {
+  background: var(--oj-gray-50);
+}
+.label-badge {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-width: 26px;
-  height: 24px;
-  padding: 0 6px;
-  border-radius: var(--oj-radius-sm);
-  background: var(--oj-gray-50);
-  color: var(--oj-text-sub);
-  font-weight: 700;
-  font-variant-numeric: tabular-nums;
-}
-.rank-cell.rank-1 {
-  background: var(--oj-warning-soft);
-  color: var(--oj-gold);
-}
-.rank-cell.rank-2 {
-  background: var(--oj-gray-50);
-  color: var(--oj-silver);
-}
-.rank-cell.rank-3 {
-  background: var(--oj-warning-soft);
-  color: var(--oj-bronze);
-}
-.p-link {
-  color: var(--oj-text);
+  width: 25px;
+  height: 25px;
+  border-radius: 5px;
+  background: var(--oj-primary-soft);
+  font-family: var(--oj-font-mono);
+  font-size: 11px;
   font-weight: 600;
-  transition: color 0.15s var(--oj-ease);
+  color: var(--oj-primary);
 }
-.p-link:hover {
+.problem-title {
+  font-size: 13.5px;
+  font-weight: 550;
+  color: var(--oj-text);
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.problem-row:hover .problem-title {
+  color: var(--oj-primary);
+}
+.problem-row svg {
+  color: var(--oj-text-weak);
+}
+.problem-row:hover svg {
   color: var(--oj-primary);
 }
 
-@media (max-width: 820px) {
-  .head-row {
-    flex-direction: column;
-    align-items: flex-start;
+.live-alert {
+  margin-top: 16px;
+  background: var(--oj-primary-soft);
+  border: 1px solid var(--oj-info-border);
+  border-radius: 7px;
+  color: var(--oj-primary);
+}
+.live-alert :deep(.el-alert__title) {
+  font-size: 11.5px;
+}
+
+.rank-hint {
+  margin: 14px 0;
+  font-size: 12px;
+  color: var(--oj-text-sub);
+}
+.rank-cell {
+  font-family: var(--oj-font-mono);
+  font-size: 11px;
+  color: var(--oj-text-sub);
+}
+.rank-cell.rank-1,
+.rank-cell.rank-2,
+.rank-cell.rank-3 {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  font-weight: 600;
+}
+.rank-cell.rank-1 { color: #b45309; background: #fef3c7; }
+.rank-cell.rank-2 { color: #475467; background: #f1f3f7; }
+.rank-cell.rank-3 { color: #9a3412; background: #fff2e8; }
+.detail-cell {
+  font-size: 10.5px;
+  color: var(--oj-text-sub);
+}
+
+@media (max-width: 900px) {
+  .race {
+    padding: 28px 18px 56px;
   }
-  .head-countdown {
-    text-align: left;
+  .race-head {
+    grid-template-columns: 1fr;
+    gap: 18px;
   }
-  .head-card {
-    padding: 22px 20px;
+  .race-clock {
+    padding: 16px 20px;
+  }
+  .clock-value {
+    font-size: 24px;
+  }
+  .problem-head {
+    grid-template-columns: 44px minmax(0, 1fr) 70px 20px;
+    gap: 10px;
+  }
+  .problem-row {
+    grid-template-columns: 44px minmax(0, 1fr) 70px 20px;
+    gap: 10px;
   }
 }
 </style>

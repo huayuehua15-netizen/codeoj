@@ -1,0 +1,303 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>CodeOJ — Arena</title>
+<style>
+  :root{
+    --bg:#070a0f;
+    --panel:#0d121a;
+    --panel-2:#111823;
+    --ink:#f2f5f9;
+    --ink-2:#c3ccd9;
+    --sub:#8391a5;
+    --weak:#5b6778;
+    --line:#1b2431;
+    --line-strong:#2a3748;
+    --lime:#c8ff4d;
+    --lime-dim:#9fd52e;
+    --cyan:#63d8ff;
+    --green:#5ee6a8;
+    --red:#ff6b6b;
+    --amber:#ffc857;
+    --mono:"Cascadia Mono","Consolas","SFMono-Regular",monospace;
+    --sans:"Segoe UI","Microsoft YaHei",system-ui,sans-serif;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0}
+  body{background:var(--bg);color:var(--ink);font-family:var(--sans);font-size:14px;-webkit-font-smoothing:antialiased}
+  a{color:inherit;text-decoration:none}
+  .wrap{max-width:1240px;margin:0 auto;padding:0 32px}
+  .mono{font-family:var(--mono);font-variant-numeric:tabular-nums}
+
+  .ticker{height:34px;background:var(--lime);color:#0a0d05;display:flex;align-items:center;overflow:hidden}
+  .ticker .wrap{display:flex;align-items:center;gap:16px;width:100%}
+  .ticker-label{font-family:var(--mono);font-size:9px;font-weight:700;letter-spacing:.12em;border:1px solid rgba(10,13,5,.45);padding:1px 6px;flex-shrink:0}
+  .ticker-text{font-size:12px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .ticker-text b{font-family:var(--mono);font-weight:700}
+  .ticker-link{margin-left:auto;font-size:11px;font-weight:700;white-space:nowrap;border-bottom:1px solid currentColor;padding-bottom:1px;flex-shrink:0}
+
+  .topbar{height:64px;background:rgba(7,10,15,.94);border-bottom:1px solid var(--line);position:sticky;top:0;z-index:10}
+  .topbar .wrap{height:100%;display:flex;align-items:center;gap:36px}
+  .brand{display:flex;align-items:center;gap:11px;flex-shrink:0}
+  .mark{width:30px;height:30px;background:var(--lime);color:#080b06;display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:13px;font-weight:800}
+  .wordmark{font-size:17px;font-weight:800;letter-spacing:.08em}
+  .wordmark span{color:var(--lime)}
+  .brand-sub{font-family:var(--mono);font-size:8px;letter-spacing:.18em;color:var(--weak);border-left:1px solid var(--line-strong);padding-left:12px;line-height:1.6}
+  .nav{display:flex;align-items:center;gap:4px;flex:1}
+  .nav a{padding:9px 12px;font-size:12.5px;letter-spacing:.02em;color:var(--sub);white-space:nowrap;position:relative}
+  .nav a:hover{color:var(--ink)}
+  .nav a.active{color:var(--lime);font-weight:700}
+  .nav a.active::after{content:"";position:absolute;left:12px;right:12px;bottom:2px;height:1px;background:var(--lime)}
+  .top-actions{display:flex;align-items:center;gap:16px;flex-shrink:0}
+  .login{font-size:12.5px;color:var(--sub)}
+  .login:hover{color:var(--ink)}
+  .btn-lime{background:var(--lime);color:#080b06;font-size:12px;font-weight:800;padding:8px 16px;border:1px solid var(--lime);letter-spacing:.02em}
+  .btn-lime:hover{background:#d7ff7d}
+
+  .hero{display:grid;grid-template-columns:minmax(0,1.04fr) minmax(0,.96fr);gap:62px;align-items:center;padding:58px 0 42px}
+  .eyebrow{display:flex;align-items:center;gap:8px;font-family:var(--mono);font-size:9.5px;letter-spacing:.15em;color:var(--sub)}
+  .live-dot{width:5px;height:5px;background:var(--lime);border-radius:50%;box-shadow:0 0 0 3px rgba(200,255,77,.1)}
+  .eyebrow .divider{width:20px;height:1px;background:var(--line-strong)}
+  h1{margin:19px 0 0;font-size:76px;line-height:.98;letter-spacing:-.065em;font-weight:850}
+  h1 .lime{color:var(--lime)}
+  h1 .outline{color:transparent;-webkit-text-stroke:1px #5c697a;font-weight:800}
+  .lede{margin:24px 0 0;max-width:27em;color:var(--sub);font-size:14.5px;line-height:1.8}
+  .lede b{color:var(--ink-2);font-weight:600}
+  .cta{display:flex;align-items:center;gap:10px;margin-top:30px}
+  .btn-primary{display:inline-flex;align-items:center;gap:10px;background:var(--lime);color:#080b06;font-size:13px;font-weight:800;padding:12px 19px;border:1px solid var(--lime)}
+  .btn-primary svg{width:14px;height:14px}
+  .btn-ghost{display:inline-flex;align-items:center;border:1px solid var(--line-strong);color:var(--ink-2);font-size:13px;font-weight:600;padding:12px 19px}
+  .btn-ghost:hover{border-color:#46566b;color:var(--ink)}
+  .footnote{margin:17px 0 0;font-family:var(--mono);font-size:9px;letter-spacing:.1em;color:var(--weak)}
+  .footnote span{color:var(--lime)}
+
+  .board{border:1px solid var(--line-strong);background:var(--panel);position:relative}
+  .board::before{content:"";position:absolute;left:-1px;right:-1px;top:-1px;height:2px;background:var(--lime)}
+  .board-head{height:42px;padding:0 16px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--line);font-family:var(--mono);font-size:9.5px;letter-spacing:.13em;color:var(--sub)}
+  .board-live{display:flex;align-items:center;gap:6px;color:var(--lime);font-size:8.5px;letter-spacing:.14em}
+  .board-live i{width:4px;height:4px;background:var(--lime);border-radius:50%}
+  .board-title{color:var(--ink-2)}
+  .rank-list{padding:8px 0 4px}
+  .rank{display:grid;grid-template-columns:44px 34px minmax(0,1fr) 74px;gap:12px;align-items:center;padding:14px 16px;border-bottom:1px solid var(--line)}
+  .rank:last-child{border-bottom:0}
+  .rank-no{font-family:var(--mono);font-size:22px;font-weight:700;color:var(--weak);letter-spacing:-.05em;line-height:1}
+  .rank:first-child .rank-no{color:var(--lime);font-size:28px}
+  .rank:nth-child(2) .rank-no{color:var(--ink-2)}
+  .rank:nth-child(3) .rank-no{color:#b1a184}
+  .avatar{width:32px;height:32px;border:1px solid var(--line-strong);display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:11px;font-weight:700;color:var(--ink-2);background:var(--panel-2)}
+  .rank:first-child .avatar{background:rgba(200,255,77,.1);border-color:rgba(200,255,77,.45);color:var(--lime)}
+  .rank-name{min-width:0}
+  .rank-name strong{display:block;font-size:13.5px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .rank-name small{display:block;margin-top:3px;font-family:var(--mono);font-size:8.5px;letter-spacing:.03em;color:var(--weak)}
+  .rank-ac{text-align:right}
+  .rank-ac strong{display:block;font-family:var(--mono);font-size:14px;font-weight:700;color:var(--ink)}
+  .rank:first-child .rank-ac strong{color:var(--lime)}
+  .rank-ac small{font-family:var(--mono);font-size:8px;color:var(--weak);letter-spacing:.1em}
+  .rank-bar{grid-column:3 / 5;height:2px;background:#1b2532;margin-top:-1px}
+  .rank-bar i{display:block;height:100%;background:var(--line-strong)}
+  .rank:first-child .rank-bar i{background:var(--lime)}
+  .board-foot{height:42px;padding:0 16px;border-top:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;font-size:10px;color:var(--sub)}
+  .board-foot b{font-family:var(--mono);color:var(--ink-2);font-weight:600}
+  .board-foot a{font-size:10px;color:var(--lime)}
+
+  .metrics{border-top:1px solid var(--line);border-bottom:1px solid var(--line);display:grid;grid-template-columns:repeat(4,1fr)}
+  .metric{padding:18px 0 17px;border-right:1px solid var(--line);padding-left:24px}
+  .metric:first-child{padding-left:0}
+  .metric:last-child{border-right:0}
+  .metric-label{font-family:var(--mono);font-size:9px;letter-spacing:.14em;color:var(--weak)}
+  .metric-value{margin-top:8px;font-family:var(--mono);font-size:31px;font-weight:700;line-height:1;letter-spacing:-.04em}
+  .metric-value small{font-size:10px;font-weight:500;color:var(--sub);margin-left:3px;letter-spacing:0}
+  .metric:first-child .metric-value{color:var(--lime)}
+  .metric-note{margin-top:7px;font-family:var(--mono);font-size:8.5px;color:var(--weak)}
+
+  .section-head{display:flex;align-items:flex-end;justify-content:space-between;gap:16px;margin:36px 0 14px}
+  .section-title{margin:0;font-size:21px;font-weight:800;letter-spacing:-.02em}
+  .section-title span{color:var(--lime)}
+  .section-sub{margin:6px 0 0;font-size:10.5px;color:var(--sub)}
+  .section-link{font-size:11px;font-weight:700;color:var(--lime)}
+
+  .lower{display:grid;grid-template-columns:minmax(0,1.4fr) minmax(0,1fr);gap:22px}
+  .panel{border:1px solid var(--line);background:var(--panel)}
+  .panel-head{height:42px;padding:0 16px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--line)}
+  .panel-title{font-size:11px;font-weight:700;letter-spacing:.04em}
+  .panel-meta{font-family:var(--mono);font-size:8.5px;color:var(--weak);letter-spacing:.1em}
+  .prob-head,.prob-row{display:grid;grid-template-columns:52px minmax(0,1fr) 74px 100px 30px;gap:12px;align-items:center;padding:0 16px}
+  .prob-head{height:30px;background:#0a0f16;border-bottom:1px solid var(--line);font-family:var(--mono);font-size:8.5px;color:var(--weak);letter-spacing:.12em}
+  .prob-row{min-height:54px;border-bottom:1px solid var(--line)}
+  .prob-row:last-child{border-bottom:0}
+  .prob-row:hover{background:#101722}
+  .prob-id{font-family:var(--mono);font-size:10.5px;color:var(--weak)}
+  .prob-title{font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .prob-tags{display:flex;gap:5px;margin-top:4px}
+  .tag{font-family:var(--mono);font-size:8px;color:var(--sub);border:1px solid var(--line);padding:1px 5px;line-height:1.5}
+  .diff{font-size:10.5px;font-weight:700;letter-spacing:.03em}
+  .diff.easy{color:var(--green)} .diff.mid{color:var(--amber)} .diff.hard{color:var(--red)}
+  .acc{display:flex;align-items:center;gap:7px}
+  .acc-bar{width:38px;height:2px;background:#202b39}
+  .acc-bar i{display:block;height:100%;background:var(--lime)}
+  .acc-num{font-family:var(--mono);font-size:9px;color:var(--sub)}
+  .go{text-align:right;font-size:13px;color:var(--weak)}
+  .prob-row:hover .go{color:var(--lime)}
+
+  .feed{padding:2px 0}
+  .feed-row{display:grid;grid-template-columns:26px minmax(0,1fr) auto;gap:10px;align-items:center;padding:10px 16px;border-bottom:1px solid var(--line)}
+  .feed-row:last-child{border-bottom:0}
+  .feed-avatar{width:24px;height:24px;background:var(--panel-2);border:1px solid var(--line);display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:9px;color:var(--sub)}
+  .feed-main{min-width:0}
+  .feed-name{font-size:11px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .feed-sub{font-family:var(--mono);font-size:8px;color:var(--weak);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .chip{font-family:var(--mono);font-size:8px;font-weight:700;letter-spacing:.04em;padding:3px 6px;border:1px solid;white-space:nowrap}
+  .chip.ac{color:var(--green);border-color:rgba(94,230,168,.32);background:rgba(94,230,168,.07)}
+  .chip.wa{color:var(--red);border-color:rgba(255,107,107,.3);background:rgba(255,107,107,.06)}
+  .chip.run{color:var(--amber);border-color:rgba(255,200,87,.3);background:rgba(255,200,87,.06)}
+
+  .features{margin-top:22px;border:1px solid var(--line);display:grid;grid-template-columns:repeat(4,1fr)}
+  .feature{padding:17px 18px 18px;border-right:1px solid var(--line);display:flex;gap:13px;align-items:flex-start}
+  .feature:last-child{border-right:0}
+  .feature-no{font-family:var(--mono);font-size:10px;color:var(--lime);font-weight:700;line-height:1.4}
+  .feature h3{margin:0;font-size:12px;font-weight:700;letter-spacing:.01em}
+  .feature p{margin:5px 0 0;font-size:10px;line-height:1.65;color:var(--sub)}
+
+  footer{margin-top:50px;border-top:1px solid var(--line);background:#05080c}
+  .footer-inner{max-width:1240px;margin:0 auto;padding:22px 32px 26px;display:flex;align-items:center;gap:18px;flex-wrap:wrap}
+  .footer-brand{display:flex;align-items:center;gap:9px}
+  .footer-brand .mark{width:22px;height:22px;font-size:10px}
+  .footer-brand span{font-size:11px;font-weight:800;letter-spacing:.08em}
+  .footer-meta{font-family:var(--mono);font-size:8.5px;color:var(--weak);letter-spacing:.08em}
+  .footer-links{display:flex;gap:16px;margin-left:auto;font-size:10px;color:var(--sub)}
+  .footer-links a:hover{color:var(--lime)}
+</style>
+</head>
+<body>
+  <div class="ticker">
+    <div class="wrap">
+      <span class="ticker-label">CONTEST</span>
+      <span class="ticker-text"><b>ROUND 04</b> · 11 月 22 日 19:00 · ACM 赛制 · 报名进行中</span>
+      <a class="ticker-link" href="#">查看赛程 →</a>
+    </div>
+  </div>
+
+  <header class="topbar">
+    <div class="wrap">
+      <a class="brand" href="#">
+        <span class="mark">CK</span>
+        <span class="wordmark">CODE<span>KING</span></span>
+        <span class="brand-sub">ONLINE<br/>JUDGE</span>
+      </a>
+      <nav class="nav">
+        <a class="active" href="#">首页</a>
+        <a href="#">题库</a>
+        <a href="#">提交</a>
+        <a href="#">错题</a>
+        <a href="#">竞赛</a>
+        <a href="#">排行</a>
+        <a href="#">公告</a>
+      </nav>
+      <div class="top-actions">
+        <a class="login" href="#">登录</a>
+        <a class="btn-lime" href="#">注册</a>
+      </div>
+    </div>
+  </header>
+
+  <main class="wrap">
+    <section class="hero">
+      <div>
+        <div class="eyebrow"><span class="live-dot"></span> SEASON 04 <span class="divider"></span> 2026</div>
+        <h1>代码<br/><span class="lime">说话。</span></h1>
+        <p class="lede">ACM 赛制、实时榜单、逐用例判定。练习是训练，比赛是证明。<b>每一次提交，都会留下排名。</b></p>
+        <div class="cta">
+          <a class="btn-primary" href="#">进入题库 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
+          <a class="btn-ghost" href="#">查看竞赛</a>
+        </div>
+        <p class="footnote"><span>●</span> 5 LANGUAGES · SANDBOXED · REALTIME JUDGE</p>
+      </div>
+
+      <div class="board">
+        <div class="board-head">
+          <span class="board-title">LIVE STANDINGS</span>
+          <span class="board-live"><i></i> LIVE</span>
+        </div>
+        <div class="rank-list">
+          <div class="rank">
+            <span class="rank-no">01</span><span class="avatar">L</span>
+            <span class="rank-name"><strong>lightwave</strong><small>图论 / 动态规划</small></span>
+            <span class="rank-ac"><strong>128</strong><small> AC</small></span>
+            <span class="rank-bar"><i style="width:98%"></i></span>
+          </div>
+          <div class="rank">
+            <span class="rank-no">02</span><span class="avatar">K</span>
+            <span class="rank-name"><strong>kite</strong><small>数据结构 / 搜索</small></span>
+            <span class="rank-ac"><strong>121</strong><small> AC</small></span>
+            <span class="rank-bar"><i style="width:91%"></i></span>
+          </div>
+          <div class="rank">
+            <span class="rank-no">03</span><span class="avatar">M</span>
+            <span class="rank-name"><strong>mori</strong><small>字符串 / 数学</small></span>
+            <span class="rank-ac"><strong>119</strong><small> AC</small></span>
+            <span class="rank-bar"><i style="width:87%"></i></span>
+          </div>
+          <div class="rank">
+            <span class="rank-no">04</span><span class="avatar">Z</span>
+            <span class="rank-name"><strong>zero</strong><small>构造 / 贪心</small></span>
+            <span class="rank-ac"><strong>104</strong><small> AC</small></span>
+            <span class="rank-bar"><i style="width:76%"></i></span>
+          </div>
+        </div>
+        <div class="board-foot"><span>本周新增 <b>42</b> 名选手</span><a href="#">完整榜单 →</a></div>
+      </div>
+    </section>
+
+    <section class="metrics">
+      <div class="metric"><div class="metric-label">PROBLEMS</div><div class="metric-value">128<small>题</small></div><div class="metric-note">6 道新题</div></div>
+      <div class="metric"><div class="metric-label">SOLVERS</div><div class="metric-value">486<small>人</small></div><div class="metric-note">132 活跃</div></div>
+      <div class="metric"><div class="metric-label">SUBMISSIONS</div><div class="metric-value">12.8<small>k</small></div><div class="metric-note">24H 318</div></div>
+      <div class="metric"><div class="metric-label">ACCEPTANCE</div><div class="metric-value">68.4<small>%</small></div><div class="metric-note">全站通过率</div></div>
+    </section>
+
+    <div class="section-head">
+      <div><h2 class="section-title">开一局<span>。</span></h2><p class="section-sub">挑一道题，写完提交，剩下的交给判题机。</p></div>
+      <a class="section-link" href="#">全部题目 →</a>
+    </div>
+
+    <section class="lower">
+      <div class="panel">
+        <div class="panel-head"><span class="panel-title">题目</span><span class="panel-meta">SORTED BY ID</span></div>
+        <div class="prob-head"><span>ID</span><span>PROBLEM</span><span>LEVEL</span><span>AC RATE</span><span></span></div>
+        <div class="prob-row"><span class="prob-id">#1001</span><span><span class="prob-title">A + B Problem</span><span class="prob-tags"><span class="tag">入门</span><span class="tag">模拟</span></span></span><span class="diff easy">EASY</span><span class="acc"><span class="acc-bar"><i style="width:82%"></i></span><span class="acc-num">82.4%</span></span><span class="go">→</span></div>
+        <div class="prob-row"><span class="prob-id">#1002</span><span><span class="prob-title">最长递增子序列</span><span class="prob-tags"><span class="tag">DP</span><span class="tag">二分</span></span></span><span class="diff mid">MEDIUM</span><span class="acc"><span class="acc-bar"><i style="width:56%"></i></span><span class="acc-num">56.1%</span></span><span class="go">→</span></div>
+        <div class="prob-row"><span class="prob-id">#1003</span><span><span class="prob-title">区间第 K 小</span><span class="prob-tags"><span class="tag">主席树</span><span class="tag">离散化</span></span></span><span class="diff hard">HARD</span><span class="acc"><span class="acc-bar"><i style="width:28%"></i></span><span class="acc-num">27.8%</span></span><span class="go">→</span></div>
+        <div class="prob-row"><span class="prob-id">#1004</span><span><span class="prob-title">最短路径计数</span><span class="prob-tags"><span class="tag">图论</span><span class="tag">Dijkstra</span></span></span><span class="diff mid">MEDIUM</span><span class="acc"><span class="acc-bar"><i style="width:44%"></i></span><span class="acc-num">43.6%</span></span><span class="go">→</span></div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-head"><span class="panel-title">最近提交</span><span class="panel-meta">REALTIME</span></div>
+        <div class="feed">
+          <div class="feed-row"><span class="feed-avatar">L</span><span class="feed-main"><span class="feed-name">lightwave</span><span class="feed-sub">#1003 区间第 K 小 · C++17</span></span><span class="chip ac">ACCEPTED</span></div>
+          <div class="feed-row"><span class="feed-avatar">K</span><span class="feed-main"><span class="feed-name">kite</span><span class="feed-sub">#1002 最长递增子序列 · Python 3</span></span><span class="chip wa">WRONG</span></div>
+          <div class="feed-row"><span class="feed-avatar">M</span><span class="feed-main"><span class="feed-name">mori</span><span class="feed-sub">#1004 最短路径计数 · Java 17</span></span><span class="chip ac">ACCEPTED</span></div>
+          <div class="feed-row"><span class="feed-avatar">Z</span><span class="feed-main"><span class="feed-name">zero</span><span class="feed-sub">#1001 A + B Problem · C</span></span><span class="chip ac">ACCEPTED</span></div>
+          <div class="feed-row"><span class="feed-avatar">N</span><span class="feed-main"><span class="feed-name">nano</span><span class="feed-sub">#1003 区间第 K 小 · C++17</span></span><span class="chip run">RUNNING</span></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="features">
+      <div class="feature"><span class="feature-no">01</span><div><h3>五语言沙箱</h3><p>C / C++ / Java / Python / JS，独立镜像编译。</p></div></div>
+      <div class="feature"><span class="feature-no">02</span><div><h3>逐用例判定</h3><p>状态、耗时、内存逐条返回，错点可定位。</p></div></div>
+      <div class="feature"><span class="feature-no">03</span><div><h3>实时推送</h3><p>排队到出结果全程推进，不刷页面。</p></div></div>
+      <div class="feature"><span class="feature-no">04</span><div><h3>ACM 赛制</h3><p>实时排名、罚时、封榜，一套完整的比赛流程。</p></div></div>
+    </section>
+  </main>
+
+  <footer>
+    <div class="footer-inner">
+      <div class="footer-brand"><span class="mark">CK</span><span>CODE KING</span></div>
+      <span class="footer-meta">SPRING BOOT 3 · VUE 3 · DOCKER</span>
+      <div class="footer-links"><a href="#">使用说明</a><a href="#">公告</a><a href="#">排行榜</a><a href="#">GitHub</a></div>
+    </div>
+  </footer>
+</body>
+</html>

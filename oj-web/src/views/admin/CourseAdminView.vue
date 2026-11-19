@@ -1,19 +1,26 @@
 <template>
-  <div class="page-container">
-    <div class="card">
-      <div class="page-head">
-        <div>
-          <h2>课程管理</h2>
-          <p class="sub">创建课程、编排题目分组，并查看班级完成情况</p>
-        </div>
-        <el-button type="primary" @click="openCreate">新建课程</el-button>
-      </div>
+  <AdminShell
+    title="课程管理"
+    section="COURSES · 实验编排"
+    description="创建课程、编排题目分组，并查看班级完成情况。"
+  >
+    <template #actions>
+      <el-button type="primary" @click="openCreate">新建课程</el-button>
+    </template>
+
+    <div class="admin-table-shell">
       <el-table :data="courses" v-loading="loading" empty-text="还没有课程，点右上角「新建课程」开始">
-        <el-table-column prop="id" label="#" width="70" />
+        <el-table-column prop="id" label="ID" width="64">
+          <template #default="{ row }">
+            <span class="mono id-cell">{{ String(row.id).padStart(3, '0') }}</span>
+          </template>
+        </el-table-column>
         <el-table-column prop="name" label="课程名称" min-width="180" />
         <el-table-column prop="description" label="描述" min-width="240" show-overflow-tooltip />
         <el-table-column label="创建时间" width="170">
-          <template #default="{ row }">{{ formatDateTime(row.createdAt) }}</template>
+          <template #default="{ row }">
+            <span class="mono time-cell">{{ formatDateTime(row.createdAt) }}</span>
+          </template>
         </el-table-column>
         <el-table-column label="操作" width="220">
           <template #default="{ row }">
@@ -23,6 +30,7 @@
           </template>
         </el-table-column>
       </el-table>
+    </div>
 
       <!-- 课程表单：名称/描述 + 题目分组多选（论文 3.3 课程实验题组管理） -->
       <el-dialog v-model="dialogVisible" :title="editingId ? '编辑课程' : '新建课程'" width="560px">
@@ -58,8 +66,7 @@
           </el-table-column>
         </el-table>
       </el-dialog>
-    </div>
-  </div>
+  </AdminShell>
 </template>
 
 <script setup lang="ts">
@@ -72,6 +79,7 @@ import {
 } from '@/api/course'
 import { pageProblems, type Problem } from '@/api/problem'
 import { formatDateTime } from '@/utils/datetime'
+import AdminShell from '@/components/AdminShell.vue'
 
 const courses = ref<Course[]>([])
 const allProblems = ref<Problem[]>([])
@@ -173,19 +181,12 @@ onMounted(() => {
 </script>
 
 <style scoped>
-.page-head {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 16px;
-  margin-bottom: 16px;
+.id-cell {
+  font-size: 11px;
+  color: var(--oj-text-weak);
 }
-.page-head h2 {
-  margin: 0;
-}
-.sub {
-  color: var(--oj-gray-400);
-  font-size: 12.5px;
-  margin: 4px 0 0;
+.time-cell {
+  font-size: 10px;
+  color: var(--oj-text-sub);
 }
 </style>

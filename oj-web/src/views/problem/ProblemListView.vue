@@ -1,64 +1,46 @@
 <template>
-  <div class="page-container">
-    <header class="oj-stage">
-      <div>
-        <h1 class="oj-stage-title">题库</h1>
-        <p class="oj-stage-sub">从 A+B 开始，把每一道题都变成自己的</p>
+  <div class="problem-page">
+    <header class="page-head problem-head">
+      <div class="head-main">
+        <p class="kicker">PROBLEM SET</p>
+        <h1 class="page-head-title">题库</h1>
+        <p class="page-head-sub">按难度、标签检索题目。点开即读题面与样例，登录后可直接提交。</p>
+        <router-link v-if="announcements.length" class="notice-line" to="/announcements">
+          <span class="notice-tag">公告</span>
+          <span class="notice-title">{{ announcements[0].title }}</span>
+          <span class="notice-body">{{ announcements[0].content }}</span>
+        </router-link>
       </div>
-    </header>
-    <!-- 顶部概览 -->
-    <section class="oj-banner card" aria-label="平台概览">
-      <div class="oj-banner-item">
-        <span class="oj-banner-num">{{ overview.totalProblems }}</span>
-        <span class="oj-banner-label">题目总数</span>
-      </div>
-      <div class="oj-banner-divider" aria-hidden="true"></div>
-      <div class="oj-banner-item">
-        <span class="oj-banner-num">{{ overview.solvers }}</span>
-        <span class="oj-banner-label">解题者</span>
-      </div>
-      <div class="oj-banner-divider" aria-hidden="true"></div>
-      <div class="oj-banner-item">
-        <span class="oj-banner-num">{{ overview.submits }}</span>
-        <span class="oj-banner-label">累计提交</span>
-      </div>
-      <div class="oj-banner-divider" aria-hidden="true"></div>
-      <div class="oj-banner-item">
-        <span class="oj-banner-num">{{ overview.acceptRate }}<small>%</small></span>
-        <span class="oj-banner-label">整体通过率</span>
-      </div>
-      <p class="oj-banner-note">写下第一行代码<br />看看能过几个测试用例</p>
-    </section>
-
-    <!-- 公告：没有公告时整块不渲染，不留白 -->
-    <div v-if="announcements.length" class="card notice-bar">
-      <span class="notice-icon" aria-hidden="true">
-        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M3 10 L3 14 L7 14 L13 18 L13 6 L7 10 Z" /><path d="M17 9 A5 5 0 0 1 17 15" />
-        </svg>
-      </span>
-      <el-carousel height="28px" direction="vertical" :autoplay="true" :interval="4500" indicator-position="none" arrow="never">
-        <el-carousel-item v-for="a in announcements" :key="a.id">
-          <span class="notice-title">【{{ a.title }}】</span>
-          <span class="notice-content">{{ a.content }}</span>
-        </el-carousel-item>
-      </el-carousel>
-    </div>
-
-    <div class="card">
-      <header class="list-head">
-        <div>
-          <h2>题库</h2>
-          <p class="sub">
-            共 <b>{{ total }}</b> 道题匹配当前筛选
-            <template v-if="hasFilter">（<button type="button" class="link-btn" @click="resetFilter">清除筛选</button>）</template>
-          </p>
+      <dl class="head-stats" aria-label="平台概览">
+        <div class="stat">
+          <dt>PROBLEMS</dt>
+          <dd>{{ overview.totalProblems }}</dd>
         </div>
-      </header>
+        <div class="stat">
+          <dt>SOLVERS</dt>
+          <dd>{{ overview.solvers }}</dd>
+        </div>
+        <div class="stat">
+          <dt>SUBMISSIONS</dt>
+          <dd>{{ overview.submits }}</dd>
+        </div>
+        <div class="stat">
+          <dt>AC RATE</dt>
+          <dd>{{ overview.acceptRate }}<small>%</small></dd>
+        </div>
+      </dl>
+    </header>
 
-      <!-- 筛选条：难度用分段按钮而非下拉，一步点到、少一次弹层 -->
-      <div class="toolbar">
+    <div class="problem-body">
+      <aside class="filter-rail" aria-label="题目筛选">
+        <div class="filter-head">
+          <span class="filter-title">筛选</span>
+          <button v-if="hasFilter" type="button" class="clear-btn" @click="resetFilter">清除</button>
+        </div>
+
+        <label class="rail-label" for="problem-search">关键词</label>
         <el-input
+          id="problem-search"
           v-model="keyword"
           placeholder="搜索题目名称"
           class="search-input"
@@ -67,26 +49,31 @@
           @clear="search"
         >
           <template #prefix>
-            <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true">
+            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
               <circle cx="11" cy="11" r="7" /><path d="M20 20 L16.5 16.5" />
             </svg>
           </template>
         </el-input>
 
-        <div class="seg" role="group" aria-label="按难度筛选">
+        <p class="rail-label">难度</p>
+        <div class="diff-filter" role="group" aria-label="按难度筛选">
           <button
             v-for="opt in difficultyOptions"
             :key="String(opt.value)"
             type="button"
-            class="seg-btn"
+            class="diff-item"
             :class="{ active: difficulty === opt.value }"
             :aria-pressed="difficulty === opt.value"
             @click="pickDifficulty(opt.value)"
           >
-            {{ opt.label }}
+            <span v-if="opt.value !== undefined" class="diff-dot" :class="`dot-${opt.value}`" aria-hidden="true" />
+            <span v-else class="diff-dot dot-all" aria-hidden="true">·</span>
+            <span>{{ opt.label }}</span>
+            <span v-if="difficulty === opt.value" class="diff-check" aria-hidden="true">✓</span>
           </button>
         </div>
 
+        <p class="rail-label">标签</p>
         <el-select
           v-model="tag"
           placeholder="全部标签"
@@ -98,59 +85,63 @@
           <el-option v-for="t in tagOptions" :key="t" :label="t" :value="t" />
         </el-select>
 
-        <el-button type="primary" @click="search">搜索</el-button>
-      </div>
+        <el-button type="primary" class="rail-search" @click="search">检索题目</el-button>
 
-      <el-table :data="problems" v-loading="loading" row-key="id" empty-text="没有符合条件的题目">
-        <el-table-column label="#" width="72" align="center">
-          <template #default="{ $index }">
-            <span class="oj-badge-id">{{ (page - 1) * size + $index + 1 }}</span>
-          </template>
-        </el-table-column>
+        <p class="rail-note">通过率 = 该题 AC 提交数 / 全部提交数。标签按算法类型聚合。</p>
+      </aside>
 
-        <el-table-column label="题目" min-width="300">
-          <template #default="{ row }">
-            <router-link :to="`/problems/${row.id}`" class="title-link">{{ row.title }}</router-link>
-            <div v-if="row.tags && row.tags.length" class="row-tags">
-              <span v-for="t in row.tags" :key="t" class="mini-tag">{{ t }}</span>
-            </div>
-          </template>
-        </el-table-column>
+      <main class="list-card" v-loading="loading">
+        <div class="list-head">
+          <p class="list-count">
+            共 <b>{{ total }}</b> 道题
+            <span v-if="hasFilter" class="filtered-badge">已筛选</span>
+          </p>
+          <p class="list-hint">按题号排列</p>
+        </div>
 
-        <el-table-column label="难度" width="96" align="center">
-          <template #default="{ row }">
-            <span class="oj-diff" :class="`diff-${row.difficulty}`">{{ DIFFICULTY_MAP[row.difficulty]?.label || '未知' }}</span>
-          </template>
-        </el-table-column>
+        <div class="table-head" aria-hidden="true">
+          <span>ID</span>
+          <span>题目</span>
+          <span>难度</span>
+          <span>通过率</span>
+          <span></span>
+        </div>
 
-        <el-table-column label="通过率" width="210">
-          <template #default="{ row }">
-            <div class="rate-cell">
-              <el-progress
-                :percentage="passRate(row)"
-                :stroke-width="8"
-                :show-text="false"
-                :color="rateColorVar(passRate(row))"
-              />
-              <span class="rate-text tabular" :class="rateClass(passRate(row))">
-                {{ passRate(row) }}%
-                <em>({{ row.acceptedCount }}/{{ row.submitCount }})</em>
+        <ul v-if="problems.length" class="entry-list">
+          <li v-for="row in problems" :key="row.id">
+            <router-link :to="`/problems/${row.id}`" class="entry">
+              <span class="entry-id">#{{ row.id }}</span>
+              <span class="entry-main">
+                <span class="entry-title">{{ row.title }}</span>
+                <span v-if="row.tags && row.tags.length" class="entry-tags">
+                  <span v-for="t in row.tags" :key="t" class="mini-tag">{{ t }}</span>
+                </span>
               </span>
-            </div>
-          </template>
-        </el-table-column>
-      </el-table>
+              <span class="oj-diff entry-diff" :class="`diff-${row.difficulty}`">{{ DIFFICULTY_MAP[row.difficulty]?.label || '未知' }}</span>
+              <span class="entry-rate">
+                <span class="rate-bar" aria-hidden="true">
+                  <span class="rate-fill" :style="{ width: `${passRate(row)}%`, background: rateColorVar(passRate(row)) }" />
+                </span>
+                <span class="rate-value tabular" :class="rateClass(passRate(row))">{{ passRate(row) }}%</span>
+                <span class="rate-frac">{{ row.acceptedCount }}/{{ row.submitCount }}</span>
+              </span>
+              <span class="entry-go" aria-hidden="true">→</span>
+            </router-link>
+          </li>
+        </ul>
+        <el-empty v-else-if="!loading" description="没有符合条件的题目，换个筛选条件试试" :image-size="72" />
 
-      <el-pagination
-        v-if="total > size"
-        v-model:current-page="page"
-        :page-size="size"
-        :total="total"
-        :pager-count="7"
-        layout="prev, pager, next, jumper"
-        class="pager"
-        @current-change="load"
-      />
+        <div v-if="total > size" class="pager-wrap">
+          <el-pagination
+            v-model:current-page="page"
+            :page-size="size"
+            :total="total"
+            :pager-count="7"
+            layout="prev, pager, next, jumper"
+            @current-change="load"
+          />
+        </div>
+      </main>
     </div>
   </div>
 </template>
@@ -196,10 +187,6 @@ function rateClass(rate: number) {
   return 'rate-low'
 }
 
-/**
- * el-progress 的 color 走内联 style，认 CSS 变量字符串，
- * 这样配色仍然由 index.css 单点控制，SFC 里不写裸色值（P2-18）。
- */
 function rateColorVar(rate: number) {
   if (rate >= 60) return 'var(--oj-success)'
   if (rate >= 30) return 'var(--oj-warning)'
@@ -248,9 +235,8 @@ async function load() {
 
 /**
  * 概览条的数据源：
- * - totalProblems / tags 走 /api/problems/overview（全站维度，不随分页变化，P2-7）
- * - 解题者 / 累计提交 / 整体通过率 走排行榜 summary：后端是**全表聚合**（COUNT(*) + COUNT(DISTINCT)），
- *   不是当前页求和（P2-8）。三者任一取不到就保持 0，横幅降级但不报错。
+ * - totalProblems / tags 走 /api/problems/overview（全站维度，不随分页变化）
+ * - 解题者 / 累计提交 / 整体通过率 走排行榜 summary（后端是整表聚合）
  */
 onMounted(() => {
   load()
@@ -261,7 +247,7 @@ onMounted(() => {
       overview.value.submits = lb.summary?.totalSubmit ?? 0
       overview.value.acceptRate = lb.summary?.overallAcceptRate ?? 0
     })
-    .catch(() => { /* 横幅统计失败不影响列表 */ })
+    .catch(() => { /* 概览失败不影响列表 */ })
 
   getProblemOverview()
     .then((data) => {
@@ -272,180 +258,460 @@ onMounted(() => {
 
   listAnnouncements()
     .then((list) => { announcements.value = list.slice(0, 5) })
-    .catch(() => { /* 公告栏失败不影响列表 */ })
+    .catch(() => { /* 公告失败不影响列表 */ })
 })
 </script>
 
 <style scoped>
-.oj-banner-num small {
-  font-size: 14px;
-  margin-left: 1px;
+.problem-page {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 44px 32px 64px;
 }
 
-.notice-bar {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 10px 24px;
-  margin-bottom: 16px;
+.problem-head {
+  align-items: flex-end;
 }
-.notice-icon {
-  display: inline-flex;
-  align-items: center;
-  color: var(--oj-warning);
-  flex-shrink: 0;
-}
-.notice-bar :deep(.el-carousel) {
-  flex: 1;
+.head-main {
   min-width: 0;
 }
-.notice-bar :deep(.el-carousel__container) {
-  height: 28px;
-}
-.notice-title {
-  color: var(--oj-warning);
-  font-weight: 700;
-  font-size: 13px;
-  margin-right: 8px;
-}
-.notice-content {
-  color: var(--oj-gray-600);
-  font-size: 13px;
-}
-
-.list-head {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 16px;
-  margin-bottom: 16px;
-}
-.list-head h2 {
-  margin: 0;
-}
-.list-head .sub {
-  margin: 6px 0 0;
-  font-size: 12.5px;
-  color: var(--oj-text-sub);
-}
-.list-head .sub b {
-  color: var(--oj-primary);
-  font-variant-numeric: tabular-nums;
-}
-.link-btn {
-  border: none;
-  background: none;
-  padding: 0;
-  font: inherit;
-  color: var(--oj-primary);
-  cursor: pointer;
-  text-decoration: underline;
-  text-underline-offset: 2px;
-}
-
-.toolbar {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 12px;
-  margin-bottom: 16px;
-}
-.search-input {
-  width: 240px;
-}
-.tag-select {
-  width: 150px;
-}
-
-/* 分段控件：难度筛选的"全部/简单/中等/困难" */
-.seg {
-  display: inline-flex;
-  padding: 3px;
-  gap: 2px;
-  border-radius: var(--oj-radius-sm);
-  background: var(--oj-gray-50);
-  border: 1px solid var(--oj-border);
-}
-.seg-btn {
-  border: none;
-  background: transparent;
-  padding: 5px 13px;
-  border-radius: 6px;
-  font-family: inherit;
-  font-size: 13px;
-  font-weight: 600;
-  color: var(--oj-gray-500);
-  cursor: pointer;
-  transition: background var(--oj-duration) var(--oj-ease),
-    color var(--oj-duration) var(--oj-ease);
-}
-.seg-btn:hover {
-  color: var(--oj-primary);
-}
-.seg-btn.active {
-  background: var(--oj-gray-100);
-  color: var(--oj-primary);
-  box-shadow: var(--oj-shadow-sm);
-}
-
-.title-link {
-  color: var(--oj-gray-800);
-  font-weight: 600;
-  font-size: 14.5px;
-  transition: color var(--oj-duration) var(--oj-ease);
-}
-.title-link:hover {
-  color: var(--oj-primary);
-}
-.row-tags {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 5px;
-  margin-top: 5px;
-}
-.mini-tag {
-  padding: 1px 7px;
-  border-radius: var(--oj-radius-pill);
-  background: var(--oj-gray-50);
-  border: 1px solid var(--oj-border);
-  color: var(--oj-gray-500);
-  font-size: 11.5px;
-  line-height: 1.5;
-}
-
-.rate-cell {
+.notice-line {
   display: flex;
   align-items: center;
   gap: 10px;
+  margin-top: 15px;
+  padding: 7px 11px;
+  max-width: 100%;
+  background: var(--oj-card);
+  border: 1px solid var(--oj-border);
+  border-left: 3px solid var(--oj-primary);
+  border-radius: 5px;
+  font-size: 11.5px;
+  color: var(--oj-text-sub);
+  box-shadow: var(--oj-shadow-sm);
 }
-.rate-cell :deep(.el-progress) {
-  flex: 1;
-  min-width: 60px;
+.notice-tag {
+  flex-shrink: 0;
+  font-family: var(--oj-font-mono);
+  font-size: 8.5px;
+  letter-spacing: 0.06em;
+  color: var(--oj-primary);
+  background: var(--oj-primary-soft);
+  padding: 1px 5px;
+  border-radius: 3px;
 }
-.rate-text {
-  font-size: 12px;
-  font-weight: 700;
+.notice-title {
+  flex-shrink: 0;
+  color: var(--oj-text);
+  font-weight: 600;
+}
+.notice-body {
+  overflow: hidden;
+  text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.head-stats {
+  display: flex;
+  margin: 0;
+  padding: 0;
   flex-shrink: 0;
 }
-.rate-text em {
-  font-style: normal;
-  font-weight: 400;
+.head-stats .stat {
+  padding: 0 20px;
+  border-left: 1px solid var(--oj-border);
+  text-align: right;
+}
+.head-stats .stat:last-child {
+  padding-right: 0;
+}
+.head-stats dt {
+  font-family: var(--oj-font-mono);
+  font-size: 8.5px;
+  letter-spacing: 0.1em;
+  color: var(--oj-text-weak);
+}
+.head-stats dd {
+  margin: 5px 0 0;
+  font-family: var(--oj-font-mono);
+  font-size: 26px;
+  line-height: 1;
+  font-weight: 600;
+  letter-spacing: -0.04em;
+  color: var(--oj-text);
+}
+.head-stats dd small {
+  margin-left: 1px;
+  font-size: 11px;
+  color: var(--oj-text-sub);
+}
+
+/* ---------- 左筛选 + 右列表 ---------- */
+.problem-body {
+  display: grid;
+  grid-template-columns: 220px minmax(0, 1fr);
+  gap: 22px;
+  align-items: start;
+}
+
+.filter-rail {
+  position: sticky;
+  top: 84px;
+  background: var(--oj-card);
+  border: 1px solid var(--oj-border);
+  border-radius: 10px;
+  padding: 18px;
+  box-shadow: var(--oj-shadow-sm);
+}
+.filter-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--oj-border);
+}
+.filter-title {
+  font-size: 12px;
+  font-weight: 700;
+}
+.clear-btn {
+  border: 0;
+  background: none;
+  padding: 0;
+  font-family: inherit;
+  font-size: 10.5px;
+  color: var(--oj-text-sub);
+  cursor: pointer;
+}
+.clear-btn:hover {
+  color: var(--oj-primary);
+}
+
+.rail-label {
+  display: block;
+  margin: 16px 0 7px;
+  font-family: var(--oj-font-mono);
+  font-size: 9px;
+  letter-spacing: 0.08em;
+  color: var(--oj-text-sub);
+}
+.rail-label:first-of-type {
+  margin-top: 14px;
+}
+.search-input,
+.tag-select {
+  width: 100%;
+}
+
+.diff-filter {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+.diff-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 9px;
+  border: 1px solid transparent;
+  border-radius: 5px;
+  background: transparent;
+  font-family: inherit;
+  font-size: 12px;
+  color: var(--oj-text-sub);
+  text-align: left;
+  cursor: pointer;
+  transition: background var(--oj-duration) var(--oj-ease), color var(--oj-duration) var(--oj-ease);
+}
+.diff-item:hover {
+  background: var(--oj-gray-50);
+  color: var(--oj-text);
+}
+.diff-item.active {
+  background: var(--oj-primary-soft);
+  border-color: var(--oj-info-border);
+  color: var(--oj-text);
+  font-weight: 600;
+}
+.diff-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.dot-all {
+  width: auto;
+  height: auto;
+  font-family: var(--oj-font-mono);
+  font-size: 9px;
+  color: var(--oj-text-weak);
+  line-height: 1;
+}
+.dot-1 { background: var(--oj-success); }
+.dot-2 { background: var(--oj-warning); }
+.dot-3 { background: var(--oj-danger); }
+.diff-check {
+  margin-left: auto;
+  font-size: 10px;
+  color: var(--oj-primary);
+}
+
+.rail-search {
+  width: 100%;
+  margin-top: 16px;
+}
+.rail-note {
+  margin-top: 16px;
+  padding-top: 12px;
+  border-top: 1px solid var(--oj-border);
+  font-size: 10px;
+  line-height: 1.7;
   color: var(--oj-text-weak);
 }
 
-.pager {
-  margin-top: 16px;
-  justify-content: flex-end;
+/* ---------- 列表 ---------- */
+.list-card {
+  min-width: 0;
+  min-height: 300px;
+  background: var(--oj-card);
+  border: 1px solid var(--oj-border);
+  border-radius: 10px;
+  box-shadow: var(--oj-shadow-sm);
+  overflow: hidden;
+}
+.list-head {
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 0 18px;
+  border-bottom: 1px solid var(--oj-border);
+}
+.list-count {
+  font-size: 12px;
+  color: var(--oj-text-sub);
+}
+.list-count b {
+  margin: 0 2px;
+  font-family: var(--oj-font-mono);
+  font-size: 15px;
+  color: var(--oj-text);
+}
+.filtered-badge {
+  margin-left: 8px;
+  padding: 1px 6px;
+  border-radius: 3px;
+  background: var(--oj-primary-soft);
+  color: var(--oj-primary);
+  font-size: 9px;
+}
+.list-hint {
+  font-family: var(--oj-font-mono);
+  font-size: 8.5px;
+  letter-spacing: 0.06em;
+  color: var(--oj-text-weak);
 }
 
-@media (max-width: 768px) {
-  .search-input,
-  .tag-select {
+.table-head,
+.entry {
+  display: grid;
+  grid-template-columns: 52px minmax(0, 1fr) 72px 176px 22px;
+  gap: 14px;
+  align-items: center;
+  padding: 0 18px;
+}
+.table-head {
+  height: 32px;
+  background: var(--oj-gray-50);
+  border-bottom: 1px solid var(--oj-border);
+  font-family: var(--oj-font-mono);
+  font-size: 8.5px;
+  letter-spacing: 0.09em;
+  color: var(--oj-text-weak);
+}
+
+.entry-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.entry {
+  min-height: 58px;
+  border-bottom: 1px solid var(--oj-border);
+  transition: background var(--oj-duration) var(--oj-ease), box-shadow var(--oj-duration) var(--oj-ease);
+}
+.entry:last-child {
+  border-bottom: 0;
+}
+.entry:hover {
+  background: var(--oj-gray-50);
+  box-shadow: inset 2px 0 0 var(--oj-primary);
+}
+.entry-id {
+  font-family: var(--oj-font-mono);
+  font-size: 10.5px;
+  color: var(--oj-text-weak);
+}
+.entry-main {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.entry-title {
+  font-size: 13.5px;
+  font-weight: 600;
+  line-height: 1.4;
+  color: var(--oj-text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.entry:hover .entry-title {
+  color: var(--oj-primary);
+}
+.entry-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+.mini-tag {
+  padding: 0 5px;
+  border: 1px solid var(--oj-border);
+  border-radius: 3px;
+  background: var(--oj-gray-50);
+  color: var(--oj-text-weak);
+  font-family: var(--oj-font-mono);
+  font-size: 8px;
+  line-height: 15px;
+}
+.entry-diff {
+  font-size: 11.5px;
+}
+.entry-rate {
+  display: grid;
+  grid-template-columns: minmax(44px, 1fr) 38px 50px;
+  align-items: center;
+  gap: 7px;
+}
+.rate-bar {
+  height: 3px;
+  border-radius: 99px;
+  background: var(--oj-gray-100);
+  overflow: hidden;
+}
+.rate-fill {
+  display: block;
+  height: 100%;
+  border-radius: 99px;
+  transition: width 0.3s var(--oj-ease);
+}
+.rate-value {
+  font-family: var(--oj-font-mono);
+  font-size: 10px;
+  font-weight: 600;
+  text-align: right;
+}
+.rate-frac {
+  font-family: var(--oj-font-mono);
+  font-size: 8.5px;
+  color: var(--oj-text-weak);
+  text-align: right;
+}
+.entry-go {
+  display: flex;
+  justify-content: flex-end;
+  font-size: 12px;
+  color: var(--oj-text-weak);
+  transition: color var(--oj-duration) var(--oj-ease), transform var(--oj-duration) var(--oj-ease);
+}
+.entry:hover .entry-go {
+  color: var(--oj-primary);
+  transform: translateX(2px);
+}
+
+.pager-wrap {
+  display: flex;
+  justify-content: flex-end;
+  padding: 16px 18px 18px;
+  border-top: 1px solid var(--oj-border);
+}
+
+@media (max-width: 1080px) {
+  .head-stats {
     width: 100%;
+    margin-top: 18px;
+    padding-top: 14px;
+    border-top: 1px solid var(--oj-border);
   }
-  .toolbar {
-    gap: 8px;
+  .head-stats .stat:first-child {
+    padding-left: 0;
+    border-left: 0;
+    text-align: left;
+  }
+  .problem-body {
+    grid-template-columns: 1fr;
+  }
+  .filter-rail {
+    position: static;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0 20px;
+  }
+  .filter-head,
+  .rail-note {
+    grid-column: 1 / -1;
+  }
+  .rail-note {
+    display: none;
+  }
+  .rail-search {
+    align-self: end;
+  }
+}
+@media (max-width: 700px) {
+  .problem-page {
+    padding: 28px 18px 52px;
+  }
+  .head-stats {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0;
+  }
+  .head-stats .stat {
+    padding: 0 0 10px 14px;
+    border-left: 1px solid var(--oj-border);
+    text-align: left;
+  }
+  .head-stats .stat:first-child {
+    padding-left: 0;
+    border-left: 0;
+  }
+  .head-stats .stat:nth-child(n + 3) {
+    padding-top: 10px;
+    border-top: 1px solid var(--oj-border);
+  }
+  .filter-rail {
+    grid-template-columns: 1fr;
+  }
+  .notice-body {
+    display: none;
+  }
+  .table-head {
+    display: none;
+  }
+  .entry {
+    grid-template-columns: 46px minmax(0, 1fr) 20px;
+    gap: 10px;
+    padding: 12px 16px;
+  }
+  .entry-diff,
+  .entry-rate {
+    display: none;
+  }
+  .head-stats dd {
+    font-size: 22px;
   }
 }
 </style>
