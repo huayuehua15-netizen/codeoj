@@ -53,3 +53,14 @@ cd oj-web && npm ci && npm run build
 - 响应式：1440 / 1024 / 390 全路由横向溢出检查通过；≤860px 导航两行换行、≤960px 管理左轨横向换行、≤700px 题库读数 2×2。
 - 验证：`npm run typecheck` exit 0；`npm test` 25/25；`npm run build` exit 0（Monaco/ECharts 大 chunk 警告为既有依赖体积）。
 - 预览说明：本机无真实后端时使用临时 mock；mock 不得伪造用户身份（曾用「预览账号」覆盖前端显示，已修正并记录于 PROGRESS §24.6）。真实数据库未写入。
+
+## 2026-11-19 增补：账号设置页与编辑器偏好
+
+本轮仍只改 `oj-web`，`oj-server`、`oj-judge`、`judge-images` 未触碰；设置页复用既有认证 API。
+
+- 新增 `/settings` 页面与顶栏「账号设置」入口；个人中心原邮箱/密码表单收口为设置入口卡。
+- 设置页包含账号资料、登录安全、编辑器偏好、本地数据四区；邮箱/签名只提交变化字段，密码修改成功后强制重新登录。
+- 编辑器偏好（字号 12–20、TAB 2/4、自动换行、代码地图、默认语言）落 localStorage `oj_editor_prefs`，不写数据库；Monaco 已实时响应，题目详情默认语言已接入。
+- 头像上传保持 256×256 居中裁剪、PNG/JPG/WebP、原图 ≤5MB；裁剪失败有明确提示。
+- 验证：`npm run typecheck` exit 0；`npm test` 29/29；`npm run build` exit 0；1440/390 设置页横向溢出检查通过。
+- 预览 mock 的 PUT/注销处理仅用于本机视觉验收，不属于项目源码；真实接口契约见 `docs/API.md` §1.4–1.6。

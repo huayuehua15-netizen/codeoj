@@ -239,6 +239,7 @@ import { runInSandbox, type RunResult } from '@/utils/jsRunner'
 import { getProblem, type Problem } from '@/api/problem'
 import { submitCode, getSubmission } from '@/api/submission'
 import { useUserStore } from '@/stores/user'
+import { usePreferencesStore } from '@/stores/preferences'
 import { onJudgePush } from '@/api/ws'
 import { CODE_TEMPLATES, DIFFICULTY_MAP, LANGUAGE_OPTIONS, statusLabel } from '@/utils/status'
 import MarkdownPreview from '@/components/MarkdownPreview.vue'
@@ -246,11 +247,12 @@ import CodeEditor from '@/components/CodeEditor.vue'
 
 const route = useRoute()
 const userStore = useUserStore()
+const prefs = usePreferencesStore()
 
 const problem = ref<Problem>()
 const loadError = ref(false)
-const language = ref('cpp')
-const prevLanguage = ref('cpp')
+const language = ref(prefs.defaultLanguage)
+const prevLanguage = ref(prefs.defaultLanguage)
 const code = ref('')
 const submitting = ref(false)
 

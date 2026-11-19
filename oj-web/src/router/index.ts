@@ -109,6 +109,12 @@ const router = createRouter({
           meta: { title: '个人中心', requiresAuth: true },
         },
         {
+          path: 'settings',
+          name: 'settings',
+          component: () => import('@/views/auth/SettingsView.vue'),
+          meta: { title: '账号设置', requiresAuth: true },
+        },
+        {
           path: 'admin/problems',
           name: 'admin-problems',
           component: () => import('@/views/admin/ProblemAdminView.vue'),

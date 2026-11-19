@@ -53,6 +53,7 @@
               <template #dropdown>
                 <el-dropdown-menu>
                   <el-dropdown-item command="profile">个人中心</el-dropdown-item>
+                  <el-dropdown-item command="settings">账号设置</el-dropdown-item>
                   <el-dropdown-item command="logout" divided>退出登录</el-dropdown-item>
                 </el-dropdown-menu>
               </template>
@@ -154,6 +155,8 @@ function goAdmin(path: string) {
 function handleCommand(command: string) {
   if (command === 'profile') {
     router.push('/profile')
+  } else if (command === 'settings') {
+    router.push('/settings')
   } else if (command === 'logout') {
     handleLogout()
   }
