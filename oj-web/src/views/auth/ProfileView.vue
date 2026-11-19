@@ -240,43 +240,21 @@
           <el-empty v-else description="还没有提交记录" :image-size="56" />
         </section>
 
-        <!-- 账号安全 -->
-        <section class="panel panel-compact panel-box security">
+        <!-- 账号设置入口：邮箱/密码/头像/编辑器偏好统一在设置页管理 -->
+        <section class="panel panel-compact panel-box settings-entry">
           <div class="panel-head">
-            <span class="panel-kicker">SECURITY</span>
-            <h2 class="panel-title">账号安全</h2>
+            <div>
+              <span class="panel-kicker">SETTINGS</span>
+              <h2 class="panel-title">账号设置</h2>
+            </div>
           </div>
-
-          <div class="sec-block">
-            <h3 class="sec-title">邮箱</h3>
-            <el-form :model="emailForm" label-position="top" class="sec-form">
-              <el-form-item label="新邮箱">
-                <el-input v-model="emailForm.email" placeholder="example@example.com" />
-              </el-form-item>
-              <el-form-item>
-                <el-button :loading="savingEmail" @click="saveEmail">保存邮箱</el-button>
-              </el-form-item>
-            </el-form>
-          </div>
-
-          <div class="sec-block">
-            <h3 class="sec-title">密码</h3>
-            <el-form :model="pwdForm" label-position="top" class="sec-form">
-              <el-form-item label="原密码">
-                <el-input v-model="pwdForm.oldPassword" type="password" show-password />
-              </el-form-item>
-              <el-form-item label="新密码">
-                <el-input v-model="pwdForm.newPassword" type="password" show-password placeholder="6-32 位" />
-              </el-form-item>
-              <el-form-item label="确认密码">
-                <el-input v-model="pwdForm.confirm" type="password" show-password />
-              </el-form-item>
-              <el-form-item>
-                <el-button type="warning" :loading="savingPwd" @click="savePassword">修改密码</el-button>
-              </el-form-item>
-            </el-form>
-            <p class="tip">修改密码成功后当前登录状态将失效，需重新登录。</p>
-          </div>
+          <p class="settings-copy">
+            邮箱、密码、头像与编辑器偏好集中管理。修改密码后当前登录状态会失效。
+          </p>
+          <router-link class="settings-link" to="/settings">
+            打开账号设置
+            <span aria-hidden="true">→</span>
+          </router-link>
         </section>
       </aside>
     </div>
@@ -286,26 +264,22 @@
 <script setup lang="ts">
 // 个人主页：布局参照 LeetCode 个人页（头部 → 难度进度 → 热力图 → 最近提交）。
 // 数据源全部来自真实接口：auth/info + statistics + trend(182 天) + languages + pageMy + favorites。
-import { computed, onMounted, reactive, ref } from 'vue'
-import { useRouter } from 'vue-router'
+import { computed, onMounted, ref } from 'vue'
 import { ElMessage } from 'element-plus'
 import {
-  changePassword,
   getUserInfo,
   updateAvatar,
-  updateEmail,
   updateSignature,
   type LoginVO,
 } from '@/api/auth'
 import { pageSubmissions, getStatistics, getTrend, getLanguageDist, type SubmissionDetail, type Statistics } from '@/api/submission'
 import { myFavorites } from '@/api/favorite'
 import { useUserStore } from '@/stores/user'
-import { disconnectWs } from '@/api/ws'
 import { formatDateTime, relativeTime } from '@/utils/datetime'
 import { buildHeatmapGrid, type HeatmapGrid } from '@/utils/heatmap'
+import { cropToSquareDataUrl } from '@/utils/avatar'
 import { statusColor, statusLabel, formatTimeUsed } from '@/utils/status'
 
-const router = useRouter()
 const userStore = useUserStore()
 
 const info = ref<LoginVO>()
@@ -316,10 +290,6 @@ const langDist = ref<{ language: string; total: number; accepted: number }[]>([]
 const recent = ref<SubmissionDetail[]>([])
 const favorites = ref<{ problemId: number; title: string; difficulty: number; favoritedAt: string }[]>([])
 const favLoading = ref(false)
-const emailForm = reactive({ email: '' })
-const pwdForm = reactive({ oldPassword: '', newPassword: '', confirm: '' })
-const savingEmail = ref(false)
-const savingPwd = ref(false)
 const avatarInput = ref<HTMLInputElement>()
 const uploadingAvatar = ref(false)
 const sigEditing = ref(false)
@@ -368,7 +338,6 @@ function langPercent(total: number) {
 
 onMounted(async () => {
   info.value = await userStore.refreshUserInfo()
-  emailForm.email = info.value.email || ''
   heatmapLoading.value = true
   try {
     const [stat, trend, langs, recentPage, favs] = await Promise.allSettled([
@@ -426,65 +395,19 @@ async function onAvatarFile(e: Event) {
   }
   uploadingAvatar.value = true
   try {
-    const dataUrl = await cropToSquareDataUrl(file)
+    let dataUrl: string
+    try {
+      dataUrl = await cropToSquareDataUrl(file)
+    } catch {
+      ElMessage.error('图片处理失败，请换一张图片重试')
+      return
+    }
     await updateAvatar(dataUrl)
     await userStore.refreshUserInfo()
     info.value = await getUserInfo()
     ElMessage.success('头像已更新')
   } finally {
     uploadingAvatar.value = false
-  }
-}
-
-async function cropToSquareDataUrl(file: File, size = 256): Promise<string> {
-  const bitmap = await createImageBitmap(file)
-  const side = Math.min(bitmap.width, bitmap.height)
-  const sx = (bitmap.width - side) / 2
-  const sy = (bitmap.height - side) / 2
-  const canvas = document.createElement('canvas')
-  canvas.width = size
-  canvas.height = size
-  const ctx = canvas.getContext('2d')!
-  ctx.imageSmoothingQuality = 'high'
-  ctx.drawImage(bitmap, sx, sy, side, side, 0, 0, size, size)
-  bitmap.close()
-  const webp = canvas.toDataURL('image/webp', 0.85)
-  return webp.startsWith('data:image/webp') ? webp : canvas.toDataURL('image/jpeg', 0.85)
-}
-
-async function saveEmail() {
-  if (!emailForm.email) {
-    ElMessage.warning('请输入邮箱')
-    return
-  }
-  savingEmail.value = true
-  try {
-    await updateEmail(emailForm.email)
-    ElMessage.success('邮箱已更新')
-    info.value = await getUserInfo()
-  } finally {
-    savingEmail.value = false
-  }
-}
-
-async function savePassword() {
-  if (!pwdForm.oldPassword || !pwdForm.newPassword) {
-    ElMessage.warning('请填写原密码与新密码')
-    return
-  }
-  if (pwdForm.newPassword !== pwdForm.confirm) {
-    ElMessage.warning('两次输入的新密码不一致')
-    return
-  }
-  savingPwd.value = true
-  try {
-    await changePassword(pwdForm.oldPassword, pwdForm.newPassword)
-    ElMessage.success('密码已修改，请重新登录')
-    userStore.logout()
-    disconnectWs()
-    router.push('/login')
-  } finally {
-    savingPwd.value = false
   }
 }
 </script>
@@ -980,33 +903,24 @@ async function savePassword() {
   color: var(--oj-text-weak);
 }
 
-/* ---------- 账号安全 ---------- */
-.security .sec-block + .sec-block {
-  margin-top: 20px;
-  padding-top: 16px;
-  border-top: 1px solid var(--oj-border);
-}
-.sec-title {
-  margin: 0 0 8px;
-  font-size: 11.5px;
-  letter-spacing: 0;
-  color: var(--oj-text);
-  font-weight: 650;
-}
-.sec-form :deep(.el-form-item) {
-  margin-bottom: 10px;
-}
-.sec-form :deep(.el-form-item__label) {
-  padding-bottom: 2px;
+/* ---------- 账号设置入口 ---------- */
+.settings-entry .settings-copy {
+  margin: 0 0 14px;
   font-size: 11px;
+  line-height: 1.7;
   color: var(--oj-text-sub);
-  line-height: 1.6;
 }
-.tip {
-  margin: 2px 0 0;
-  font-size: 10px;
-  line-height: 1.6;
-  color: var(--oj-text-weak);
+.settings-entry .settings-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--oj-primary);
+  font-size: 11.5px;
+  font-weight: 700;
+  text-decoration: none;
+}
+.settings-entry .settings-link:hover {
+  text-decoration: underline;
 }
 
 @media (max-width: 1120px) {
@@ -1027,7 +941,7 @@ async function savePassword() {
     gap: 16px;
     margin-top: 0;
   }
-  .security {
+  .settings-entry {
     grid-column: 1 / -1;
   }
 }

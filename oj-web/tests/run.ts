@@ -12,3 +12,4 @@
 import './status.test.ts'
 import './datetime.test.ts'
 import './heatmap.test.ts'
+import './preferences.test.ts'
