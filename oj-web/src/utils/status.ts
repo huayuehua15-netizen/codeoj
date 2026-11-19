@@ -22,38 +22,51 @@ export function statusType(status?: number) {
 }
 
 /**
+ * 读取设计 token 的实际色值。
+ *
+ * 为什么需要它：SFC 样式里可以直接写 `var(--oj-x)`，但 **ECharts 画在 canvas 上**
+ * （以及任何需要真实色值而非 CSS 引用的场景），拿不到变量解析结果。
+ * 这里统一从 :root 上取一次，色板仍然只有 styles/index.css 一份。
+ */
+export function cssVar(name: string, fallback = '#8a8f98'): string {
+  if (typeof document === 'undefined') return fallback
+  const value = getComputedStyle(document.documentElement).getPropertyValue(name).trim()
+  return value || fallback
+}
+
+/**
  * 状态主色：用于「彩色圆点 + 文字」的专业 OJ 呈现（替代通用 el-tag）。
  * 同族状态同色：AC 绿 / WA·RE·SE 红 / TLE·MLE·CE 橙 / 判题中主题色 / 排队中灰。
  */
 const STATUS_COLOR: Record<number, string> = {
-  0: '#6b7280',
-  1: '#4f46e5',
-  2: '#16a34a',
-  3: '#dc2626',
-  4: '#d97706',
-  5: '#d97706',
-  6: '#dc2626',
-  7: '#d97706',
-  8: '#dc2626',
+  0: 'var(--oj-gray-500)',
+  1: 'var(--oj-primary)',
+  2: 'var(--oj-success)',
+  3: 'var(--oj-danger)',
+  4: 'var(--oj-warning)',
+  5: 'var(--oj-warning)',
+  6: 'var(--oj-danger)',
+  7: 'var(--oj-warning)',
+  8: 'var(--oj-danger)',
 }
 
 export function statusColor(status?: number) {
-  return status != null ? STATUS_COLOR[status] || '#6b7280' : '#6b7280'
+  return status != null ? STATUS_COLOR[status] || 'var(--oj-gray-500)' : 'var(--oj-gray-500)'
 }
 
 /**
  * 状态浅底色：判题结果横幅等大面积背景用（与 statusColor 同族）。
  */
 const STATUS_TINT: Record<number, string> = {
-  0: 'rgba(107, 114, 128, 0.08)',
-  1: 'rgba(79, 70, 229, 0.07)',
-  2: 'rgba(22, 163, 74, 0.08)',
-  3: 'rgba(220, 38, 38, 0.06)',
-  4: 'rgba(217, 119, 6, 0.08)',
-  5: 'rgba(217, 119, 6, 0.08)',
-  6: 'rgba(220, 38, 38, 0.06)',
-  7: 'rgba(217, 119, 6, 0.08)',
-  8: 'rgba(220, 38, 38, 0.06)',
+  0: 'var(--oj-tint-gray)',
+  1: 'var(--oj-tint-primary)',
+  2: 'var(--oj-tint-success)',
+  3: 'var(--oj-tint-danger)',
+  4: 'var(--oj-tint-warning)',
+  5: 'var(--oj-tint-warning)',
+  6: 'var(--oj-tint-danger)',
+  7: 'var(--oj-tint-warning)',
+  8: 'var(--oj-tint-danger)',
 }
 
 export function statusTint(status?: number) {
@@ -80,11 +93,12 @@ export function formatMemory(kb?: number | null): string {
 
 /**
  * 难度映射（论文表 4-2：1=简单，2=中等，3=困难）。
+ * color 供 el-tag / el-progress 使用，可直接是 CSS 变量引用。
  */
-export const DIFFICULTY_MAP: Record<number, { label: string; color: string }> = {
-  1: { label: '简单', color: '#67c23a' },
-  2: { label: '中等', color: '#e6a23c' },
-  3: { label: '困难', color: '#f56c6c' },
+export const DIFFICULTY_MAP: Record<number, { label: string; color: string; token: string }> = {
+  1: { label: '简单', color: 'var(--oj-success)', token: '--oj-success' },
+  2: { label: '中等', color: 'var(--oj-warning)', token: '--oj-warning' },
+  3: { label: '困难', color: 'var(--oj-danger)', token: '--oj-danger' },
 }
 
 /**

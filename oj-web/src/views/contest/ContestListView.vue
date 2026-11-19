@@ -1,44 +1,42 @@
 <template>
   <div class="page-container">
-    <!-- 页头 -->
-    <div class="page-head">
+    <!-- 页头：墨色舞台 + 实时状态统计 -->
+    <header class="oj-stage">
       <div>
-        <h1>竞赛</h1>
-        <p class="sub">限时竞赛 · ACM 赛制 · 解题数优先，同解题数按总罚时排序</p>
+        <h1 class="oj-stage-title">竞赛</h1>
+        <p class="oj-stage-sub">限时竞赛 · ACM 赛制 · 解题数优先，同解题数按总罚时排序</p>
       </div>
-      <div class="head-stat">
-        <div class="hs-item">
-          <span class="hs-num">{{ runningCount }}</span>
-          <span class="hs-label">进行中</span>
+      <div class="oj-stage-side">
+        <div class="oj-stage-stat">
+          <span class="oj-stage-num">{{ runningCount }}</span>
+          <span class="oj-stage-label">进行中</span>
         </div>
-        <div class="hs-sep" />
-        <div class="hs-item">
-          <span class="hs-num">{{ upcomingCount }}</span>
-          <span class="hs-label">即将开始</span>
+        <div class="oj-stage-stat">
+          <span class="oj-stage-num">{{ upcomingCount }}</span>
+          <span class="oj-stage-label">即将开始</span>
         </div>
       </div>
-    </div>
+    </header>
 
-    <!-- 进行中优先展示（大卡片） -->
+    <!-- 进行中优先展示（强调大卡片） -->
     <template v-if="liveContests.length">
-      <div v-for="c in liveContests" :key="c.id" class="live-card" @click="go(c)">
-        <div class="live-glow" />
+      <router-link v-for="c in liveContests" :key="c.id" :to="`/contests/${c.id}`" class="live-card">
         <div class="live-left">
-          <div class="live-badge">
-            <span class="pulse" />
+          <span class="live-badge">
+            <span class="pulse" aria-hidden="true" />
             进行中
-          </div>
+          </span>
           <h2 class="live-title">{{ c.title }}</h2>
           <p class="live-desc">{{ c.description || '暂无说明' }}</p>
           <div class="live-meta">
             <span class="meta-item">
-              <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
+              <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
                 <circle cx="12" cy="12" r="9" /><path d="M12 7v5l3 2" />
               </svg>
               {{ formatDateTime(c.startTime) }} 起
             </span>
             <span class="meta-item">
-              <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
+              <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
                 <path d="M4 6h16M4 12h10M4 18h7" />
               </svg>
               {{ c.problemCount }} 道题
@@ -47,29 +45,30 @@
         </div>
         <div class="live-right">
           <div class="countdown-label">距结束</div>
-          <div class="countdown-value">{{ countdownOf(c) }}</div>
-          <button class="live-btn" @click.stop="go(c)">进入竞赛</button>
+          <div class="countdown-value" :aria-label="`距结束 ${countdownOf(c)}`">{{ countdownOf(c) }}</div>
+          <span class="live-btn">进入竞赛</span>
         </div>
-      </div>
+      </router-link>
     </template>
 
     <!-- 其余竞赛：紧凑列表 -->
-    <div v-if="otherContests.length" class="card list-card">
+    <section v-if="otherContests.length" class="card list-card">
       <div class="list-head">
-        <h3>全部竞赛</h3>
-        <div class="filters">
+        <h2 class="list-title">全部竞赛</h2>
+        <div class="filters" role="group" aria-label="竞赛状态筛选">
           <button
             v-for="f in FILTERS" :key="String(f.value)"
             class="filter-btn" :class="{ active: filter === f.value }"
+            type="button" :aria-pressed="filter === f.value"
             @click="filter = f.value"
           >{{ f.label }}</button>
         </div>
       </div>
 
-      <div v-for="c in filteredOthers" :key="c.id" class="row" @click="go(c)">
-        <div class="row-status" :class="`st-${c.status}`">
+      <router-link v-for="c in filteredOthers" :key="c.id" :to="`/contests/${c.id}`" class="row">
+        <span class="row-status" :class="`st-${c.status}`">
           {{ STATUS[c.status]?.label ?? '—' }}
-        </div>
+        </span>
         <div class="row-main">
           <div class="row-title">{{ c.title }}</div>
           <div class="row-desc">{{ c.description || '暂无说明' }}</div>
@@ -82,26 +81,27 @@
           <span v-if="c.status === 0" class="cd">{{ countdownOf(c) }} 后开始</span>
           <span v-else class="cd muted">已结束</span>
         </div>
-        <svg class="row-arrow" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+        <svg class="row-arrow" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
           <path d="M9 6l6 6-6 6" />
         </svg>
-      </div>
+      </router-link>
 
       <el-empty v-if="!filteredOthers.length" description="该分类下暂无竞赛" :image-size="80" />
-    </div>
+    </section>
 
-    <el-empty v-if="!loading && !contests.length" description="暂无竞赛" />
+    <el-empty
+      v-if="!loading && !contests.length"
+      description="还没有竞赛，管理员创建后就会出现在这里"
+    />
   </div>
 </template>
 
 <script setup lang="ts">
 // 竞赛列表（论文 7.2 展望落地：竞赛模式）
 import { computed, onMounted, onUnmounted, ref } from 'vue'
-import { useRouter } from 'vue-router'
 import { listContests, type ContestVO } from '@/api/contest'
 import { formatDateTime, parseServerTime } from '@/utils/datetime'
 
-const router = useRouter()
 const contests = ref<ContestVO[]>([])
 const loading = ref(true)
 const filter = ref<number | null>(null)
@@ -148,10 +148,6 @@ function countdownOf(c: ContestVO) {
   return d > 0 ? `${d}天 ${pad(h)}:${pad(m)}:${pad(s)}` : `${pad(h)}:${pad(m)}:${pad(s)}`
 }
 
-function go(c: ContestVO) {
-  router.push(`/contests/${c.id}`)
-}
-
 onMounted(async () => {
   try {
     contests.value = await listContests()
@@ -165,80 +161,28 @@ onUnmounted(() => window.clearInterval(timer))
 </script>
 
 <style scoped>
-.page-head {
-  display: flex;
-  align-items: flex-end;
-  justify-content: space-between;
-  padding: 4px 2px 18px;
-}
-.page-head h1 {
-  margin: 0;
-  font-size: 24px;
-  font-weight: 800;
-  letter-spacing: -0.3px;
-  color: var(--oj-text);
-}
-.sub {
-  margin: 6px 0 0;
-  color: var(--oj-text-weak);
-  font-size: 13px;
-}
-.head-stat {
-  display: flex;
-  align-items: center;
-  gap: 20px;
-}
-.hs-item {
-  text-align: right;
-}
-.hs-num {
-  display: block;
-  font-size: 22px;
-  font-weight: 800;
-  font-variant-numeric: tabular-nums;
-  color: var(--oj-primary);
-  line-height: 1.1;
-}
-.hs-label {
-  font-size: 11.5px;
-  color: var(--oj-text-weak);
-}
-.hs-sep {
-  width: 1px;
-  height: 28px;
-  background: var(--oj-border);
-}
+/* 页头已统一走 index.css 的 .oj-stage（墨色舞台），此处不再重复定义 */
 
-/* ---------- 进行中：强调卡 ---------- */
+/* ---------- 进行中：强调卡（整卡可键盘聚焦，链接语义） ----------
+   平面强调：白底 + 3px 绿色左边线 + 绿色呼吸点。
+   不再用整块渐变底——强调要靠位置和一根线，而不是一块大色板。 */
 .live-card {
   position: relative;
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 24px;
-  padding: 24px 28px;
+  padding: 20px 24px;
   margin-bottom: 16px;
+  border: 1px solid var(--oj-border);
+  border-left: 3px solid var(--oj-success);
   border-radius: var(--oj-radius);
-  background: linear-gradient(135deg, #312e81 0%, #4338ca 55%, #4f46e5 100%);
-  color: #fff;
-  cursor: pointer;
-  overflow: hidden;
-  box-shadow: 0 8px 28px -10px rgba(67, 56, 202, 0.55);
-  transition: transform 0.25s var(--oj-ease), box-shadow 0.25s var(--oj-ease);
+  background: var(--oj-card);
+  color: var(--oj-text);
+  transition: border-color var(--oj-duration) var(--oj-ease);
 }
 .live-card:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 14px 36px -12px rgba(67, 56, 202, 0.65);
-}
-/* 右上角柔光，避免纯色块显得平 */
-.live-glow {
-  position: absolute;
-  top: -70px;
-  right: -30px;
-  width: 260px;
-  height: 260px;
-  background: radial-gradient(circle, rgba(139, 92, 246, 0.55), transparent 68%);
-  pointer-events: none;
+  border-color: var(--oj-border-strong);
 }
 .live-left {
   position: relative;
@@ -248,54 +192,52 @@ onUnmounted(() => window.clearInterval(timer))
   display: inline-flex;
   align-items: center;
   gap: 7px;
-  padding: 3px 11px;
-  border-radius: 999px;
-  background: rgba(255, 255, 255, 0.16);
-  font-size: 11.5px;
+  font-size: 12px;
   font-weight: 600;
-  letter-spacing: 0.3px;
-  backdrop-filter: blur(4px);
+  color: var(--oj-success);
+  letter-spacing: 0.2px;
 }
 .pulse {
   width: 6px;
   height: 6px;
   border-radius: 50%;
-  background: #4ade80;
-  box-shadow: 0 0 0 0 rgba(74, 222, 128, 0.7);
+  background: var(--oj-pulse-dot);
+  box-shadow: 0 0 0 0 var(--oj-pulse-ring);
   animation: pulse 1.8s infinite;
 }
 @keyframes pulse {
   70% {
-    box-shadow: 0 0 0 7px rgba(74, 222, 128, 0);
+    box-shadow: 0 0 0 6px var(--oj-pulse-ring-out);
   }
   100% {
-    box-shadow: 0 0 0 0 rgba(74, 222, 128, 0);
+    box-shadow: 0 0 0 0 var(--oj-pulse-ring-out);
   }
 }
 .live-title {
-  margin: 12px 0 0;
-  font-size: 21px;
-  font-weight: 800;
-  letter-spacing: -0.2px;
+  margin: 10px 0 0;
+  font-size: 18px;
+  font-weight: 600;
+  letter-spacing: -0.1px;
 }
 .live-desc {
-  margin: 8px 0 0;
+  margin: 6px 0 0;
   font-size: 13px;
-  color: rgba(255, 255, 255, 0.82);
+  color: var(--oj-text-sub);
   max-width: 520px;
   line-height: 1.6;
 }
 .live-meta {
   display: flex;
+  flex-wrap: wrap;
   gap: 18px;
-  margin-top: 12px;
+  margin-top: 10px;
 }
 .meta-item {
   display: inline-flex;
   align-items: center;
   gap: 6px;
   font-size: 12.5px;
-  color: rgba(255, 255, 255, 0.75);
+  color: var(--oj-text-sub);
 }
 .live-right {
   position: relative;
@@ -304,33 +246,30 @@ onUnmounted(() => window.clearInterval(timer))
 }
 .countdown-label {
   font-size: 11.5px;
-  color: rgba(255, 255, 255, 0.7);
-  letter-spacing: 0.5px;
+  color: var(--oj-text-sub);
+  letter-spacing: 0.3px;
 }
 .countdown-value {
-  font-family: 'JetBrains Mono', Consolas, monospace;
-  font-size: 30px;
-  font-weight: 700;
+  font-family: var(--oj-font-mono);
+  font-size: 26px;
+  font-weight: 600;
   font-variant-numeric: tabular-nums;
-  letter-spacing: 0.5px;
+  letter-spacing: 0.3px;
   margin: 2px 0 12px;
+  color: var(--oj-text);
 }
 .live-btn {
-  padding: 9px 22px;
-  border: none;
-  border-radius: 9px;
-  background: #fff;
-  color: #4338ca;
-  font-size: 13.5px;
-  font-weight: 700;
-  cursor: pointer;
-  transition: background 0.2s var(--oj-ease), transform 0.15s var(--oj-ease);
+  display: inline-block;
+  padding: 7px 16px;
+  border-radius: var(--oj-radius-md);
+  background: var(--oj-primary);
+  color: var(--oj-white);
+  font-size: 13px;
+  font-weight: 500;
+  transition: background 0.15s var(--oj-ease);
 }
-.live-btn:hover {
-  background: #eef2ff;
-}
-.live-btn:active {
-  transform: scale(0.97);
+.live-card:hover .live-btn {
+  background: var(--oj-primary-hover);
 }
 
 /* ---------- 其余竞赛：紧凑列表 ---------- */
@@ -341,10 +280,12 @@ onUnmounted(() => window.clearInterval(timer))
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
   padding: 0 24px 14px;
   border-bottom: 1px solid var(--oj-border);
 }
-.list-head h3 {
+.list-title {
   margin: 0;
   font-size: 15px;
   font-weight: 700;
@@ -352,9 +293,10 @@ onUnmounted(() => window.clearInterval(timer))
 .filters {
   display: flex;
   gap: 4px;
-  background: #f3f4f6;
+  background: var(--oj-gray-50);
+  border: 1px solid var(--oj-border);
   padding: 3px;
-  border-radius: 8px;
+  border-radius: var(--oj-radius-sm);
 }
 .filter-btn {
   padding: 5px 14px;
@@ -362,19 +304,21 @@ onUnmounted(() => window.clearInterval(timer))
   border-radius: 6px;
   background: transparent;
   color: var(--oj-text-sub);
+  font-family: inherit;
   font-size: 12.5px;
   font-weight: 500;
   cursor: pointer;
-  transition: all 0.18s var(--oj-ease);
+  transition: color var(--oj-duration) var(--oj-ease),
+    background var(--oj-duration) var(--oj-ease);
 }
 .filter-btn:hover {
   color: var(--oj-text);
 }
 .filter-btn.active {
-  background: #fff;
+  background: var(--oj-gray-100);
   color: var(--oj-primary);
   font-weight: 600;
-  box-shadow: 0 1px 3px rgba(17, 24, 39, 0.1);
+  box-shadow: var(--oj-shadow-sm);
 }
 
 .row {
@@ -382,15 +326,14 @@ onUnmounted(() => window.clearInterval(timer))
   align-items: center;
   gap: 16px;
   padding: 15px 24px;
-  border-bottom: 1px solid #f3f4f6;
-  cursor: pointer;
+  border-bottom: 1px solid var(--oj-border);
   transition: background 0.16s var(--oj-ease);
 }
 .row:last-child {
   border-bottom: none;
 }
 .row:hover {
-  background: #fafbff;
+  background: var(--oj-primary-soft);
 }
 .row:hover .row-arrow {
   color: var(--oj-primary);
@@ -406,12 +349,12 @@ onUnmounted(() => window.clearInterval(timer))
   text-align: center;
 }
 .st-0 {
-  background: #fff7ed;
-  color: #c2410c;
+  background: var(--oj-warning-soft);
+  color: var(--oj-warning);
 }
 .st-2 {
-  background: #f3f4f6;
-  color: #6b7280;
+  background: var(--oj-gray-50);
+  color: var(--oj-gray-500);
 }
 .row-main {
   flex: 1;
@@ -428,7 +371,7 @@ onUnmounted(() => window.clearInterval(timer))
 .row-desc {
   margin-top: 3px;
   font-size: 12.5px;
-  color: var(--oj-text-weak);
+  color: var(--oj-text-sub);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -454,13 +397,14 @@ onUnmounted(() => window.clearInterval(timer))
   text-align: right;
 }
 .cd {
-  font-family: 'JetBrains Mono', Consolas, monospace;
+  font-family: var(--oj-font-mono);
   font-size: 12px;
   color: var(--oj-warning);
   font-weight: 600;
+  font-variant-numeric: tabular-nums;
 }
 .cd.muted {
-  color: var(--oj-text-weak);
+  color: var(--oj-text-sub);
   font-family: inherit;
   font-weight: 400;
 }

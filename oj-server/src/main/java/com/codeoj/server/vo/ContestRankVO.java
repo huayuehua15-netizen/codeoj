@@ -17,6 +17,6 @@ public class ContestRankVO {
     private int solved;
     /** 总罚时（分钟） */
     private long penalty;
-    /** 各题状态摘要：A:✅85min / B:❌×2 …（前端直接渲染） */
+    /** 各题状态摘要：A AC 85min (-1) / 未解题目错误 ×2 …（纯文本，前端 mono 原样渲染） */
     private String detail;
 }

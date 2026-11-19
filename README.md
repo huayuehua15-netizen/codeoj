@@ -62,7 +62,7 @@ code-oj/
 | 模块 | 状态 | 说明 |
 |---|---|---|
 | oj-judge | 五语言真实链路已验证 | 沙箱、租约恢复与隔离已有回归及真实 AC 证据；[镜像构建自检](docs/JUDGE-IMAGES.md) 支持新环境复现 |
-| oj-server / oj-web | 已集成业务与页面 | 包含课程、竞赛、统计、排行榜和管理端；已补题组/用例完整性与历史删除保护 |
+| oj-server / oj-web | 已集成业务与页面 | 页面：首页落地页、题库、题目详情、提交记录、判题结果、统计、排行榜、竞赛、公告中心、错题本、个人中心（头像/签名/热力图）、帮助与关于、管理端 ×6；全站 Linear 式暗色主题；已补题组/用例完整性与历史删除保护 |
 | 部署与测试 | 本地回归通过，持续完善验收 | Java 70 项、Python 19 项及真实接口验证通过；完整恶意样例与大并发仍需单独复测。新增 CI 配置，云端运行以提交后结果为准 |
 
 当前修复包含持久 QUEUING 补发、租约过期恢复与 token 写回校验、去重解题数榜单、程序墙钟耗时和按执行尝试/用例隔离。完整协议与数据库升级要求见 [CONTRACT v1.2](docs/CONTRACT.md)，交接清单见 [HANDOFF-A](docs/HANDOFF-A.md)。2026-11-17 完善记录见 [交付检查](docs/DELIVERY-CHECKLIST.md)。
@@ -117,7 +117,7 @@ docker compose up -d --scale oj-judge=4
 
 `JUDGE_CONCURRENCY` 与 `MAX_PARALLEL_CONTAINERS` 默认均为 4，分别限制消费线程和容器信号量，稳态并发受两者较小值限制。调整后核查实际线程与容器峰值，再采集吞吐；不要沿用旧报告的槽位推算。`/judge/work` 在宿主机与判题服务中必须对应同一路径。
 
-首次启动会等待 MySQL TCP 认证、Redis 和 MQ 就绪。旧库升级还需按现有索引状态执行 `sql/migration-20261116-indexes.sql`；若曾执行早期租约迁移，使用 `sql/migrations/20261116_dispatch_utc_default.sql` 修正默认值，不重复添加字段。镜像自检和真实提交不能由演示数据替代。
+首次启动会等待 MySQL TCP 认证、Redis 和 MQ 就绪。旧库升级还需按现有索引状态执行 `sql/migration-20261116-indexes.sql`；若曾执行早期租约迁移，使用 `sql/migrations/20261116_dispatch_utc_default.sql` 修正默认值，不重复添加字段。[排行对账与课程统计覆盖索引](sql/migrations/20261118_submission_covering_indexes.sql) 可重复执行，旧库建议补跑（新库已含）。镜像自检和真实提交不能由演示数据替代。
 
 若沿用早期只有七张表的数据库，备份并停止旧服务后，还需在目标数据库执行 [业务结构补齐迁移](sql/migrations/20261117_legacy_business_schema.sql)。它补齐 `user.status`、`problem.tags`、竞赛/公告/收藏表，并兼容旧 `nickname` 必填列；保留已有数据且可重复执行。直接导入 `schema.sql` 不会给已存在的表增加缺失字段。
 

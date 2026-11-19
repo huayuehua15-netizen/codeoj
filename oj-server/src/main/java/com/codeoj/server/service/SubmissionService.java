@@ -1,7 +1,6 @@
 package com.codeoj.server.service;
 
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
-import com.codeoj.common.entity.Problem;
 import com.codeoj.common.entity.Submission;
 import com.codeoj.server.dto.SubmitDTO;
 import com.codeoj.server.security.LoginUser;
@@ -24,9 +23,6 @@ public interface SubmissionService {
 
     /** 事务写库 status=0（论文 5.3） */
     Long createQueued(Long userId, SubmitDTO dto);
-
-    /** 语言允许、代码 ≤64KB 校验（论文 5.3 validate） */
-    void validate(Problem problem, SubmitDTO dto);
 
     /** 判题详情（用例级），他人代码不可见（论文表 3-3 / F-13） */
     SubmissionDetailVO detail(Long id, LoginUser user);

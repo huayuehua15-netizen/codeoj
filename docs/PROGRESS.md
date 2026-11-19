@@ -1,6 +1,6 @@
 # CodeOJ 项目进度文档
 
-> 最后更新：2026-11-17 00:50 ｜ 维护：成员 B ｜ 更新纪律：每完成一个里程碑/修复一批 bug，更新本文档
+> 最后更新：2026-11-18 ｜ 维护：成员 B ｜ 更新纪律：每完成一个里程碑/修复一批 bug，更新本文档
 > 配套文档：[API.md](./API.md)（接口契约 v1.3）｜ [CONTRACT.md](./CONTRACT.md)（模块契约 v1.1）｜ [COLLABORATION.md](./COLLABORATION.md)（分工+分支规则，§3 已改为新手可跟做版）｜ [HANDOFF-A.md](./HANDOFF-A.md)（A 侧交接，新增 §0 上手第一步）｜ [PROGRESS.md](./PROGRESS.md)（本文档）
 
 ---
@@ -13,7 +13,7 @@
 | 分工 | 方案 A（已固化）：成员 A = 评测链路（oj-judge real 引擎/judge-images）；成员 B = 业务与前端（oj-server/oj-web/联调/测试） |
 | 技术栈 | JDK17 / Spring Boot 3.2.5 / MyBatis-Plus / RabbitMQ / Redis / MySQL 8 / docker-java / Vue3+Vite+TS+Pinia+EP+Monaco / ECharts / SockJS+STOMP / Web Worker 沙箱 |
 | 仓库 | github.com/huayuehua15-netizen/codeoj ｜ 分支：**main**（发布快照）/ **dev**（集成）/ **niuzj**（成员 B 个人分支）/ feat/*（成员 A） |
-| 交付状态 | A 侧 C/C++/Java/Python3/JavaScript 的 real 评测已实现，五语言已通过实际判题。B 侧业务与前端已完成联调。以下旧里程碑保留当时状态，评测现状见 §14 和 [当前评测契约](./CONTRACT.md)。 |
+| 交付状态 | **双侧齐备：A 侧 real 评测已实现——C/C++/Java/Python3/JavaScript 五语言全部通过实际判题（§14 与 CONTRACT）；B 侧功能 100% 交付 + 复审修复 + review 40 项建议落地（§19~20）+ 全站暗色设计 v4「墨夜」（§21~23）+ 四个新页面（首页/公告中心/错题本/帮助，§22）** |
 
 ---
 
@@ -61,10 +61,10 @@
 - 25 个用例全部通过（12 类型放行 / 6 类非法拒绝 / BOM 拒绝 / 真实 commit 端到端）
 
 ### 当前位置
-**B 侧全部完成**：功能面 + 复审修复 + 六个核心页面专业化（排行榜/统计/竞赛 + 提交记录/判题结果/题目详情）+ 演示数据（1053 条提交 + 2451 行判题明细）。
+**B 侧全部完成**：功能面 + 复审修复（§19）+ 个人中心扩展（头像上传/签名/热力图/语言分布/错题本，§20）+ 四个新页面（首页落地页/公告中心/错题本/帮助与关于，§22）+ 全站暗色设计系统 v4「墨夜」（Linear 暗色 token + EP dark 适配，§21~23）。
 真实判题链路已在本机打通：五语言镜像全部构建并自检通过，首次真实提交判定成功（见 §16）。
 协作规范已落成机制：`pre-push` 保构建、`commit-msg` 保提交信息格式（见 §15、§18）。
-P0 = A 侧 real 引擎（HANDOFF-A.md 就绪，`ENGINE_MODE=local` 目前是静态语义判定）。
+P0 = A 侧 real 引擎（HANDOFF-A.md 就绪）。设计待用户在内置浏览器逐页确认，已知待验证项：首页尾部空白拖尾是否复现（§23.2）。
 
 ---
 
@@ -875,5 +875,278 @@ fi
 |---|---|---|
 | P2 | 云端校验 | 钩子是本地的，`--no-verify` 可绕过。要彻底杜绝需 GitHub Actions 或服务端钩子 |
 | P3 | 历史提交规范化 | 39 条非方括号提交保持原样，改写公共历史风险大于收益 |
+
+---
+
+## 19. 复审修复轮：review 40 项建议落地 + 设计体系收口（2026-11-18）
+
+> 依据 `review/backend.md`（P0-2 项 + P1-14 项 + P2-40 项）与 `review/frontend.md`
+> （P0-6 + P1-12 + P2-20 项）做的一轮系统化修复。review 目录为本地工作材料，不入库。
+
+### 19.1 后端修复（oj-server，本轮全部完成）
+
+| 来源 | 修复 | 位置 |
+|---|---|---|
+| P2-1/4 | 登出拉黑下沉 service；注册不再白签 JWT | AuthController / AuthServiceImpl |
+| P2-5 | 删除不生效的 MetaObjectHandler（实体无 fill 声明） | MybatisPlusConfig |
+| P2-7 | `validate` 从接口收窄为 private | SubmissionService(Impl) |
+| P2-10~12 | 未使用 import 清理；登录失败键走 `RedisKeys.rate`（CONTRACT §5） | SecurityConfig / AuthServiceImpl / QueueMonitorServiceImpl |
+| P2-13/14 | 42901 与 40000 手写码改枚举 | SubmissionServiceImpl / AnnouncementController |
+| P2-16 | 限流阈值全部走 `oj.rate-limit.*`，改配置不再重编译 | AuthServiceImpl / application.yml |
+| P2-17/18 | 竞赛列表 N+1 → GROUP BY 一次取全；详情 N+1 → selectBatchIds | ContestMapper / ContestServiceImpl |
+| P2-19 | 对账任务 N 次 score() → rangeWithScores 一次取全 | LeaderboardReconcileTask |
+| P2-22~25 | 分页下限夹取：新增 PageUtils（含 5 个单测），排行榜脏 member 跳过 | LeaderboardServiceImpl / AdminUserController / ProblemServiceImpl / SubmissionServiceImpl |
+| P2-29~31 | 参数类异常逐类兜 40000（JSON/类型/缺参/超限）；兜底打请求上下文；JwtUtil 失败 debug 日志 | GlobalExceptionHandler / JwtUtil |
+| P2-32/33 | 无效配置删除（logic-delete-field、mapper-locations） | application.yml |
+| P2-34 | 队列不存在降级 0 + warn（新部署常态，不再 50000） | QueueMonitorServiceImpl |
+| P2-35 | `cachedAt` → `queriedAt`（API.md v1.7 先行），改 LocalDateTime 走全局序列化，修掉 UTC「Z」格式 | QueueStatusVO / QueueMonitorServiceImpl / admin.ts / QueueMonitorView |
+| P2-36~38 | 收藏并发双击幂等成功；收藏/详情同口径校验上架；注册并发撞唯一键转 40000 | FavoriteController / AuthServiceImpl |
+| P2-39 | 禁止降掉最后一个管理员（40300 + 4 个单测） | AdminUserController |
+| P2-40 | 语言白名单以 Language 枚举为唯一权威（DTO 正则会漂移；5 个单测） | ProblemServiceImpl |
+
+P2-3（`incr` 无调用点）**有意保留**：写入属 oj-judge 职责（CONTRACT §7），保留是为接口语义完整，
+已加注释说明。P2-26/27/28、P2-6/9、P2-15 部分在早前提交已落地；P2-21 无选课表、语义为全站口径，
+已在 CourseMapper 注释标明为已知限制。
+
+### 19.2 前端修复与设计（oj-web，本轮全部完成）
+
+| 来源 | 修复 |
+|---|---|
+| P2-1/2/3 | 越权重定向给 ElMessage 提示；`router.afterEach` 消费 meta.title；补 `scrollBehavior` |
+| P2-4/9 | 详情页 watch 路由参数重载；路由 id 数字校验（题/竞赛/提交/用例四处） |
+| P2-5 | 全部 `ElMessageBox.confirm` 吞取消分支 |
+| P2-6/7/8 | 提交筛选 NaN 防御；标签选项全量来源；统计条口径改排行榜全表聚合 |
+| P2-10~16 | size=200 截断、冗余动态 import、ws.ts 复用 userStore 取 token、未用导入清理、onLanguageChange 补确认与回退 |
+| P2-17 | logo/竞赛标题改 router-link/真按钮 + 全站 aria/focus-visible |
+| P2-18 | SFC 硬编码色值 117 处 → 6 处（余下为 mask 蒙版与 cssVar 兜底值，属合理用法）；token 体系扩充语义色/奖牌/代码面板/渐变/品牌前景 |
+| P2-19 | `npm run typecheck`（vue-tsc）+ `npm test`（node:test 直跑，18 用例，覆盖状态映射与时间格式口径） |
+| P2-20 | EP 全局 locale zh-cn |
+
+**设计体系收口（对应「前端设计也要优化」）**：
+- 登录/注册改用 `AuthShell` 双栏品牌页（渐变深底 + 网格纹理 + 特性列表，窄屏收成单栏）
+- 404 从静默重定向改为 `NotFoundView`（`</>404` 渐变字 + 返回入口 + 显示原始地址）
+- MainLayout：管理端五项收进二级菜单（一级 10 → 6 项）、用户区头像 + 角色徽章 + 真按钮、
+  路由切换 page 过渡、页脚、窄屏降级
+- 编辑器 IDE 化补完（等宽字体/行高/平滑光标）、Monaco worker、`prefers-reduced-motion`、
+  favicon（内联 SVG，图形与 logo 同源）、`theme-color`、noscript
+- 全部 18 个路由视图单根校验通过（v-if/v-else 链合法），page 过渡可正常工作
+
+### 19.3 数据与文档
+
+- `sql/schema.sql` + [20261118 覆盖索引迁移](../sql/migrations/20261118_submission_covering_indexes.sql)：
+  `idx_submission_status_user(status,user_id,problem_id)`（对账聚合）、
+  `idx_submission_problem_user(problem_id,user_id)`（课程统计去重），可重复执行；README 部署段已更新
+- API.md v1.6 → **v1.7**：队列监控 `cachedAt` → `queriedAt`（语义修正 + 时间示例对齐 §0.1）
+- 竞赛排行明细串去 emoji（`A AC 85min (-1)` 纯文本，前端 mono 原样渲染）
+
+### 19.4 回归验证（全绿）
+
+| 检查 | 结果 |
+|---|---|
+| `mvn -B verify`（含新增 11 个后端单测） | ✅ exit 0 |
+| `oj-web npm run build` | ✅ 1m20s |
+| `oj-web npm run typecheck`（vue-tsc） | ✅ exit 0 |
+| `oj-web npm test`（18 用例） | ✅ 18 pass / 0 fail |
+
+### 19.5 仍未做（继承自 §8，本轮未动）
+
+| 级别 | 项 |
+|---|---|
+| P0 | A 侧 real 判题引擎（HANDOFF-A.md 就绪） |
+| P1 | 论文文档同步（§8 列表） |
+| P2 | JMeter 并发复测、恶意样例库 10 例、compose 部署验证（需 Linux/Docker 环境，本机 Docker 未启动） |
+| P3 | ESLint/Prettier 接入（已有 typecheck/test 兜底）、Pyodide 控制台、题解区 |
+
+---
+
+## 20. 精密工具风换肤 + 个人中心扩展（2026-11-19）
+
+### 20.1 全站换肤：AI 模板脸 → 精密工具风（`468032c`）
+
+用户反馈旧皮肤"AI 生成痕迹重"（靛蓝渐变横幅 + 玻璃拟态 + 全站胶囊圆角是三大模板味来源）。
+经三方向对齐后选定 **Linear/GitHub/Vercel 式精密工具风**，全站 14 文件重做皮肤：
+
+| 维度 | 旧 | 新 |
+|---|---|---|
+| 强调色 | 靛蓝渐变满天飞 | 全站唯一彩色 `#0969da`，语义色只进 7px 状态点 |
+| 层次 | 阴影 + hover 上浮 | 发丝边框深浅，卡片零阴影零动效 |
+| 字重/圆角 | 800 满天飞 / 胶囊 999px | 统一 600 / 芯片 4px 直角 |
+| 数据 | 不定 | 等宽字体 + tabular-nums（评测工具的基本素养） |
+| 登录页 | 双栏渐变品牌页 | 居中一栏式（词标 + 表单卡） |
+| 领奖台 | 渐变彩底行 | 2px 名次顶线 + 实色小方块名次 |
+
+实现杠杆：改 token 值 + 共享类，20+ 视图自动换肤；再清扫 8 个视图残留。
+期间用 node 脚本核对 71 处 token 引用零缺失（发现并修复头像取色引用已删 token）。
+**净删 254 行**——装饰代码变少本身就是方向的证明。
+
+### 20.2 个人中心扩展：自定义头像 + 签名（API.md v1.8）
+
+| 项 | 说明 |
+|---|---|
+| 数据 | `user` 表加 `avatar VARCHAR(255)`、`signature VARCHAR(200)`（schema + [可重复迁移](../sql/migrations/20261119_user_profile.sql)，本机库已执行） |
+| 契约 | API.md v1.8：LoginVO 加 `avatar`/`signature`；新增 `PUT /api/auth/profile`（签名）、`PUT /api/auth/avatar`（data URL 上传）；`GET /uploads/**` 公开静态读取；排行榜 Item 加 `avatar` |
+| 头像链路 | 前端 canvas 居中裁剪 256px → webp(85%) ≤几十 KB → data URL 上传 → 后端**白名单 MIME + 魔数二次校验 + 300KB 上限** → 服务端生成文件名落盘 → 旧头像文件清理 → 返回相对 URL |
+| 安全 | 客户端文件名永不参与路径（防穿越）；魔数防"改前缀冒充图片"；文件名 `{userId}-{ts}.{ext}` |
+| 静态映射 | `UploadResourceConfig`：/uploads/** → 磁盘目录（oj.upload.root-dir）；compose 加 `data/server-uploads` 持久卷 |
+| ⚠️ oj-common | `User` 实体加两字段（公共区）——**需知会成员 A**，代码为零行为变更，judge 侧不读这两列 |
+| 前端 | ProfileView 重写（资料头卡：头像 hover 更换遮罩 + 签名就地编辑 + 等宽 meta；账号安全双列；收藏用状态点）；顶栏/排行榜/领奖台接自定义头像（未设置回退首字母方头像） |
+
+### 20.3 验证（全绿，真实接口实测）
+
+| 检查 | 结果 |
+|---|---|
+| `mvn -pl oj-server test`（含 AvatarDataUrlTest 5 例：MIME 冒充/损坏 base64/超限/边界） | ✅ 43 pass |
+| 前端 build + typecheck + 18 单测 | ✅ |
+| 端到端：登录 → 签名中文写入/空签名拒绝 40000 → 头像上传 → 假 PNG 魔数拒绝 → info 回读 → `GET /uploads/...` 200 | ✅ 全通过 |
+| 排行榜响应含 `avatar` 字段 | ✅ |
+
+踩坑复现：Git Bash curl 发中文 body 是 GBK → 恰好落进 P2-29 新增的"请求体格式错误 40000"分支（修复前是 50000），
+用 `--data-binary @utf8.json` 复测通过；Windows 下运行中的 jar 被文件锁占用，重建前必须先停服务。
+
+### 20.4 个人主页二期：从"设置页"到"个人主页"（同日晚，API.md v1.9）
+
+用户反馈个人中心"还是简陋、功能少、布局一般"，于是把页面从资料设置升级为活动总览：
+
+| 区块 | 内容 | 数据源 |
+|---|---|---|
+| 数据 hero | 解题数 / 提交数 / 通过率 / **连续刷题天数** 等宽大数字行 | statistics + trend 计算 |
+| **刷题热力图** | 近 26 周×7 逐日提交密度（GitHub 式，月份/星期标尺 + 五档色阶 + 图例） | `trend?days=182` |
+| 语言分布 | 各语言提交/AC 横条 | `GET /api/submissions/languages`（v1.9 新增） |
+| 最近动态 | 最近 8 条提交：状态点 + 题目链接 + 语言/耗时 + 相对时间 | `pageSubmissions(page=1,size=8)` |
+| 收藏 / 账号安全 | 保留，双列收纳 | — |
+
+后端配套：`trend` 的 days 上限 30 → **366**（API.md §4.4a，30 天正是"个人页没有活动历史"的根因）；
+新增语言分布聚合（§4.4b，`languageDistByUser`）。前端 `utils/heatmap.ts` 纯函数栅格构建
+（周日对齐、稀疏补零、未来格恒 0、streak 端日无提交回退一天计），**7 个 node:test 钉死全部 off-by-one**。
+
+验证：后端 43 测试 ✅；前端 25 测试（+7 热力图）✅ typecheck/build ✅；
+聚合 SQL 在真实演示数据上核对（用户 31：55 次 C 提交/22 AC，逐日趋势行正确）✅。
+
+### 20.5 布局三期 + 演示数据清理（用户反馈驱动，2026-11-19 深夜）
+
+用户两条反馈：①"3 号就有记录"——查明**页面无任何 mock**，是 11-16 演示数据脚本（§12.4）把
+11-03~11-16 窗口的历史提交铺到了用户 54 的账号（DB 实证：多个账号的提交首末日期恰好落在该窗口）；
+②布局失衡（语言分布卡大片留白、热力图月份标签重叠、两列高度错配）。
+
+**数据清理（用户确认后执行）**：删除用户 54 的 37 条演示提交 + 关联 judge_case，
+Redis 榜单 ZREM 同步（对账任务 5 分钟内也会自愈）。其统计/热力图归零，此后积累皆真实记录；
+排行榜仍有 37 个演示账号支撑答辩效果。
+
+**布局重构（参照 LeetCode 个人页结构）**：
+- 热力图月份标签改与格子**同栅格对齐**（原绝对定位不跟随网格列 → 全部叠在左端的 bug）；
+  格子 11px 定宽 + 3px 间距，不再 1fr 拉伸，横向滚动
+- 新增**解题进度卡**：简单/中等/困难三行 solved/totalCount 进度条（数据来自 statistics.byDifficulty），
+  与语言分布叠放填满左列，右列最近动态 8 行 → 两列高度平衡
+- 卡片顺序对齐 LeetCode：hero → 热力图（全宽）→ [进度+语言 | 动态] → [收藏 | 安全]
+
+回归：前端 25 测试 ✅ typecheck ✅ build ✅；trend 接口对已清空账号返回空数组 ✅。
+
+---
+
+## 21. 全站设计重构 v3：「墨卷」体系（2026-11-19 深夜）
+
+用户要求全站所有页面重构 UI 与布局，"好看精致、眼前一亮、不千篇一律"。
+先检索确认了编辑风（Warm Editorial）的公认公式——暖纸底 + 近黑墨字 + 单一深色强调 + 衬线大标题
+（[FreeDesignMD](https://freedesignmd.com/lexicon/editorial-web-design)、
+[PageProofer 对 Every 的拆解](https://pageproofer.com/inspiration/warm-editorial/every)、
+[Tubik 编辑设计集](https://tubikstudio.com/blog/media-editorial-website-design)），
+再结合评测平台"作答—批改"的领域本质，自行设计出**「墨卷」**体系（不照搬任何一家）：
+
+> 概念：判题如批改。平台是一张数字稿纸——学生落笔（提交代码），系统批卷（运行用例），
+> AC 得绿批，错误落朱批。暖纸底、松绿强调、朱印点睛、宋体标题、等宽数据。
+
+### 21.1 配色（自拟，全部脱离 Tailwind/GitHub 默认色号）
+
+| 角色 | 色值 | 用途 |
+|---|---|---|
+| 纸 paper | `#f6f4ec` | 页面底（暖，与冷灰 SaaS 脸区分） |
+| 卡 card | `#fffef9` | 暖白卡片 |
+| 墨 ink | `#232d26` | 主文字（墨绿黑） |
+| 松 pine | `#17694a` | 全站唯一强调色：链接/主按钮/选中 |
+| 绿批 success | `#1d7a44` | AC/通过 |
+| 朱批 danger | `#bc3f2c` | WA/CE/编译失败；`--oj-seal` 仅品牌与第一名小印 |
+| 赭批 warning | `#a26a15` | TLE/MLE/进行中 |
+| 青磷 info | `#2b7a8c` | 判题中 |
+| 松烟墨代码面板 | `#15201a` 系 | 样例/编辑器/查看器（绿相深底） |
+
+字体三层：宋体系 `--oj-font-display`（页面 h1/卡片 h2/词标/页脚格言，书卷气）
++ 系统黑体（正文）+ JetBrains Mono（数据/代码，工具感）。衬线与等宽各司其职。
+
+### 21.2 品牌记号与组件
+
+- **方印 logo**：朱底白「判」衬线字，MainLayout/AuthShell/favicon 三处同源
+- **朱印句读**：全站页面级 h1 前置 8px 朱色小方块
+- **笺纸统计条**：oj-banner 铺与行高呼应的极淡稿纸横线
+- **稿纸登录页**：AuthShell 整页铺竖向稿纸线，表单卡如答题卡置于其上
+- **名次印**：排行榜前三改印章式——状元朱印/榜眼墨方/探花赭方，衬线数字
+- 页脚衬线格言："判题如批改，落笔即成长"
+- 热力图绿阶整体转暖（`#cbe3cf`/`#7abf8b`/`#3d9463`）
+
+### 21.3 落地方式与验证
+
+token 层全量重映射（93 个变量，71 处引用经 node 脚本核对零缺失），
+20+ 视图自动换肤；手工清扫：热力图绿阶、排行榜名次印、StatisticsView ECharts 兜底色。
+回归：typecheck ✅ / 25 单测 ✅ / build 45s ✅。
+
+### 21.4 v3.1「给墨卷加灵魂」：墨色舞台 + 纸张噪点（用户反馈"不丑但没感觉"后）
+
+诊断：平面纸卡 + 均匀浅底 = 有质感没节奏。解法是给页面明暗节奏与肌理：
+
+- **`.oj-stage` 墨色舞台**（index.css 共享组件）：每页顶部深松烟墨横幅——
+  纸白衬线大标题（26px）+ 朱印 + 暗稿纸竖线 + 纸白等宽数据列。
+  页面节奏变为 明（纸）→ 暗（墨）→ 明（纸卡）。
+  落地页：题库/竞赛/提交记录/排行榜/统计（后三页借此补上了缺失的 h1，顺带修可访问性）
+- **个人中心资料头转墨色舞台**：纸白首字母头像反转配色，签名/数据行纸上墨显
+- **竞赛详情/题目详情头部转墨色**：倒计时纸白等宽 26px，状态呼吸点绿
+- **登录页全暗稿纸**：深松烟墨整页 + 绿相稿纸竖线 + 噪点，纸卡浮于墨卷之上
+- **纸张噪点**：body 背景叠加 feTurbulence 4% 透明度噪点层，给纸面"纤维"质感（纯 CSS，无图片资源）
+- 清理 ContestListView 遗留死样式（page-head/hs-* 三段）
+
+回归：typecheck ✅ / 25 单测 ✅ / build 45s ✅。
+
+---
+
+## 23. 设计 v4「墨夜」：全站切换 Linear 暗色系统（2026-11-19 深夜）
+
+前三版（靛蓝渐变 / 平面灰 / 暖纸文房）均被否。本轮放弃自创，按用户要求直接采用被验证的设计系统：
+[Linear 暗色 token 规格](https://open-design.ai/plugins/design-system-linear-app)（近黑 #08090a +
+薰衣草靛蓝 #5e6ad2 单强调 + 亮度分层）忠实落地。
+
+### 23.1 落地内容
+
+| 层 | 改动 |
+|---|---|
+| token | 全量按 Linear 规格重写：bg #08090a、卡片 #101012 + 顶部内高光渐变、边框 rgba(255,255,255,0.08)、文字四级灰（#f7f8f8/#d0d6e0/#8a8f98/#62666d）、强调 #5e6ad2、语义色暗底亮档（#4cb782/#eab308/#f87171） |
+| Element Plus | 引入 `dark/css-vars.css` + `html.dark` 常驻 + 12 个 --el-* 变量对齐（表格/输入/下拉/对话框全暗） |
+| 舞台/hero | 暗稿纸线 → **品牌靛蓝径向辉光**（radial 28%→transparent），朱印改靛蓝印 |
+| 字体 | 弃衬线（Linear 无衬线），Inter 系统栈 + ui-monospace；字重收敛 600 |
+| 视图清扫 | 热力图暗底亮绿阶、名次印/头像反转、6 处白底残留→面板色、题面交互件暗化、404 提对比度 |
+| 首页 hero | 双辉光（靛蓝+紫罗兰）+ 幽灵按钮 |
+
+### 23.2 验证
+
+typecheck ✅ / 25 单测 ✅ / build 1m23s ✅；grep 审计零浅底残留。
+**注意**：本机 Edge headless 启动被环境拦截（多轮尝试失败），本轮无法截图自证——
+需要用户在内置浏览器确认；已知未解问题：v3.1 时代首页曾出现约 3000px 的空白拖尾（见 §21.4 截图记录），暗色下是否复现待用户反馈。
+
+---
+
+## 22. 页面扩容：首页落地页 + 公告中心 + 错题本 + 帮助与关于（API.md v1.10，2026-11-19）
+
+用户反馈"页面太少"。新增 4 个页面（全部走墨卷体系，数据来自真实接口）：
+
+| 页面 | 路由 | 说明 |
+|---|---|---|
+| **首页落地页** | `/home`（`/` 重定向至此，logo 同步指向） | 全站最大排版：46px 宋体标语"落笔，即见分晓。"压在墨卷 hero 上（CTA 双按钮 + 四项全站数据）；四张能力卡；最新公告 ×3 + 榜单前五双列。数据全部来自公开接口（题库概览/榜单 summary/公告），未登录可完整展示 |
+| **公告中心** | `/announcements` | 公告列表（"告"字朱印 + 标题 + 日期 + 正文），公开 |
+| **错题本** | `/wrongbook`（登录） | 尝试过且未 AC 的题：题目/难度/最近状态点/尝试次数/最近提交/重做入口 |
+| **帮助与关于** | `/about` | 四卡：四步上手指南、九态判题状态对照表（复用 STATUS_MAP + statusColor）、FAQ 折叠、技术栈清单——答辩讲解页 |
+
+后端：新增 `GET /api/submissions/wrongbook`（§4.4c）——窗口函数一步完成"每题尝试次数 + 最近一次提交 + 是否 AC 过"
+（ROW_NUMBER/COUNT/MAX OVER PARTITION BY），已 AC 的题自动移出错题本。
+导航更新：+公告、+错题本（登录可见），logo 与 `/` 均指向 `/home`；页脚加"帮助与关于"。
+
+验证：错题本聚合在真实数据上核对（用户 17：题 21 JavaScript 题 1 次尝试、最近状态 WA=3）✅；
+wrongbook 空账号返回空数组 ✅；typecheck ✅ / 25 单测 ✅ / build 48s ✅。
 
 ---

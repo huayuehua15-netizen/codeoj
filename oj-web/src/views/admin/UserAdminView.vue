@@ -1,12 +1,18 @@
 <template>
   <div class="page-container">
     <div class="card">
-      <div class="toolbar">
+      <header class="oj-page-head">
+        <div>
+          <h1 class="oj-page-title">用户管理</h1>
+          <p class="oj-page-sub">调整用户角色、封禁或解封账号，以及重置密码</p>
+        </div>
+      </header>
+      <div class="oj-toolbar toolbar-gap">
         <el-input v-model="keyword" placeholder="按用户名搜索" style="width: 220px" clearable @keyup.enter="load" />
         <el-button @click="load">搜索</el-button>
         <span class="hint">封禁后账号立即无法登录，既有登录态同时失效</span>
       </div>
-      <el-table :data="users" v-loading="loading">
+      <el-table :data="users" v-loading="loading" empty-text="没有匹配的用户，试试换个用户名">
         <el-table-column prop="id" label="#" width="60" />
         <el-table-column prop="username" label="用户名" min-width="160" />
         <el-table-column prop="email" label="邮箱" min-width="180" />
@@ -85,16 +91,26 @@ async function setRole(row: AdminUserItem) {
 
 async function toggleBan(row: AdminUserItem) {
   const banning = row.status !== 1
-  await ElMessageBox.confirm(
-    banning ? `确认封禁「${row.username}」？其登录态将立即失效。` : `确认解封「${row.username}」？`,
-    '提示', { type: 'warning' })
+  // 取消会让 confirm reject，吞掉它避免 unhandled rejection；确认后的封禁/解封逻辑不变
+  try {
+    await ElMessageBox.confirm(
+      banning ? `确认封禁「${row.username}」？其登录态将立即失效。` : `确认解封「${row.username}」？`,
+      '提示', { type: 'warning' })
+  } catch {
+    return
+  }
   await changeUserStatus(row.id, banning ? 1 : 0)
   ElMessage.success(banning ? '已封禁' : '已解封')
   load()
 }
 
 async function resetPwd(row: AdminUserItem) {
-  await ElMessageBox.confirm(`确认重置「${row.username}」的密码？`, '提示', { type: 'warning' })
+  // 取消会让 confirm reject，吞掉它避免 unhandled rejection；确认后的重置逻辑不变
+  try {
+    await ElMessageBox.confirm(`确认重置「${row.username}」的密码？`, '提示', { type: 'warning' })
+  } catch {
+    return
+  }
   const temp = await resetUserPassword(row.id)
   ElMessageBox.alert(`临时密码：${temp}（请转告该学生，登录后可在个人中心修改）`, '重置成功')
   load()
@@ -104,14 +120,12 @@ onMounted(load)
 </script>
 
 <style scoped>
-.toolbar {
-  display: flex;
-  align-items: center;
-  gap: 12px;
+/* 搜索行放在页面头部下方，与头部保持 16px 间距 */
+.toolbar-gap {
   margin-bottom: 16px;
 }
 .hint {
-  color: #909399;
+  color: var(--oj-text-sub);
   font-size: 12px;
   margin-left: auto;
 }

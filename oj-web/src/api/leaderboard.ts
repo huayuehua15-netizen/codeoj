@@ -4,6 +4,8 @@ import { http } from './http'
 export interface LeaderboardItem {
   userId: number
   username?: string
+  /** 头像相对路径（API.md v1.8），null=未设置 */
+  avatar?: string | null
   acCount: number
   rank: number
   /** 总提交次数 */

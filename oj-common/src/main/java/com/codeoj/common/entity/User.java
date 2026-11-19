@@ -36,6 +36,14 @@ public class User {
     @TableField("status")
     private Integer status;
 
+    /** 头像相对路径（/uploads/avatars/xxx），null=未设置，前端回退首字母占位（API.md v1.8） */
+    @TableField("avatar")
+    private String avatar;
+
+    /** 个性签名（≤200 字），null=未设置（API.md v1.8） */
+    @TableField("signature")
+    private String signature;
+
     @TableField("created_at")
     private LocalDateTime createdAt;
 

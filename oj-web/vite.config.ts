@@ -16,9 +16,14 @@ export default defineConfig({
   },
   server: {
     port: 5173,
-    // 开发代理：/api 与 /ws 转发到 oj-server（论文 4.2：Nginx 同样承担此职责）
+    // 开发代理：/api /ws /uploads 转发到 oj-server（论文 4.2：Nginx 同样承担此职责）
     proxy: {
       '/api': {
+        target: 'http://localhost:8080',
+        changeOrigin: true,
+      },
+      '/uploads': {
+        // 头像等静态资源（API.md v1.8）：生产环境由 Nginx 反代同一前缀
         target: 'http://localhost:8080',
         changeOrigin: true,
       },

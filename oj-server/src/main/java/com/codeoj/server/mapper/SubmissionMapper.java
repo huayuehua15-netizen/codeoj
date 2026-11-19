@@ -135,7 +135,7 @@ public interface SubmissionMapper extends BaseMapper<Submission>, SubmissionLeas
     }
 
     /**
-     * 提交趋势（个人统计页图表）：近 N 天按日聚合提交数与通过数。
+     * 提交趋势（个人统计页图表 / 个人主页热力图）：近 N 天按日聚合提交数与通过数。
      */
     @Select("SELECT DATE(s.created_at) AS date, COUNT(*) AS total, " +
             "       SUM(s.status = 2) AS accepted " +
@@ -144,4 +144,35 @@ public interface SubmissionMapper extends BaseMapper<Submission>, SubmissionLeas
             "   AND s.created_at >= DATE_SUB(CURDATE(), INTERVAL #{days} DAY) " +
             " GROUP BY DATE(s.created_at) ORDER BY DATE(s.created_at)")
     List<Map<String, Object>> trendByUser(@Param("userId") Long userId, @Param("days") int days);
+
+    /**
+     * 语言分布（个人主页，API.md v1.9 §4.4b）：各语言提交数与通过数，按提交数降序。
+     * language 是 Language 枚举 code，由前端映射为显示名。
+     */
+    @Select("SELECT s.language AS language, COUNT(*) AS total, " +
+            "       SUM(s.status = 2) AS accepted " +
+            "  FROM submission s " +
+            " WHERE s.user_id = #{userId} " +
+            " GROUP BY s.language ORDER BY total DESC")
+    List<Map<String, Object>> languageDistByUser(@Param("userId") Long userId);
+
+    /**
+     * 错题本（API.md v1.10 §4.4c）：尝试过且从未 AC 的题目，按最近一次提交倒序。
+     *
+     * <p>窗口函数一步取每题的聚合与"最近一次提交"：ROW_NUMBER 取最新行拿到
+     * lastStatus/lastLanguage/lastAt，COUNT(*) OVER 得尝试次数，
+     * MAX(status=2) OVER 判断是否 AC 过（=0 即错题）。已 AC 的题不进错题本。
+     */
+    @Select("SELECT t.problem_id AS problemId, p.title AS title, p.difficulty AS difficulty, " +
+            "       t.attempts AS attempts, t.status AS lastStatus, " +
+            "       t.language AS lastLanguage, t.created_at AS lastAt " +
+            "  FROM (SELECT s.problem_id, s.status, s.language, s.created_at, " +
+            "               COUNT(*) OVER (PARTITION BY s.problem_id) AS attempts, " +
+            "               ROW_NUMBER() OVER (PARTITION BY s.problem_id ORDER BY s.id DESC) AS rn, " +
+            "               MAX(s.status = 2) OVER (PARTITION BY s.problem_id) AS solvedFlag " +
+            "          FROM submission s WHERE s.user_id = #{userId}) t " +
+            "  JOIN problem p ON p.id = t.problem_id " +
+            " WHERE t.rn = 1 AND t.solvedFlag = 0 " +
+            " ORDER BY t.created_at DESC")
+    List<Map<String, Object>> wrongBookByUser(@Param("userId") Long userId);
 }

@@ -72,7 +72,27 @@ export function getStatistics() {
   return http.get<never, Statistics>('/api/submissions/statistics')
 }
 
-/** 提交趋势（近 N 天按日聚合，个人维度） */
+/** 提交趋势（近 N 天按日聚合，个人维度；上限 366 天，热力图传 182） */
 export function getTrend(days = 7) {
   return http.get<never, { date: string; total: number; accepted: number }[]>(`/api/submissions/trend?days=${days}`)
+}
+
+/** 语言分布（个人主页，API.md v1.9 §4.4b）：按提交数降序 */
+export function getLanguageDist() {
+  return http.get<never, { language: string; total: number; accepted: number }[]>('/api/submissions/languages')
+}
+
+export interface WrongBookItem {
+  problemId: number
+  title: string
+  difficulty: number
+  attempts: number
+  lastStatus: number
+  lastLanguage: string
+  lastAt: string
+}
+
+/** 错题本（API.md v1.10 §4.4c）：尝试过且未 AC 的题目，按最近提交倒序 */
+export function getWrongBook() {
+  return http.get<never, WrongBookItem[]>('/api/submissions/wrongbook')
 }

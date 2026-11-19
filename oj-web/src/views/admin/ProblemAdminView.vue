@@ -1,20 +1,26 @@
 <template>
   <div class="page-container">
     <div class="card">
-      <div class="toolbar">
-        <el-input
-          v-model="keyword"
-          placeholder="按标题搜索"
-          style="width: 220px"
-          clearable
-          @keyup.enter="load"
-          @clear="load"
-        />
-        <el-button @click="load">搜索</el-button>
-        <el-button type="primary" @click="openCreate">新建题目</el-button>
-        <el-button @click="noticeVisible = true; loadNotices()">公告管理</el-button>
-      </div>
-      <el-table :data="problems" v-loading="loading">
+      <header class="oj-page-head">
+        <div>
+          <h1 class="oj-page-title">题目管理</h1>
+          <p class="oj-page-sub">新增、编辑、上下架题目，并维护测试用例与公告</p>
+        </div>
+        <div class="oj-toolbar">
+          <el-input
+            v-model="keyword"
+            placeholder="按标题搜索"
+            style="width: 220px"
+            clearable
+            @keyup.enter="load"
+            @clear="load"
+          />
+          <el-button @click="load">搜索</el-button>
+          <el-button @click="noticeVisible = true; loadNotices()">公告管理</el-button>
+          <el-button type="primary" @click="openCreate">新建题目</el-button>
+        </div>
+      </header>
+      <el-table :data="problems" v-loading="loading" empty-text="还没有题目，点右上角「新建题目」开始">
         <el-table-column prop="id" label="#" width="70" />
         <el-table-column prop="title" label="标题" min-width="240" />
         <el-table-column prop="difficulty" label="难度" width="90" />
@@ -112,7 +118,7 @@
           <el-input v-model="noticeForm.content" placeholder="公告内容（实验截止时间等）" />
           <el-button type="primary" @click="publishNotice">发布</el-button>
         </div>
-        <el-table :data="notices" size="small">
+        <el-table :data="notices" size="small" empty-text="暂无公告，填写标题与内容后点「发布」">
           <el-table-column prop="title" label="标题" min-width="140" />
           <el-table-column prop="content" label="内容" min-width="220" show-overflow-tooltip />
           <el-table-column label="操作" width="70">
@@ -251,7 +257,13 @@ async function save() {
 }
 
 async function remove(row: Problem) {
-  await ElMessageBox.confirm(`确认删除题目「${row.title}」？`, '提示', { type: 'warning' })
+  // ElMessageBox.confirm 在点「取消」时会 reject，不吞掉就是一个 unhandled rejection，
+  // 所以改成 try/catch：取消即返回，确认后原有删除逻辑不变。
+  try {
+    await ElMessageBox.confirm(`确认删除题目「${row.title}」？`, '提示', { type: 'warning' })
+  } catch {
+    return
+  }
   await deleteProblem(row.id)
   ElMessage.success('已删除')
   load()
@@ -283,9 +295,6 @@ onMounted(load)
 </script>
 
 <style scoped>
-.toolbar {
-  margin-bottom: 16px;
-}
 .md-editor {
   width: 100%;
   display: flex;
@@ -306,13 +315,13 @@ onMounted(load)
 }
 .md-pane-title {
   font-size: 12px;
-  color: #909399;
+  color: var(--oj-gray-400);
   margin-bottom: 6px;
 }
 .md-pane.preview {
-  background: #f5f7fa;
-  border: 1px solid #e4e7ed;
-  border-radius: 6px;
+  background: var(--oj-bg);
+  border: 1px solid var(--oj-border);
+  border-radius: var(--oj-radius-sm);
   padding: 10px;
   max-height: 260px;
   overflow: auto;

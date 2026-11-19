@@ -1,53 +1,65 @@
 <template>
   <div class="page-container">
-    <!-- 顶部概览：个人提交全景（来自统计接口，不随筛选变化） -->
-    <div class="summary-bar card">
-      <div class="sum-item">
-        <span class="sum-num">{{ summary.totalSubmit }}</span>
-        <span class="sum-label">累计提交</span>
+    <header class="oj-stage">
+      <div>
+        <h1 class="oj-stage-title">提交记录</h1>
+        <p class="oj-stage-sub">每一次提交都有完整判题明细——错在哪里，用例说了算</p>
       </div>
-      <div class="sum-divider" />
-      <div class="sum-item">
-        <span class="sum-num">{{ summary.totalAccepted }}</span>
-        <span class="sum-label">判题通过</span>
+    </header>
+    <!-- 顶部概览：个人提交全景（来自 /api/submissions/statistics，全表聚合，不随筛选变化） -->
+    <section class="oj-banner card" aria-label="个人提交概览">
+      <div class="oj-banner-item">
+        <span class="oj-banner-num">{{ summary.totalSubmit }}</span>
+        <span class="oj-banner-label">累计提交</span>
       </div>
-      <div class="sum-divider" />
-      <div class="sum-item">
-        <span class="sum-num">{{ summary.acceptRate }}%</span>
-        <span class="sum-label">整体通过率</span>
+      <div class="oj-banner-divider" aria-hidden="true"></div>
+      <div class="oj-banner-item">
+        <span class="oj-banner-num">{{ summary.totalAccepted }}</span>
+        <span class="oj-banner-label">判题通过</span>
       </div>
-      <div class="sum-divider" />
-      <div class="sum-item">
-        <span class="sum-num">{{ summary.solvedCount }}</span>
-        <span class="sum-label">已解题目</span>
+      <div class="oj-banner-divider" aria-hidden="true"></div>
+      <div class="oj-banner-item">
+        <span class="oj-banner-num">{{ summary.acceptRate }}<small>%</small></span>
+        <span class="oj-banner-label">通过率</span>
       </div>
-    </div>
+      <div class="oj-banner-divider" aria-hidden="true"></div>
+      <div class="oj-banner-item">
+        <span class="oj-banner-num">{{ summary.solvedCount }}</span>
+        <span class="oj-banner-label">已解题目</span>
+      </div>
+      <p class="oj-banner-note">保持节奏<br />每一道 AC 都算数</p>
+    </section>
 
     <div class="card">
-      <div class="head">
+      <header class="head">
         <div>
           <h2>提交记录</h2>
-          <p class="sub">支持按题目、判题状态与时间范围筛选</p>
+          <p class="sub">
+            按题目、判题状态与时间范围筛选
+            <template v-if="hasFilter">（<button type="button" class="link-btn" @click="reset">清除筛选</button>）</template>
+          </p>
         </div>
-      </div>
+      </header>
 
       <div class="filter-bar">
         <el-input
           v-model="problemId"
           placeholder="题目 ID"
-          style="width: 120px"
+          class="pid-input"
           clearable
           @keyup.enter="search"
+          @clear="search"
         />
-        <el-select v-model="status" placeholder="判题状态" style="width: 140px" clearable @change="search">
+        <el-select v-model="status" placeholder="判题状态" class="status-select" clearable @change="search">
           <el-option v-for="(v, k) in STATUS_MAP" :key="k" :label="v.label" :value="Number(k)" />
         </el-select>
-        <div class="quick-range">
+        <div class="quick-range" role="group" aria-label="快捷时间范围">
           <button
             v-for="p in QUICK_RANGES"
             :key="p.key"
             class="quick-btn"
             :class="{ active: activePreset === p.key }"
+            :aria-pressed="activePreset === p.key"
             type="button"
             @click="applyPreset(p.key)"
           >
@@ -60,77 +72,81 @@
           start-placeholder="开始时间"
           end-placeholder="结束时间"
           value-format="YYYY-MM-DDTHH:mm:ss"
-          style="width: 360px"
+          class="range-picker"
           @change="activePreset = ''"
         />
         <el-button type="primary" @click="search">筛选</el-button>
-        <el-button @click="reset">重置</el-button>
       </div>
 
-      <el-table :data="records" v-loading="loading" class="sub-table">
-        <el-table-column prop="id" label="编号" width="80">
+      <el-table :data="records" v-loading="loading" row-key="id" class="sub-table" empty-text="没有符合条件的提交记录">
+        <el-table-column prop="id" label="编号" width="84">
           <template #default="{ row }">
             <span class="mono dim">#{{ row.id }}</span>
           </template>
         </el-table-column>
+
         <el-table-column label="题目" min-width="230">
           <template #default="{ row }">
             <div class="problem-cell">
-              <span class="pid-badge">{{ row.problemId }}</span>
+              <span class="oj-badge-id">{{ row.problemId }}</span>
               <router-link :to="`/problems/${row.problemId}`" class="title-link">
                 {{ row.problemTitle || `题目 ${row.problemId}` }}
               </router-link>
             </div>
           </template>
         </el-table-column>
-        <el-table-column label="语言" width="110">
+
+        <el-table-column label="语言" width="112">
           <template #default="{ row }">
             <span class="lang-chip">{{ languageLabel(row.language) }}</span>
           </template>
         </el-table-column>
-        <el-table-column label="状态" width="120">
+
+        <el-table-column label="状态" width="118">
           <template #default="{ row }">
             <span class="status-cell" :style="{ color: statusColor(row.status) }">
-              <span class="status-dot" :style="{ background: statusColor(row.status) }" />
+              <span class="status-dot" :style="{ background: statusColor(row.status) }" aria-hidden="true" />
               {{ statusLabel(row.status) }}
             </span>
           </template>
         </el-table-column>
+
         <el-table-column label="耗时" width="100" align="right">
           <template #default="{ row }">
             <span class="mono" :class="{ dim: row.timeUsedMs == null }">{{ formatTimeUsed(row.timeUsedMs) }}</span>
           </template>
         </el-table-column>
-        <el-table-column label="内存" width="110" align="right">
+
+        <el-table-column label="内存" width="108" align="right">
           <template #default="{ row }">
             <span class="mono" :class="{ dim: row.memoryUsedKb == null }">{{ formatMemory(row.memoryUsedKb) }}</span>
           </template>
         </el-table-column>
-        <el-table-column label="提交时间" width="130" align="right">
+
+        <el-table-column label="提交时间" width="132" align="right">
           <template #default="{ row }">
             <span class="submit-time" :title="formatDateTime(row.createdAt)">{{ relativeTime(row.createdAt) }}</span>
           </template>
         </el-table-column>
-        <el-table-column label="操作" width="80" align="center">
+
+        <el-table-column label="操作" width="86" align="center">
           <template #default="{ row }">
             <el-button link type="primary" @click="$router.push(`/submissions/${row.id}`)">
-              详情<svg class="arrow" viewBox="0 0 24 24" width="12" height="12" fill="none">
+              详情<svg class="arrow" viewBox="0 0 24 24" width="12" height="12" fill="none" aria-hidden="true">
                 <path d="M9 6 L15 12 L9 18" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" />
               </svg>
             </el-button>
           </template>
         </el-table-column>
-        <template #empty>
-          <el-empty description="没有符合条件的提交记录" />
-        </template>
       </el-table>
 
       <el-pagination
+        v-if="total > size"
         v-model:current-page="page"
         v-model:page-size="size"
         :page-sizes="[10, 20, 50]"
         :total="total"
-        layout="total, prev, pager, next"
+        layout="total, prev, pager, next, sizes"
         class="pager"
         @current-change="load"
         @size-change="search"
@@ -140,9 +156,16 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, ref } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { getStatistics, pageSubmissions, type SubmissionDetail } from '@/api/submission'
-import { STATUS_MAP, statusColor, statusLabel, formatTimeUsed, formatMemory, LANGUAGE_OPTIONS } from '@/utils/status'
+import {
+  STATUS_MAP,
+  statusColor,
+  statusLabel,
+  formatTimeUsed,
+  formatMemory,
+  LANGUAGE_OPTIONS,
+} from '@/utils/status'
 import { formatDateTime, relativeTime, toQueryDateTime } from '@/utils/datetime'
 
 const records = ref<SubmissionDetail[]>([])
@@ -155,6 +178,8 @@ const total = ref(0)
 const loading = ref(false)
 
 const summary = ref({ totalSubmit: 0, totalAccepted: 0, acceptRate: 0, solvedCount: 0 })
+
+const hasFilter = computed(() => !!problemId.value || status.value !== undefined || !!timeRange.value)
 
 /** 时间快捷范围：与日期选择器联动，选中自定义区间后自动取消高亮 */
 const QUICK_RANGES = [
@@ -188,8 +213,11 @@ function languageLabel(lang?: string) {
 async function load() {
   loading.value = true
   try {
+    // P2-6：输入框允许任意字符，Number('abc') 是 NaN，直接传给后端会得到 40000。
+    // 只有解析出正整数才作为筛选条件，否则视为"未筛选"。
+    const pid = Number(problemId.value)
     const data = await pageSubmissions({
-      problemId: problemId.value ? Number(problemId.value) : undefined,
+      problemId: Number.isInteger(pid) && pid > 0 ? pid : undefined,
       status: status.value,
       // Query 参数走 @DateTimeFormat(ISO.DATE_TIME)，必须是 T 分隔
       begin: toQueryDateTime(timeRange.value?.[0]),
@@ -239,113 +267,100 @@ onMounted(() => {
 </script>
 
 <style scoped>
-.summary-bar {
-  display: flex;
-  align-items: center;
-  gap: 32px;
-  padding: 20px 28px;
-  margin-bottom: 16px;
-  background: linear-gradient(135deg, #3730a3 0%, #4f46e5 60%, #6366f1 100%);
-  color: #fff;
+.oj-banner-num small {
+  font-size: 14px;
+  margin-left: 1px;
 }
-.sum-item {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-}
-.sum-num {
-  font-size: 26px;
-  font-weight: 800;
-  line-height: 1.1;
-  font-variant-numeric: tabular-nums;
-}
-.sum-label {
-  font-size: 12px;
-  opacity: 0.85;
-  margin-top: 4px;
-}
-.sum-divider {
-  width: 1px;
-  height: 36px;
-  background: rgba(255, 255, 255, 0.28);
-}
+
 .head h2 {
   margin: 0;
 }
-.sub {
-  margin: 4px 0 0;
+.head .sub {
+  margin: 6px 0 0;
   font-size: 12.5px;
-  color: #909399;
+  color: var(--oj-text-sub);
 }
+.link-btn {
+  border: none;
+  background: none;
+  padding: 0;
+  font: inherit;
+  color: var(--oj-primary);
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
 .filter-bar {
   display: flex;
   align-items: center;
   flex-wrap: wrap;
   gap: 10px;
   padding: 12px;
-  margin-bottom: 16px;
-  background: #f8f9fc;
+  margin: 14px 0 16px;
+  background: var(--oj-gray-50);
   border: 1px solid var(--oj-border);
-  border-radius: 10px;
+  border-radius: var(--oj-radius-md);
 }
+.pid-input {
+  width: 120px;
+}
+.status-select {
+  width: 140px;
+}
+.range-picker {
+  width: 360px;
+}
+
 .quick-range {
   display: flex;
   gap: 6px;
 }
 .quick-btn {
   border: 1px solid var(--oj-border);
-  background: #fff;
-  color: #606266;
+  background: var(--oj-gray-100);
+  color: var(--oj-gray-600);
+  font-family: inherit;
   font-size: 12.5px;
   padding: 5px 12px;
-  border-radius: 999px;
+  border-radius: var(--oj-radius-pill);
   cursor: pointer;
-  transition: all 0.15s var(--oj-ease);
+  transition: color var(--oj-duration) var(--oj-ease),
+    border-color var(--oj-duration) var(--oj-ease),
+    background var(--oj-duration) var(--oj-ease);
 }
 .quick-btn:hover {
   color: var(--oj-primary);
-  border-color: var(--oj-primary-light-5);
+  border-color: var(--el-color-primary-light-5);
 }
 .quick-btn.active {
   background: var(--oj-primary);
   border-color: var(--oj-primary);
-  color: #fff;
+  color: var(--oj-white);
+  font-weight: 600;
 }
+
 .problem-cell {
   display: flex;
   align-items: center;
   gap: 8px;
 }
-.pid-badge {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-width: 30px;
-  height: 24px;
-  padding: 0 6px;
-  border-radius: 6px;
-  background: #eef2ff;
-  color: #4f46e5;
-  font-weight: 700;
-  font-size: 13px;
-  flex-shrink: 0;
-  font-variant-numeric: tabular-nums;
-}
 .title-link {
-  color: #303133;
-  font-weight: 500;
+  color: var(--oj-gray-800);
+  font-weight: 600;
+  transition: color var(--oj-duration) var(--oj-ease);
 }
 .title-link:hover {
-  color: #4f46e5;
+  color: var(--oj-primary);
 }
 .lang-chip {
   display: inline-flex;
   align-items: center;
   padding: 2px 10px;
-  border-radius: 999px;
-  background: #f4f4f5;
-  border: 1px solid #e4e7ed;
-  color: #606266;
+  border-radius: var(--oj-radius-pill);
+  background: var(--oj-gray-50);
+  border: 1px solid var(--oj-border);
+  color: var(--oj-gray-600);
   font-size: 12px;
 }
 .status-cell {
@@ -362,16 +377,16 @@ onMounted(() => {
   flex-shrink: 0;
 }
 .mono {
-  font-family: 'JetBrains Mono', 'Cascadia Code', Consolas, Menlo, monospace;
+  font-family: var(--oj-font-mono);
   font-size: 13px;
   font-variant-numeric: tabular-nums;
 }
 .mono.dim,
 .dim {
-  color: #a8abb2;
+  color: var(--oj-text-weak);
 }
 .submit-time {
-  color: #909399;
+  color: var(--oj-text-sub);
   font-size: 13px;
 }
 .arrow {
@@ -380,5 +395,13 @@ onMounted(() => {
 .pager {
   margin-top: 16px;
   justify-content: flex-end;
+}
+
+@media (max-width: 900px) {
+  .pid-input,
+  .status-select,
+  .range-picker {
+    width: 100%;
+  }
 }
 </style>

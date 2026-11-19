@@ -1,44 +1,162 @@
 /* =====================================================
-   CodeOJ 设计体系（Design Tokens）
-   精致浅色风：柔和层次 + 代码感 + 统一过渡
+   CodeOJ 设计体系 v4「墨夜」（Design Tokens）
+   基准：Linear 暗色系统（open-design.ai 收录的公开 token 规格）
+   —— 近黑画布 + 单一薰衣草靛蓝强调 + 亮度分层代替阴影。
+
+   四条铁律：
+   1. 全站唯一彩色 #5e6ad2（品牌靛蓝），其余一律无彩度灰阶；
+   2. 深度靠亮度分层（0.02→0.04→0.05 的白透明度），不靠投影；
+   3. 边框即分隔：rgba(255,255,255,0.08) 一细到底；
+   4. 数据与代码等宽，正文用系统无衬线——工具的克制感。
+
+   约定：SFC 的 <style> 里不写裸色值，一律用 --oj-* 变量。
    ===================================================== */
 :root {
-  /* Element Plus 主题覆盖：全局组件跟随靛蓝主色 */
-  --el-color-primary: #4f46e5;
-  --el-color-primary-light-3: #7679f0;
-  --el-color-primary-light-5: #a5b0f7;
-  --el-color-primary-light-7: #cdd2fa;
-  --el-color-primary-light-8: #dfe2fb;
-  --el-color-primary-light-9: #eef2ff;
-  --el-color-primary-dark-2: #3730a3;
-  --el-border-radius-base: 8px;
-  --el-font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC',
-    'Microsoft YaHei', sans-serif;
+  /* ---------- 画布与面板（亮度分层） ---------- */
+  --oj-bg: #08090a;
+  --oj-card: #101012;
+  --oj-paper: #08090a;           /* 兼容别名 */
+  --oj-paper-2: #141516;
+  --oj-gray-50: #141516;         /* 次级面 */
+  --oj-gray-100: #1c1d21;        /* hover/浅分隔 */
+  --oj-gray-200: #23252a;        /* 实线 */
+  --oj-gray-300: #34343a;
+  --oj-gray-400: #62666d;        /* 四级文字 */
+  --oj-gray-500: #8a8f98;        /* 弱文字 */
+  --oj-gray-600: #9ba1ac;
+  --oj-gray-700: #b4bac4;
+  --oj-gray-800: #d0d6e0;
+  --oj-gray-900: #f7f8f8;        /* 主文字（刻意不纯白） */
+  --oj-white: #f7f8f8;
+  --oj-card-hl: linear-gradient(180deg, rgba(255, 255, 255, 0.04), transparent 40%);
 
-  /* 色彩 */
-  --oj-primary: #4f46e5;
-  --oj-primary-deep: #3730a3;
-  --oj-primary-soft: #eef2ff;
-  --oj-accent: #8b5cf6;
-  --oj-bg: #f5f6fa;
-  --oj-card: #ffffff;
-  --oj-border: #e8eaf2;
-  --oj-text: #1f2937;
-  --oj-text-sub: #6b7280;
-  --oj-text-weak: #9ca3af;
-  --oj-success: #16a34a;
-  --oj-warning: #d97706;
-  --oj-danger: #dc2626;
+  /* ---------- 边框 ---------- */
+  --oj-border: rgba(255, 255, 255, 0.08);
+  --oj-border-strong: rgba(255, 255, 255, 0.14);
 
-  /* 层次 */
-  --oj-radius: 14px;
-  --oj-radius-sm: 8px;
-  --oj-shadow-sm: 0 1px 2px rgba(17, 24, 39, 0.05);
-  --oj-shadow: 0 1px 3px rgba(17, 24, 39, 0.06), 0 6px 16px -8px rgba(17, 24, 39, 0.10);
-  --oj-shadow-lg: 0 8px 24px -6px rgba(17, 24, 39, 0.14);
+  /* ---------- 品牌强调（全站唯一彩色） ---------- */
+  --oj-primary: #5e6ad2;
+  --oj-primary-hover: #7170ff;
+  --oj-primary-deep: #4752c4;
+  --oj-primary-soft: rgba(94, 106, 210, 0.14);
+  --oj-accent: #5e6ad2;
+  --oj-seal: #5e6ad2;            /* 历史名"朱印"→ 品牌靛蓝印 */
+  --oj-info: #7170ff;
+  --oj-info-soft: rgba(113, 112, 255, 0.14);
+  --oj-info-border: rgba(113, 112, 255, 0.35);
 
-  /* 过渡 */
-  --oj-ease: cubic-bezier(0.4, 0, 0.2, 1);
+  /* ---------- 语义色（暗底加亮档） ---------- */
+  --oj-success: #4cb782;
+  --oj-success-soft: rgba(76, 183, 130, 0.12);
+  --oj-success-border: rgba(76, 183, 130, 0.35);
+  --oj-warning: #eab308;
+  --oj-warning-soft: rgba(234, 179, 8, 0.12);
+  --oj-warning-border: rgba(234, 179, 8, 0.35);
+  --oj-danger: #f87171;
+  --oj-danger-soft: rgba(248, 113, 113, 0.12);
+  --oj-danger-border: rgba(248, 113, 113, 0.35);
+
+  /* ---------- 判定横幅浅底 ---------- */
+  --oj-tint-gray: rgba(138, 143, 152, 0.1);
+  --oj-tint-primary: rgba(94, 106, 210, 0.14);
+  --oj-tint-success: rgba(76, 183, 130, 0.12);
+  --oj-tint-warning: rgba(234, 179, 8, 0.12);
+  --oj-tint-danger: rgba(248, 113, 113, 0.1);
+
+  /* ---------- 名次（暗底亮档） ---------- */
+  --oj-gold: #eab308;
+  --oj-gold-light: rgba(234, 179, 8, 0.14);
+  --oj-silver: #8a8f98;
+  --oj-silver-light: rgba(138, 143, 152, 0.14);
+  --oj-bronze: #c08552;
+  --oj-bronze-light: rgba(192, 133, 82, 0.14);
+
+  /* ---------- 代码面板（比画布亮一档的松烟墨） ---------- */
+  --oj-code-bg: #0d0f13;
+  --oj-code-bg-soft: #16171b;
+  --oj-code-border: rgba(255, 255, 255, 0.06);
+  --oj-code-text: #e6e8eb;
+  --oj-code-text-sub: #8a8f98;
+  --oj-code-keyword: #a5b0ff;
+  --oj-code-string: #7ee2b8;
+  --oj-code-number: #f2c94c;
+  --oj-code-comment: #62666d;
+
+  /* ---------- 层次：亮度分层，不用投影 ---------- */
+  --oj-radius: 8px;
+  --oj-radius-md: 6px;
+  --oj-radius-sm: 6px;
+  --oj-radius-pill: 4px;
+  --oj-shadow-sm: none;
+  --oj-shadow: rgba(0, 0, 0, 0.4) 0px 2px 4px;
+  --oj-shadow-lg: rgba(0, 0, 0, 0.5) 0px 8px 24px;
+  --oj-shadow-brand: none;
+
+  /* ---------- 兼容别名（历史引用 → 暗色等价物，清扫后删除） ---------- */
+  --oj-gradient-brand: #5e6ad2;
+  --oj-gradient-brand-deep: #1a1b26;
+  --oj-gradient-brand-live: #5e6ad2;
+  --oj-gradient-page: none;
+  --oj-on-brand: #f7f8f8;
+  --oj-on-brand-90: rgba(247, 248, 248, 0.9);
+  --oj-on-brand-85: rgba(247, 248, 248, 0.85);
+  --oj-on-brand-82: rgba(247, 248, 248, 0.82);
+  --oj-on-brand-75: rgba(247, 248, 248, 0.75);
+  --oj-on-brand-70: rgba(247, 248, 248, 0.7);
+  --oj-on-brand-28: rgba(247, 248, 248, 0.28);
+  --oj-on-brand-16: rgba(247, 248, 248, 0.16);
+  --oj-on-brand-08: rgba(247, 248, 248, 0.08);
+  --oj-glow-accent: radial-gradient(circle, rgba(94, 106, 210, 0.4), transparent 68%);
+  --oj-grid-line-04: transparent;
+  --oj-code-inset: inset 0 0 0 1px rgba(255, 255, 255, 0.06);
+  --oj-ring-primary: 0 0 0 3px rgba(94, 106, 210, 0.3);
+  --oj-shadow-brand-lg: none;
+  --oj-shadow-brand-lg-hover: none;
+
+  /* ---------- 状态脉冲 ---------- */
+  --oj-pulse-dot: #4cb782;
+  --oj-pulse-ring: rgba(76, 183, 130, 0.35);
+  --oj-pulse-ring-out: rgba(76, 183, 130, 0);
+
+  /* ---------- 过渡（Linear 节奏） ---------- */
+  --oj-ease: cubic-bezier(0.2, 0, 0, 1);
+  --oj-duration: 0.15s;
+
+  /* ---------- 语义别名 ---------- */
+  --oj-text: var(--oj-gray-900);
+  --oj-text-sub: var(--oj-gray-500);
+  --oj-text-weak: var(--oj-gray-400);
+
+  /* Element Plus 主题覆盖（配合 dark/css-vars.css 使用） */
+  --el-color-primary: var(--oj-primary);
+  --el-color-primary-light-3: #767fdc;
+  --el-color-primary-light-5: #8a92db;
+  --el-color-primary-light-7: #a9addf;
+  --el-color-primary-light-8: #c0c3e7;
+  --el-color-primary-light-9: rgba(94, 106, 210, 0.16);
+  --el-color-primary-dark-2: var(--oj-primary-deep);
+  --el-border-radius-base: 6px;
+  --el-bg-color: #101012;
+  --el-bg-color-overlay: #191a1b;
+  --el-border-color: rgba(255, 255, 255, 0.08);
+  --el-border-color-light: rgba(255, 255, 255, 0.06);
+  --el-border-color-lighter: rgba(255, 255, 255, 0.05);
+  --el-fill-color-blank: #101012;
+  --el-fill-color: #1c1d21;
+  --el-fill-color-light: #191a1b;
+  --el-fill-color-lighter: #141516;
+  --el-text-color-primary: #f7f8f8;
+  --el-text-color-regular: #d0d6e0;
+  --el-text-color-secondary: #8a8f98;
+  --el-text-color-placeholder: #62666d;
+  --el-font-family: var(--oj-font-sans);
+
+  /* ---------- 字体（Linear 口径：Inter 系系统栈 + 等宽） ---------- */
+  --oj-font-sans: 'Inter Variable', Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI',
+    'PingFang SC', 'Microsoft YaHei', sans-serif;
+  --oj-font-mono: ui-monospace, 'Cascadia Code', 'JetBrains Mono', Consolas, Menlo, monospace;
+  /* 历史展示体引用 → 同无衬线（Linear 不用衬线） */
+  --oj-font-display: var(--oj-font-sans);
 }
 
 * {
@@ -50,21 +168,25 @@ body,
 #app {
   height: 100%;
   margin: 0;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC',
-    'Microsoft YaHei', sans-serif;
-  background:
-    radial-gradient(1200px 400px at 85% -100px, rgba(99, 102, 241, 0.08), transparent),
-    var(--oj-bg);
+  font-family: var(--oj-font-sans);
+  background: var(--oj-bg);
   color: var(--oj-text);
+  -webkit-font-smoothing: antialiased;
 }
 
-/* 数字与代码统一等宽字体，强化“代码感” */
+/* 数字与代码统一等宽 */
 code,
 pre,
 .el-progress__text,
 .stat-num,
-.ring-num {
-  font-family: 'JetBrains Mono', 'Cascadia Code', Consolas, Menlo, monospace;
+.ring-num,
+.mono {
+  font-family: var(--oj-font-mono);
+}
+
+.tabular,
+.el-table {
+  font-variant-numeric: tabular-nums;
 }
 
 a {
@@ -72,17 +194,30 @@ a {
   color: inherit;
 }
 
-/* 统一卡片：白底 + 细边 + 柔和大阴影 + 14px 圆角 + hover 微浮 */
+:focus-visible {
+  outline: 2px solid var(--oj-primary);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* 卡片：亮度分层——面板色 + 顶部内高光 + 发丝边，无投影 */
 .card {
+  position: relative;
   background: var(--oj-card);
+  background-image: var(--oj-card-hl);
   border: 1px solid var(--oj-border);
   border-radius: var(--oj-radius);
   padding: 24px;
-  box-shadow: var(--oj-shadow-sm);
-  transition: box-shadow 0.25s var(--oj-ease), transform 0.25s var(--oj-ease);
-}
-.card:hover {
-  box-shadow: var(--oj-shadow);
 }
 
 .page-container {
@@ -91,33 +226,331 @@ a {
   padding: 24px 20px;
 }
 
-/* Element Plus 细节统一 */
-.el-table {
-  --el-table-row-hover-bg-color: var(--oj-primary-soft);
-  --el-table-border-color: var(--oj-border);
-}
-.el-button {
-  border-radius: 8px;
-  transition: transform 0.15s var(--oj-ease);
-}
-.el-button:active {
-  transform: scale(0.97);
-}
-.el-dialog {
+/* ---------- 页面顶部统计条 ---------- */
+.oj-banner {
+  display: flex;
+  align-items: center;
+  gap: 28px;
+  padding: 18px 26px;
+  margin-bottom: 16px;
+  background-image: var(--oj-card-hl);
+  background-color: var(--oj-card);
+  border: 1px solid var(--oj-border);
   border-radius: var(--oj-radius);
+  color: var(--oj-text);
 }
-.el-tag {
-  border-radius: 6px;
+.oj-banner .oj-banner-item {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+}
+.oj-banner .oj-banner-num {
+  font-family: var(--oj-font-mono);
+  font-size: 22px;
+  font-weight: 600;
+  line-height: 1.2;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.3px;
+  color: var(--oj-text);
+}
+.oj-banner .oj-banner-label {
+  font-size: 12px;
+  color: var(--oj-text-sub);
+  margin-top: 2px;
+}
+.oj-banner .oj-banner-divider {
+  width: 1px;
+  height: 32px;
+  background: var(--oj-border);
+}
+.oj-banner .oj-banner-note {
+  margin-left: auto;
+  font-size: 12.5px;
+  color: var(--oj-text-sub);
+  text-align: right;
+}
+@media (max-width: 768px) {
+  .oj-banner {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px 12px;
+    padding: 16px 20px;
+  }
+  .oj-banner .oj-banner-divider {
+    display: none;
+  }
+  .oj-banner .oj-banner-note {
+    grid-column: 1 / -1;
+    margin-left: 0;
+    text-align: left;
+    line-height: 1.6;
+  }
 }
 
-/* 页面标题 */
+/* ---------- 题号小徽章 ---------- */
+.oj-badge-id {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 30px;
+  height: 22px;
+  padding: 0 6px;
+  border-radius: var(--oj-radius-sm);
+  background: var(--oj-gray-100);
+  border: 1px solid var(--oj-border);
+  color: var(--oj-gray-700);
+  font-family: var(--oj-font-mono);
+  font-weight: 600;
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+  flex-shrink: 0;
+}
+
+/* 难度：色点 + 文字 */
+.oj-diff {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12.5px;
+  font-weight: 500;
+  white-space: nowrap;
+  color: var(--oj-gray-600);
+}
+.oj-diff::before {
+  content: '';
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: currentColor;
+  flex-shrink: 0;
+}
+.oj-diff.diff-1 { color: var(--oj-success); }
+.oj-diff.diff-2 { color: var(--oj-warning); }
+.oj-diff.diff-3 { color: var(--oj-danger); }
+
+.rate-good { color: var(--oj-success); }
+.rate-mid { color: var(--oj-warning); }
+.rate-low { color: var(--oj-danger); }
+
+/* Element Plus 细节统一 */
+.el-table {
+  --el-table-row-hover-bg-color: var(--oj-gray-100);
+  --el-table-border-color: var(--oj-border);
+  --el-table-header-text-color: var(--oj-gray-500);
+  --el-table-header-bg-color: transparent;
+}
+.el-table th.el-table__cell {
+  font-weight: 600;
+  font-size: 12px;
+  letter-spacing: 0.02em;
+}
+.el-button {
+  border-radius: var(--oj-radius-md);
+  font-weight: 500;
+}
+.el-dialog {
+  border-radius: 10px;
+  background: var(--oj-card);
+  border: 1px solid var(--oj-border);
+}
+.el-tag {
+  border-radius: 4px;
+}
+.el-pagination {
+  --el-pagination-font-size: 13px;
+}
+.el-empty {
+  --el-empty-description-margin-top: 12px;
+}
+.el-empty__description p {
+  color: var(--oj-text-sub);
+  font-size: 13px;
+}
+
 .card h2 {
   margin: 0 0 8px;
-  font-size: 20px;
-  font-weight: 800;
+  font-size: 17px;
+  font-weight: 600;
+  letter-spacing: -0.1px;
 }
 .card h3 {
   margin: 20px 0 10px;
-  font-size: 16px;
-  font-weight: 700;
+  font-size: 14.5px;
+  font-weight: 600;
+}
+
+/* ---------- 页面头部：朱印改品牌印 ---------- */
+.oj-page-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin-bottom: 16px;
+}
+.oj-page-title,
+.page-container h1 {
+  margin: 0;
+  position: relative;
+  padding-left: 16px;
+  font-size: 21px;
+  font-weight: 600;
+  letter-spacing: -0.3px;
+  line-height: 1.35;
+  color: var(--oj-text);
+}
+.oj-page-title::before,
+.page-container h1::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0.34em;
+  width: 8px;
+  height: 8px;
+  background: var(--oj-seal);
+  border-radius: 2px;
+}
+.oj-page-sub {
+  margin: 6px 0 0;
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--oj-text-sub);
+}
+.oj-page-sub b {
+  color: var(--oj-primary-hover);
+  font-variant-numeric: tabular-nums;
+}
+.oj-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+@media (max-width: 640px) {
+  .oj-page-head {
+    gap: 12px;
+  }
+  .oj-page-title,
+  .page-container h1 {
+    font-size: 19px;
+  }
+  .oj-toolbar {
+    width: 100%;
+  }
+}
+
+/* ---------- 墨色舞台 → 辉光舞台 ----------
+   深面板 + 品牌靛蓝径向辉光 + 微网格，一束光从左上打下来。 */
+.oj-stage {
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  align-items: flex-start;
+  gap: 20px;
+  flex-wrap: wrap;
+  padding: 26px 30px;
+  margin-bottom: 16px;
+  border-radius: 10px;
+  border: 1px solid var(--oj-border);
+  background-image:
+    radial-gradient(640px 260px at 12% -40%, rgba(94, 106, 210, 0.28), transparent 70%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.03), transparent 55%),
+    var(--oj-card);
+  color: var(--oj-text);
+}
+.oj-stage .oj-stage-title {
+  margin: 0;
+  position: relative;
+  padding-left: 18px;
+  font-size: 26px;
+  font-weight: 600;
+  letter-spacing: -0.5px;
+  line-height: 1.3;
+  color: var(--oj-text);
+}
+.oj-stage .oj-stage-title::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0.3em;
+  width: 9px;
+  height: 9px;
+  background: var(--oj-seal);
+  border-radius: 2px;
+}
+.oj-stage .oj-stage-sub {
+  margin: 8px 0 0;
+  font-size: 13px;
+  line-height: 1.7;
+  color: var(--oj-text-sub);
+}
+.oj-stage .oj-stage-sub b {
+  color: var(--oj-primary-hover);
+  font-variant-numeric: tabular-nums;
+}
+.oj-stage .oj-stage-side {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  align-self: stretch;
+  flex-shrink: 0;
+}
+.oj-stage .oj-stage-stat {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-width: 84px;
+  padding: 0 16px;
+}
+.oj-stage .oj-stage-stat + .oj-stage-stat {
+  border-left: 1px solid var(--oj-border);
+}
+.oj-stage .oj-stage-num {
+  font-family: var(--oj-font-mono);
+  font-size: 26px;
+  font-weight: 600;
+  line-height: 1.15;
+  letter-spacing: -0.5px;
+  font-variant-numeric: tabular-nums;
+  color: var(--oj-text);
+}
+.oj-stage .oj-stage-label {
+  margin-top: 4px;
+  font-size: 11.5px;
+  color: var(--oj-text-sub);
+  white-space: nowrap;
+}
+@media (max-width: 760px) {
+  .oj-stage .oj-stage-side {
+    margin-left: 0;
+    width: 100%;
+    justify-content: flex-start;
+    border-top: 1px solid var(--oj-border);
+    padding-top: 14px;
+  }
+  .oj-stage .oj-stage-stat:first-child {
+    padding-left: 0;
+  }
+}
+
+/* 页面进入动画（仅首屏） */
+.page-enter-active {
+  transition: opacity 0.15s var(--oj-ease), transform 0.15s var(--oj-ease);
+}
+.page-enter-from {
+  opacity: 0;
+  transform: translateY(4px);
+}
+
+/* 无障碍：仅屏幕阅读器可见 */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
 }

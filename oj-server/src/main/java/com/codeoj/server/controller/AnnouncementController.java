@@ -3,6 +3,7 @@ package com.codeoj.server.controller;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.codeoj.common.entity.Announcement;
 import com.codeoj.common.result.R;
+import com.codeoj.common.result.ResultCode;
 import com.codeoj.server.mapper.AnnouncementMapper;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -52,15 +53,15 @@ public class AnnouncementController {
         String title = body.getOrDefault("title", "").trim();
         String content = body.getOrDefault("content", "").trim();
         if (title.isEmpty() || content.isEmpty()) {
-            return R.fail(40000, "标题与内容不能为空");
+            return R.fail(ResultCode.BAD_REQUEST.getCode(), "标题与内容不能为空");
         }
         // 长度上限必须与库表对齐（title VARCHAR(200)/content VARCHAR(2000)），
         // 否则超长直接触发 SQL 异常被兜底成 50000，而不是可读的 40000
         if (title.length() > 200) {
-            return R.fail(40000, "标题不得超过 200 字");
+            return R.fail(ResultCode.BAD_REQUEST.getCode(), "标题不得超过 200 字");
         }
         if (content.length() > 2000) {
-            return R.fail(40000, "内容不得超过 2000 字");
+            return R.fail(ResultCode.BAD_REQUEST.getCode(), "内容不得超过 2000 字");
         }
         Announcement a = new Announcement();
         a.setTitle(title);

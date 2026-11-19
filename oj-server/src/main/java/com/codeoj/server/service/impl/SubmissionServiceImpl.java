@@ -2,6 +2,7 @@ package com.codeoj.server.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.codeoj.common.constant.RedisKeys;
 import com.codeoj.common.entity.JudgeCase;
 import com.codeoj.common.entity.Problem;
 import com.codeoj.common.entity.Submission;
@@ -22,6 +23,7 @@ import com.codeoj.server.security.LoginUser;
 import com.codeoj.server.service.IdempotentLockService;
 import com.codeoj.server.service.RateLimiter;
 import com.codeoj.server.service.SubmissionService;
+import com.codeoj.server.util.PageUtils;
 import com.codeoj.server.vo.JudgeCaseVO;
 import com.codeoj.server.vo.StatisticsVO;
 import com.codeoj.server.vo.SubmissionDetailVO;
@@ -97,8 +99,9 @@ public class SubmissionServiceImpl implements SubmissionService {
     @Override
     public SubmitVO submit(LoginUser user, SubmitDTO dto) {
         rateLimiter.check("submit:" + user.userId(), String.valueOf(user.userId()), submitPerMinute, 60);
-        if (!lockService.tryLock("oj:lock:submit:" + user.userId() + ":" + dto.getProblemId(), 2)) {
-            throw new BizException(42901, "提交过于频繁，请稍后再试");
+        // 幂等锁键走 RedisKeys（CONTRACT §5 禁止硬编码键名）
+        if (!lockService.tryLock(RedisKeys.lockSubmit(user.userId(), dto.getProblemId()), 2)) {
+            throw new BizException(ResultCode.SUBMIT_TOO_FREQUENT);
         }
         // 保留 B 侧显式事务；同步回调注册在事务内，也兼容未来由外层事务调用 submit。
         Long sid = transactionTemplate.execute(status -> {
@@ -177,8 +180,14 @@ public class SubmissionServiceImpl implements SubmissionService {
         }
     }
 
-    @Override
-    public void validate(Problem problem, SubmitDTO dto) {
+    /**
+     * 内部步骤：语言白名单 + 代码字节数，仅由 {@link #submit} 调用。
+     *
+     * <p>之所以不放进 {@link SubmissionService} 接口：它是提交流程中的一步内联校验，
+     * 外部没有任何调用方，暴露在服务契约里只会让人误以为它是可独立调用的公共能力。
+     * 合并说明：dev 侧曾以接口方法形式暴露（review P2-7 后收窄为 private）。
+     */
+    private void validate(Problem problem, SubmitDTO dto) {
         if (problem.getLanguages() == null || !problem.getLanguages().contains(dto.getLanguage())) {
             throw new BizException(ResultCode.SUBMIT_INVALID.getCode(), "该题目不允许使用此语言提交");
         }
@@ -248,7 +257,8 @@ public class SubmissionServiceImpl implements SubmissionService {
             wrapper.le(Submission::getCreatedAt, end);
         }
         wrapper.orderByDesc(Submission::getId);
-        Page<Submission> result = submissionMapper.selectPage(new Page<>(page, size), wrapper);
+        // page/size 下限由 PageUtils 统一夹取（review P2-25）
+        Page<Submission> result = submissionMapper.selectPage(PageUtils.of(page, size), wrapper);
 
         // 批量补齐题目标题，避免 N+1 查询
         Map<Long, String> titles = result.getRecords().isEmpty() ? Map.of()

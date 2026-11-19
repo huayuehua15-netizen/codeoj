@@ -5,11 +5,11 @@ import com.codeoj.server.mapper.SubmissionMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.redis.core.StringRedisTemplate;
+import org.springframework.data.redis.core.ZSetOperations;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
@@ -39,37 +39,36 @@ public class LeaderboardReconcileTask {
             expected.put(String.valueOf(row.getUserId()), row.getAcCount());
         }
 
-        Set<String> members = redis.opsForZSet().range(RedisKeys.LEADERBOARD_AC, 0, -1);
+        // 一次 rangeWithScores(0,-1) 取回 member + 分数（review P2-19）：原先先 range 拿
+        // member 集合，再对每个 member 单独 score() 比对，N 个用户就是 N+1 次往返；
+        // 对账是全量扫描，往返次数应固定为 1 次。
+        Set<ZSetOperations.TypedTuple<String>> entries =
+                redis.opsForZSet().rangeWithScores(RedisKeys.LEADERBOARD_AC, 0, -1);
+        Map<String, Double> actual = new HashMap<>();
+        if (entries != null) {
+            for (ZSetOperations.TypedTuple<String> t : entries) {
+                if (t.getValue() != null) {
+                    actual.put(t.getValue(), t.getScore());
+                }
+            }
+        }
         int removed = 0;
         int corrected = 0;
 
         // 1. ZSet 中的脏 member（DB 无此用户/无 AC）删除
-        if (members != null) {
-            for (Object m : members) {
-                if (!expected.containsKey(String.valueOf(m))) {
-                    redis.opsForZSet().remove(RedisKeys.LEADERBOARD_AC, m);
-                    removed++;
-                }
+        for (String member : actual.keySet()) {
+            if (!expected.containsKey(member)) {
+                redis.opsForZSet().remove(RedisKeys.LEADERBOARD_AC, member);
+                removed++;
             }
         }
 
-        // 2. 期望值与 ZSet 不符的 member 覆盖校正
-        Set<String> checked = new HashSet<>();
-        if (members != null) {
-            for (Object m : members) {
-                checked.add(String.valueOf(m));
-            }
-        }
+        // 2. 期望值与 ZSet 不符的 member 覆盖校正（缺失或不一致都重写）
         for (Map.Entry<String, Long> e : expected.entrySet()) {
-            if (!checked.contains(e.getKey())) {
+            Double score = actual.get(e.getKey());
+            if (score == null || score.longValue() != e.getValue()) {
                 redis.opsForZSet().add(RedisKeys.LEADERBOARD_AC, e.getKey(), e.getValue());
                 corrected++;
-            } else {
-                Double score = redis.opsForZSet().score(RedisKeys.LEADERBOARD_AC, e.getKey());
-                if (score == null || score.longValue() != e.getValue()) {
-                    redis.opsForZSet().add(RedisKeys.LEADERBOARD_AC, e.getKey(), e.getValue());
-                    corrected++;
-                }
             }
         }
 

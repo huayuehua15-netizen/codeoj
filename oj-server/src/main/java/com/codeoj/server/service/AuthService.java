@@ -10,20 +10,48 @@ import com.codeoj.server.vo.LoginVO;
  */
 public interface AuthService {
 
-    /** 注册：按客户端 IP 限流（防批量刷号） */
-    LoginVO register(RegisterDTO dto, String clientIp);
+    /**
+     * 注册：按客户端 IP 限流（防批量刷号）。
+     *
+     * <p>API.md §1.1 规定注册<b>不自动登录</b>、响应 {@code data: null}，
+     * 因此这里不返回令牌，调用方也无从"顺手"拿到一个 JWT。
+     */
+    void register(RegisterDTO dto, String clientIp);
 
     /** 登录成功返回 JWT；连续失败 5 次锁定 15 分钟 + 按 IP 限流（论文 4.7） */
     LoginVO login(LoginDTO dto, String clientIp);
 
-    /** 登出：令牌加入 Redis 黑名单直至自然过期 */
-    void logout(LoginUser user);
+    /**
+     * 登出：令牌加入 Redis 黑名单直至自然过期。
+     *
+     * @param token 裸 JWT（不含 {@code Bearer } 前缀），可为 null
+     *              （例如请求未携带 Authorization 头时）
+     */
+    void logout(LoginUser user, String token);
 
     LoginVO getUserInfo(LoginUser user);
 
     /** 邮箱修改（论文表 3-1 个人信息维护） */
     void updateEmail(LoginUser user, String email);
 
-    /** 密码修改：验证旧密码，成功后调用方应使当前令牌失效 */
-    void changePassword(LoginUser user, String oldPassword, String newPassword);
+    /**
+     * 密码修改：验证旧密码，成功后由本方法把当前令牌拉黑使其立即失效。
+     *
+     * @param token 裸 JWT（不含 {@code Bearer } 前缀），可为 null
+     */
+    void changePassword(LoginUser user, String oldPassword, String newPassword, String token);
+
+    /**
+     * 个性签名修改（API.md v1.8 §1.5a）。
+     *
+     * @param signature 由调用方 trim；trim 后 1-200 字，否则 40000
+     */
+    void updateSignature(LoginUser user, String signature);
+
+    /**
+     * 头像上传（API.md v1.8 §1.5b）：解析并校验 data URL，落盘并更新用户列。
+     *
+     * @return 相对 URL（/uploads/avatars/{file}），前端直接用于 img src
+     */
+    String updateAvatar(LoginUser user, String dataUrl);
 }

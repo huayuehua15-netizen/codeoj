@@ -46,7 +46,8 @@ spring:
     time-zone: Asia/Shanghai
 
 mybatis-plus:
-  mapper-locations: classpath*:mapper/*.xml
+  # 不再声明 mapper-locations（review P2-33）：本仓库所有 Mapper 均为注解式，
+  # 不存在 src/main/resources/mapper/*.xml，留着只会让人误以为有 XML 要维护。
   type-aliases-package: com.codeoj.common.entity
   configuration:
     map-underscore-to-camel-case: true
@@ -54,7 +55,8 @@ mybatis-plus:
   global-config:
     db-config:
       id-type: auto
-      logic-delete-field: false
+      # 不声明 logic-delete-field（review P2-32）：该键应填实体字段名，
+      # 写布尔值既无意义，项目也并未启用逻辑删除（删除均为物理删除）。
 
 # JWT 认证配置（论文 4.7：24 小时过期，登出进入 Redis 黑名单）
 jwt:
@@ -64,14 +66,23 @@ jwt:
   expire-hours: 24
 
 # 限流配置（论文 4.7：登录失败 5 次锁定 15 分钟；提交 6 次/分/用户）
+# 阈值集中在此处而不是散落在业务代码里：改限流口径属于配置调整，
+# 不该为了把一个 5 改成 10 而重新编译、重新发版。
 oj:
   rate-limit:
-    login-max-attempts: 5
-    login-lock-minutes: 15
-    submit-per-minute: 6
+    login-max-attempts: 5        # API.md §1.2：连续失败 5 次锁定
+    login-lock-minutes: 15       # 锁定时长（分钟，服务内换算成秒传给 Redis EXPIRE）
+    login-per-hour: 30           # API.md §1.2：登录按 IP 30 次/小时
+    register-per-hour: 10        # API.md §1.1：注册按 IP 10 次/小时
+    submit-per-minute: 6         # 论文 5.3：提交 6 次/分钟
   # 提交代码大小上限（论文 4.4：≤64KB）
   submit:
     max-code-bytes: 65536
+  # 头像上传（API.md v1.8 §1.5b）：root-dir 是静态映射 /uploads/** 的根，
+  # avatar-dir 必须位于其下；部署时把持久卷挂到容器内该路径
+  upload:
+    root-dir: uploads
+    avatar-dir: uploads/avatars
 
 logging:
   level:

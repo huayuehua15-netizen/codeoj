@@ -67,6 +67,12 @@ services:
       RABBITMQ_USER: ${RABBITMQ_USER:-guest}
       RABBITMQ_PASSWORD: ${RABBITMQ_PASSWORD:-guest}
       JWT_SECRET: ${JWT_SECRET:-codeoj-dev-jwt-secret-0123456789abcdef0123456789abcdef}
+      # 头像落盘目录（API.md v1.8）：容器内路径与静态映射 /uploads/** 对齐
+      OJ_UPLOAD_ROOT_DIR: /app/uploads
+      OJ_UPLOAD_AVATAR_DIR: /app/uploads/avatars
+    volumes:
+      # 头像文件持久化：容器重建不丢（README 部署段有说明）
+      - ./data/server-uploads:/app/uploads
     depends_on:
       mysql:
         condition: service_healthy

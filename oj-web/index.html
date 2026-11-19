@@ -3,10 +3,31 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <!--
+      品牌图标：内联 SVG data URI（朱底白「判」方印），
+      与 MainLayout / AuthShell 的方印词标同源，不额外产生 /favicon.ico 请求。
+    -->
+    <link
+      rel="icon"
+      type="image/svg+xml"
+      href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='12' fill='%235e6ad2'/%3E%3Ctext x='32' y='45' font-family='Segoe UI, PingFang SC, sans-serif' font-size='36' font-weight='700' fill='%23f7f8f8' text-anchor='middle'%3E判%3C/text%3E%3C/svg%3E"
+    />
+
+    <!-- 移动端地址栏/状态栏跟随页面底色，避免割裂 -->
+    <meta name="theme-color" content="#08090a" />
+    <meta
+      name="description"
+      content="CodeOJ —— 在线代码评测与编程练习平台。支持 C / C++ / Java / Python / JavaScript 五种语言在线编写与提交，用例级判题结果实时推送。"
+    />
+    <meta name="color-scheme" content="light" />
+
+    <!-- 首屏标题与 router.afterEach 的默认值保持同一口径 -->
     <title>CodeOJ - 在线代码评测平台</title>
   </head>
   <body>
     <div id="app"></div>
+    <noscript>CodeOJ 需要启用 JavaScript 才能运行在线编辑器与判题流程。</noscript>
     <script type="module" src="/src/main.ts"></script>
   </body>
 </html>

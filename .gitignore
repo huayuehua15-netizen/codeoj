@@ -29,7 +29,11 @@ Thumbs.db
 
 # 审查/构建临时产物
 .tmp/
+.tmp-build/
 review/
+
+# 头像等运行时上传文件（compose 持久卷挂载点；本地默认落在仓库根的 uploads/）
+uploads/
 
 # ===== Python 与压测产物 =====
 __pycache__/

@@ -1,6 +1,6 @@
 # CodeOJ 接口文档（前后端对接契约）
 
-> 版本：v1.7（2026-11-18）｜ 提交详情补充用例总数及统计口径，明确语言内存配置
+> 版本：v1.11（2026-11-19）｜ 合并登记：A 侧 v1.7（提交详情 `totalCases` 与内存下限）与 B 侧 v1.8~v1.10（个人中心头像/签名、trend 366 天、语言分布、错题本）并行演进，本轮统一收口至 v1.11
 > 适用：前端（oj-web）按此文档先行开发，后端按此文档补全实现。
 > 标注 ⚠️ 的接口：骨架已定契约，业务实现于第二阶段完成（前端可先按 mock 开发）。
 
@@ -114,15 +114,42 @@
   "username": "张三丰",
   "email": "zhangsan@example.com",
   "role": 0,
+  "avatar": "/uploads/avatars/3-1763500000000.webp",
+  "signature": "每天进步一点点。",
   "createdAt": "2026-11-15 08:00:00"
 }
 ```
+
+`avatar` 为站点内相对路径（前端直接用于 `<img src>`，dev 由 Vite 代理、生产由 Nginx 反代 `/uploads`）；未设置头像时为 `null`，前端回退到首字母占位头像。`signature` 未设置时为 `null`。
 
 ### 1.5 邮箱修改 `PUT /api/auth/info`（登录）
 
 请求体：`{ "email": "new@example.com" }`（@Valid 校验邮箱格式）。响应 `data: null`。
 
 > 个人信息维护（论文表 3-1）：用户名与角色不可变更，仅邮箱可改。
+
+### 1.5a 签名修改 `PUT /api/auth/profile`（登录，v1.8 新增）
+
+请求体：`{ "signature": "每天进步一点点。" }`。响应 `data: null`。
+
+| 校验 | 说明 |
+|---|---|
+| signature | trim 后 1-200 字，超长或全空返回 40000 |
+
+### 1.5b 头像上传 `PUT /api/auth/avatar`（登录，v1.8 新增）
+
+请求体：`{ "dataUrl": "data:image/webp;base64,UklGRh..." }`（前端裁剪压缩后的 data URL）。
+
+响应 `data: { "avatar": "/uploads/avatars/3-1763500000000.webp" }`。
+
+| 校验 | 说明 |
+|---|---|
+| 格式 | 仅 `data:image/png`、`image/jpeg`、`image/webp`，且按魔数二次校验（防止改后缀绕过） |
+| 大小 | 解码后 ≤ 300 KB |
+| 存储 | 服务端生成文件名 `{userId}-{时间戳}.{ext}` 落盘到 `oj.upload.avatar-dir`，旧头像文件删除 |
+| 安全 | 客户端文件名永不参与落盘路径（防路径穿越）；目录由服务端创建 |
+
+头像静态读取：`GET /uploads/avatars/{file}` **无需登录**（公开可读），由 oj-server 静态映射到磁盘目录；部署时该目录需要持久卷（见 docker-compose 的 `data/server-uploads` 挂载）。
 
 ### 1.6 密码修改 `PUT /api/auth/password`（登录）
 
@@ -373,6 +400,43 @@ Query 参数：`problemId`、`status`（0-8）、`begin`/`end`（ISO 时间范�
 
 `byDifficulty` 始终包含简单、中等、困难三行，包括尚未提交的难度。`totalCount` 统计该难度全部上架题目；新增的 `availableSolvedCount` 只计已 AC 且仍在架的不同题目，用作题库覆盖率分子。原 `solvedCount`、提交数和通过数保留含下架题目的历史口径，重复 AC 同一道题不会增加解题数。
 
+### 4.4a 提交趋势 `GET /api/submissions/trend`（登录）
+
+Query 参数：`days`（默认 7，**上限 366**，v1.9 由 30 放宽以支持个人主页热力图）。
+
+响应 `data`：按日聚合数组 `[{ "date": "2026-11-18", "total": 3, "accepted": 2 }]`（仅有提交的日子会出现，无提交日由前端补零）。
+
+### 4.4b 语言分布 `GET /api/submissions/languages`（登录，v1.9 新增）
+
+响应 `data`：该用户各语言的提交聚合，按提交数降序：
+
+```json
+[
+  { "language": "cpp", "total": 20, "accepted": 12 },
+  { "language": "python3", "total": 5, "accepted": 3 }
+]
+```
+
+个人主页的语言分布与"最近动态"的语种展示以此口径为准（language 为 `Language` 枚举 code）。
+
+### 4.4c 错题本 `GET /api/submissions/wrongbook`（登录，v1.10 新增）
+
+**口径**：该用户**尝试过且从未 AC** 的题目（有提交记录但 `MAX(status=2)=0`），按最近一次提交时间倒序。已 AC 的题不进错题本（哪怕曾经错过）。
+
+响应 `data`：
+
+```json
+[
+  { "problemId": 5, "title": "最长公共前缀", "difficulty": 2,
+    "attempts": 6, "lastStatus": 3, "lastLanguage": "java", "lastAt": "2026-11-10 14:20:00" }
+]
+```
+
+| 字段 | 说明 |
+|---|---|
+| attempts | 该题总提交次数 |
+| lastStatus / lastLanguage / lastAt | 最近一次提交的状态码 / 语言 / 时间 |
+
 ---
 
 ## 5. 排行榜 `/api/leaderboard`
@@ -389,7 +453,7 @@ Query 参数：`page`（默认 1，最小 1）、`size`（默认 20，限制在 
 {
   "total": 25,
   "items": [
-    { "userId": 3, "username": "lisi", "acCount": 12, "rank": 1, "totalSubmit": 30, "acceptedSubmit": 20, "acceptRate": 66.7, "lastSubmitAt": "2026-11-17 15:00:00" }
+    { "userId": 3, "username": "lisi", "avatar": null, "acCount": 12, "rank": 1, "totalSubmit": 30, "acceptedSubmit": 20, "acceptRate": 66.7, "lastSubmitAt": "2026-11-17 15:00:00" }
   ],
   "summary": { "solverCount": 25, "maxAcCount": 12, "totalSubmit": 200, "overallAcceptRate": 60.0 }
 }
@@ -406,10 +470,10 @@ Query 参数：`page`（默认 1，最小 1）、`size`（默认 20，限制在 
 响应 `data`（QueueStatusVO，论文表 3-3 运维监控）：
 
 ```json
-{ "backlog": 5, "judgedToday": 128, "judgeInstances": 2, "cachedAt": "2026-11-13T08:10:00Z" }
+{ "backlog": 5, "judgedToday": 128, "judgeInstances": 2, "queriedAt": "2026-11-13 08:10:00" }
 ```
 
-`backlog` 为 RabbitMQ `oj.judge.queue` 积压量（Redis 缓存 30s）；`judgeInstances` 为在线判题实例数——oj-judge 每 20s 向 Redis 写心跳键（TTL 30s，掉线自动消失），`--scale oj-judge=4` 扩容后自动可见。
+`backlog` 为 RabbitMQ `oj.judge.queue` 积压量（Redis 缓存 30s，命中缓存时返回的是上一次探询结果）；`judgeInstances` 为在线判题实例数——oj-judge 每 20s 向 Redis 写心跳键（TTL 30s，掉线自动消失），`--scale oj-judge=4` 扩容后自动可见；`queriedAt` 为本次查询时刻（§0.1 格式），与 `backlog` 的缓存时间解耦，避免误读为"积压量的采集时间"。
 
 ### 6.2 课程实验 `/api/admin/courses`（管理员）
 
@@ -568,4 +632,8 @@ new Client({
 | 2026-11-16 | v1.4 | 保留 v1.3 接口及 LoginUser Principal；补充 STOMP 黑名单/数据库状态鉴权、订阅白名单与 SEND 限制。提交事务及时间字段保持 B 契约，内部租约/补发采用 UTC | A 评测修复，待 B 评审 |
 | 2026-11-17 | v1.5 | 补齐当前统计/排行榜响应；课程/竞赛题组与用例导入校验；有历史或引用的题目禁止物理删除；无效分页处理 | 项目完整性改善，待评审 |
 | 2026-11-17 | v1.6 | 统计固定返回三个难度，新增在架解题数；新增题库概览与全站标签；题库横幅和筛选翻页口径修正，原响应字段保留 | 题库完善，待评审 |
-| 2026-11-18 | v1.7 | 提交详情新增可空的 `totalCases`，`cases` 继续返回已执行明细；Java 和 JavaScript 题目内存下限为 64 MB | A/B 评测对接 |
+| 2026-11-18 | v1.7 | 双线并行：A 侧——提交详情新增可空 `totalCases`、`cases` 继续返回已执行明细、Java/JavaScript 内存下限 64 MB；B 侧——§6.1 队列监控 `cachedAt` 更名 `queriedAt` | A/B |
+| 2026-11-19 | v1.8 | 个人中心扩展：`PUT /api/auth/profile` 签名、`PUT /api/auth/avatar` 头像（data URL + 魔数校验）、`GET /uploads/**` 公开静态资源；LoginVO 增加 `avatar`/`signature` | 成员 B |
+| 2026-11-19 | v1.9 | 个人主页数据支撑：`4.4a` trend 上限 30 → 366 天；`4.4b` `GET /api/submissions/languages` 语言分布 | 成员 B |
+| 2026-11-19 | v1.10 | `4.4c` `GET /api/submissions/wrongbook` 错题本（尝试过且未 AC 的题目聚合） | 成员 B |
+| 2026-11-19 | v1.11 | 合并收口：A/B 双线版本号并行演进（均自 v1.7 起），本轮统一登记 | 成员 B |
