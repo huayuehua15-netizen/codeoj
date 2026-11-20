@@ -68,7 +68,7 @@
           <span>DESCRIPTION</span>
         </div>
         <div class="statement-body">
-          <MarkdownPreview :content="problem.description" />
+          <MarkdownPreview :content="statementContent" />
         </div>
       </section>
 
@@ -285,6 +285,12 @@ const rateClass = computed(() => {
   if (passRate.value >= 60) return 'rate-good'
   if (passRate.value >= 30) return 'rate-mid'
   return 'rate-low'
+})
+
+/** 题面正文：去掉自带的「## 题目描述」首标题，避免和分区标题重复 */
+const statementContent = computed(() => {
+  const raw = problem.value?.description || ''
+  return raw.replace(/^\s*#{1,6}\s*题目描述\s*(?:\r?\n)+/, '')
 })
 
 const resultSubTitle = computed(() => {
@@ -782,6 +788,11 @@ onMounted(load)
   background: var(--oj-code-bg);
   box-shadow: var(--oj-shadow);
 }
+
+/* 编辑区随桌面高度伸展，避免右栏上半截是编辑器、下半截大片空白的“半张卡片”视觉 */
+.editor-card :deep(.code-editor) {
+  height: clamp(440px, calc(100vh - 236px), 620px);
+}
 .editor-toolbar {
   display: flex;
   align-items: center;
@@ -1127,6 +1138,9 @@ onMounted(load)
   }
   .workspace {
     position: static;
+  }
+  .editor-card :deep(.code-editor) {
+    height: 420px;
   }
   .sample-set {
     grid-template-columns: 1fr;
