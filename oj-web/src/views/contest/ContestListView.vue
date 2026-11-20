@@ -425,7 +425,7 @@ onUnmounted(() => {
 
 .schedule-cols {
   display: grid;
-  grid-template-columns: 72px 84px minmax(0, 1fr) 72px 156px 22px;
+  grid-template-columns: 72px 84px minmax(0, 1fr) 72px 176px 22px;
   gap: 18px;
   align-items: center;
   padding: 8px 18px 7px;
@@ -438,7 +438,7 @@ onUnmounted(() => {
 }
 .schedule-row {
   display: grid;
-  grid-template-columns: 72px 84px minmax(0, 1fr) 72px 156px 22px;
+  grid-template-columns: 72px 84px minmax(0, 1fr) 72px 176px 22px;
   gap: 18px;
   align-items: center;
   padding: 12px 18px;
@@ -510,6 +510,7 @@ onUnmounted(() => {
   font-size: 9.5px;
   color: var(--oj-text-weak);
   text-align: right;
+  white-space: nowrap;
 }
 .row-arrow {
   color: var(--oj-text-weak);

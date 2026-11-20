@@ -47,10 +47,17 @@
 
     <div class="settings-layout">
       <nav class="settings-nav" aria-label="设置分区">
-        <a href="#account">01 / 账号资料</a>
-        <a href="#security">02 / 登录安全</a>
-        <a href="#editor">03 / 编辑器偏好</a>
-        <a href="#local">04 / 本地数据</a>
+        <a
+          v-for="item in SECTION_LINKS"
+          :key="item.id"
+          class="settings-nav-link"
+          :class="{ active: activeSection === item.id }"
+          :href="`#${item.id}`"
+          :aria-current="activeSection === item.id ? 'location' : undefined"
+          @click="activeSection = item.id"
+        >
+          {{ item.no }} / {{ item.label }}
+        </a>
       </nav>
 
       <main class="settings-main">
@@ -230,7 +237,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, reactive, ref } from 'vue'
+import { computed, onMounted, onUnmounted, reactive, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import {
@@ -252,6 +259,40 @@ import { FONT_SIZE_MAX, FONT_SIZE_MIN, TAB_SIZE_OPTIONS } from '@/utils/preferen
 const router = useRouter()
 const userStore = useUserStore()
 const prefs = usePreferencesStore()
+
+/** 左侧分区导航：滚动时高亮当前分区，而不是永久高亮第一项 */
+const SECTION_LINKS = [
+  { id: 'account', no: '01', label: '账号资料' },
+  { id: 'security', no: '02', label: '登录安全' },
+  { id: 'editor', no: '03', label: '编辑器偏好' },
+  { id: 'local', no: '04', label: '本地数据' },
+] as const
+
+type SectionId = (typeof SECTION_LINKS)[number]['id']
+const activeSection = ref<SectionId>('account')
+let scrollRaf = 0
+
+/** 以视口上方 120px 为基准线：最后一个越过基准线的分区就是当前分区 */
+function updateActiveSection() {
+  let current: SectionId = SECTION_LINKS[0].id
+  for (const item of SECTION_LINKS) {
+    const el = document.getElementById(item.id)
+    if (!el) continue
+    if (el.getBoundingClientRect().top <= 120) current = item.id
+  }
+  const reachedBottom =
+    window.scrollY + window.innerHeight >= document.documentElement.scrollHeight - 4
+  if (reachedBottom) current = SECTION_LINKS[SECTION_LINKS.length - 1].id
+  activeSection.value = current
+}
+
+function onScroll() {
+  if (scrollRaf) return
+  scrollRaf = requestAnimationFrame(() => {
+    scrollRaf = 0
+    updateActiveSection()
+  })
+}
 
 const info = ref<LoginVO>()
 const email = ref('')
@@ -291,6 +332,15 @@ async function load() {
 
 onMounted(() => {
   load().catch(() => ElMessage.error('账号资料加载失败，请稍后重试'))
+  updateActiveSection()
+  window.addEventListener('scroll', onScroll, { passive: true })
+  window.addEventListener('resize', onScroll)
+})
+
+onUnmounted(() => {
+  window.removeEventListener('scroll', onScroll)
+  window.removeEventListener('resize', onScroll)
+  if (scrollRaf) cancelAnimationFrame(scrollRaf)
 })
 
 async function saveProfile() {
@@ -615,6 +665,10 @@ async function refreshInfo() {
   font-weight: 700;
   letter-spacing: 0.04em;
   text-decoration: none;
+  transition:
+    color var(--oj-duration) var(--oj-ease),
+    background var(--oj-duration) var(--oj-ease),
+    border-color var(--oj-duration) var(--oj-ease);
 }
 
 .settings-nav a:hover {
@@ -622,7 +676,7 @@ async function refreshInfo() {
   background: var(--oj-gray-50);
 }
 
-.settings-nav a:first-child {
+.settings-nav a.active {
   color: var(--oj-primary);
   border-left-color: var(--oj-primary);
   background: var(--oj-primary-soft);
@@ -926,7 +980,7 @@ async function refreshInfo() {
     padding: 7px 10px;
   }
 
-  .settings-nav a:first-child {
+  .settings-nav a.active {
     border-color: var(--oj-primary);
   }
 

@@ -304,6 +304,18 @@ a {
   border-radius: 4px;
 }
 
+/* Element Plus 的输入框、选择器自带焦点态（1px 内描边 + 外发光），
+   内层 input 再叠一圈全局 outline 会变成难看的“双框”，这里交给组件自己表达焦点。 */
+.el-input__inner:focus-visible,
+.el-textarea__inner:focus-visible,
+.el-select__input:focus-visible,
+.el-range-input:focus-visible,
+.el-checkbox__original:focus-visible,
+.el-radio__original:focus-visible,
+.el-switch__input:focus-visible {
+  outline: none;
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
@@ -947,13 +959,25 @@ a {
   align-items: center;
 }
 
-/* 页面进入：轻微上浮，不做花哨位移 */
-.page-enter-active {
-  transition: opacity 0.18s var(--oj-ease), transform 0.18s var(--oj-ease);
+/* 页面进入：轻微上浮，不做花哨位移。用普通 CSS 动画而不是 Vue Transition：
+   异步页面加载后可能替换根节点，Transition 的 enter-from 类会滞留在新根节点上。 */
+.page-fade {
+  animation: page-in 0.18s var(--oj-ease) both;
 }
-.page-enter-from {
-  opacity: 0;
-  transform: translateY(4px);
+@keyframes page-in {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .page-fade {
+    animation: none;
+  }
 }
 
 .sr-only {

@@ -548,11 +548,18 @@ onMounted(load)
     margin-top: 16px;
     padding-top: 14px;
     border-top: 1px solid var(--oj-border);
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 0;
+  }
+  .total {
+    padding: 0 0 0 16px;
+    border-left: 1px solid var(--oj-border);
+    text-align: left;
   }
   .total:first-child {
     padding-left: 0;
     border-left: 0;
-    text-align: left;
   }
   .podium {
     grid-template-areas: 'first first';
@@ -569,6 +576,21 @@ onMounted(load)
   }
   .roster-sub {
     display: none;
+  }
+}
+@media (max-width: 520px) {
+  .honor-totals {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .total {
+    padding: 0 0 10px 14px;
+  }
+  .total:nth-child(n + 3) {
+    padding-top: 10px;
+    border-top: 1px solid var(--oj-border);
+  }
+  .total dd {
+    font-size: 21px;
   }
 }
 </style>

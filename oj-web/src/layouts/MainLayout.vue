@@ -68,11 +68,11 @@
     </header>
 
     <main class="main">
-      <router-view v-slot="{ Component }">
-        <transition name="page" mode="out-in">
-          <component :is="Component" />
-        </transition>
-      </router-view>
+      <!-- 页面切换用 CSS 动画而不是 <transition>：题目详情等页面在异步加载后会切换根节点，
+           Vue Transition 会把 page-enter-from 留在新根节点上，导致整页 opacity: 0 一直不消失。 -->
+      <div :key="route.path" class="page-fade">
+        <router-view />
+      </div>
     </main>
 
     <footer class="footer">

@@ -38,54 +38,62 @@
           <button v-if="hasFilter" type="button" class="clear-btn" @click="resetFilter">清除</button>
         </div>
 
-        <label class="rail-label" for="problem-search">关键词</label>
-        <el-input
-          id="problem-search"
-          v-model="keyword"
-          placeholder="搜索题目名称"
-          class="search-input"
-          clearable
-          @keyup.enter="search"
-          @clear="search"
-        >
-          <template #prefix>
-            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
-              <circle cx="11" cy="11" r="7" /><path d="M20 20 L16.5 16.5" />
-            </svg>
-          </template>
-        </el-input>
-
-        <p class="rail-label">难度</p>
-        <div class="diff-filter" role="group" aria-label="按难度筛选">
-          <button
-            v-for="opt in difficultyOptions"
-            :key="String(opt.value)"
-            type="button"
-            class="diff-item"
-            :class="{ active: difficulty === opt.value }"
-            :aria-pressed="difficulty === opt.value"
-            @click="pickDifficulty(opt.value)"
+        <div class="rail-field rail-field-keyword">
+          <label class="rail-label" for="problem-search">关键词</label>
+          <el-input
+            id="problem-search"
+            v-model="keyword"
+            placeholder="搜索题目名称"
+            class="search-input"
+            clearable
+            @keyup.enter="search"
+            @clear="search"
           >
-            <span v-if="opt.value !== undefined" class="diff-dot" :class="`dot-${opt.value}`" aria-hidden="true" />
-            <span v-else class="diff-dot dot-all" aria-hidden="true">·</span>
-            <span>{{ opt.label }}</span>
-            <span v-if="difficulty === opt.value" class="diff-check" aria-hidden="true">✓</span>
-          </button>
+            <template #prefix>
+              <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
+                <circle cx="11" cy="11" r="7" /><path d="M20 20 L16.5 16.5" />
+              </svg>
+            </template>
+          </el-input>
         </div>
 
-        <p class="rail-label">标签</p>
-        <el-select
-          v-model="tag"
-          placeholder="全部标签"
-          class="tag-select"
-          clearable
-          filterable
-          @change="search"
-        >
-          <el-option v-for="t in tagOptions" :key="t" :label="t" :value="t" />
-        </el-select>
+        <div class="rail-field rail-field-difficulty">
+          <p class="rail-label">难度</p>
+          <div class="diff-filter" role="group" aria-label="按难度筛选">
+            <button
+              v-for="opt in difficultyOptions"
+              :key="String(opt.value)"
+              type="button"
+              class="diff-item"
+              :class="{ active: difficulty === opt.value }"
+              :aria-pressed="difficulty === opt.value"
+              @click="pickDifficulty(opt.value)"
+            >
+              <span v-if="opt.value !== undefined" class="diff-dot" :class="`dot-${opt.value}`" aria-hidden="true" />
+              <span v-else class="diff-dot dot-all" aria-hidden="true">·</span>
+              <span>{{ opt.label }}</span>
+              <span v-if="difficulty === opt.value" class="diff-check" aria-hidden="true">✓</span>
+            </button>
+          </div>
+        </div>
 
-        <el-button type="primary" class="rail-search" @click="search">检索题目</el-button>
+        <div class="rail-field rail-field-tag">
+          <p class="rail-label">标签</p>
+          <el-select
+            v-model="tag"
+            placeholder="全部标签"
+            class="tag-select"
+            clearable
+            filterable
+            @change="search"
+          >
+            <el-option v-for="t in tagOptions" :key="t" :label="t" :value="t" />
+          </el-select>
+        </div>
+
+        <div class="rail-actions">
+          <el-button type="primary" class="rail-search" @click="search">检索题目</el-button>
+        </div>
 
         <p class="rail-note">通过率 = 该题 AC 提交数 / 全部提交数。标签按算法类型聚合。</p>
       </aside>
@@ -387,6 +395,10 @@ onMounted(() => {
   color: var(--oj-primary);
 }
 
+.rail-field {
+  min-width: 0;
+}
+
 .rail-label {
   display: block;
   margin: 16px 0 7px;
@@ -395,7 +407,7 @@ onMounted(() => {
   letter-spacing: 0.08em;
   color: var(--oj-text-sub);
 }
-.rail-label:first-of-type {
+.filter-head + .rail-field .rail-label {
   margin-top: 14px;
 }
 .search-input,
@@ -644,30 +656,77 @@ onMounted(() => {
     margin-top: 18px;
     padding-top: 14px;
     border-top: 1px solid var(--oj-border);
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 0;
+  }
+  .head-stats .stat {
+    padding: 0 0 0 18px;
+    border-left: 1px solid var(--oj-border);
+    text-align: left;
   }
   .head-stats .stat:first-child {
     padding-left: 0;
     border-left: 0;
-    text-align: left;
+  }
+  .head-stats .stat:last-child {
+    padding-right: 0;
   }
   .problem-body {
     grid-template-columns: 1fr;
   }
+  /* 筛选区改为一行工具条：关键词 / 难度 / 标签 / 按钮同排，不再出现
+     “标签在左、输入框在右”的错位两列布局。 */
   .filter-rail {
     position: static;
     display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 0 20px;
+    grid-template-columns: minmax(190px, 1.15fr) minmax(280px, 1.4fr) minmax(170px, 0.9fr) auto;
+    gap: 14px 18px;
+    align-items: end;
   }
-  .filter-head,
-  .rail-note {
+  .filter-head {
     grid-column: 1 / -1;
+    padding-bottom: 10px;
+  }
+  .filter-head + .rail-field .rail-label,
+  .rail-field .rail-label {
+    margin: 0 0 7px;
+  }
+  .diff-filter {
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: 4px;
+  }
+  .diff-item {
+    flex: 1 1 auto;
+    justify-content: center;
+    padding: 6px 8px;
+    font-size: 11px;
+  }
+  .diff-check {
+    margin-left: 4px;
+  }
+  .rail-search {
+    width: 100%;
+    margin-top: 0;
+    height: 32px;
   }
   .rail-note {
     display: none;
   }
+}
+@media (max-width: 880px) {
+  /* 平板窄宽度：关键词独占一行，难度与标签并排，避免工具条横向溢出 */
+  .filter-rail {
+    grid-template-columns: 1fr 1fr;
+    gap: 12px 18px;
+  }
+  .rail-field-keyword,
+  .rail-actions {
+    grid-column: 1 / -1;
+  }
   .rail-search {
-    align-self: end;
+    margin-top: 0;
   }
 }
 @media (max-width: 700px) {
@@ -694,6 +753,26 @@ onMounted(() => {
   }
   .filter-rail {
     grid-template-columns: 1fr;
+    gap: 12px;
+  }
+  .rail-field .rail-label,
+  .filter-head + .rail-field .rail-label {
+    margin: 0 0 7px;
+  }
+  .diff-filter {
+    flex-direction: column;
+    flex-wrap: nowrap;
+  }
+  .diff-item {
+    justify-content: flex-start;
+    padding: 7px 9px;
+    font-size: 12px;
+  }
+  .rail-actions {
+    margin-top: 2px;
+  }
+  .rail-search {
+    margin-top: 0;
   }
   .notice-body {
     display: none;
