@@ -117,6 +117,24 @@ docker compose up -d --scale oj-judge=4
 
 `JUDGE_CONCURRENCY` 与 `MAX_PARALLEL_CONTAINERS` 默认均为 4，分别限制消费线程和容器信号量，稳态并发受两者较小值限制。调整后核查实际线程与容器峰值，再采集吞吐；不要沿用旧报告的槽位推算。`/judge/work` 在宿主机与判题服务中必须对应同一路径。
 
+### 低内存服务器：使用预构建前端
+
+默认的 oj-web 构建在容器内执行 `npm ci && npm run build`，打包 Monaco、ECharts 等大依赖通常需要 2GB 以上内存；内存不足时构建会因 `JavaScript heap out of memory` 失败。
+
+此时改用预构建方式（产物由内存充足的构建机生成）：
+
+```bash
+# 1. 构建机：生成产物并放入 deploy/web-dist
+cd oj-web && npm ci && npm run build
+rm -rf ../deploy/web-dist && cp -r dist ../deploy/web-dist
+
+# 2. 部署端：指定预构建 Dockerfile 后构建（deploy/.env 中设置后无需每次传参）
+echo 'OJ_WEB_DOCKERFILE=deploy/oj-web/Dockerfile.prebuilt' >> deploy/.env
+cd deploy && docker compose up -d --build oj-web
+```
+
+`deploy/web-dist/` 为构建产物目录（已加入 `.gitignore`），每次前端升级都需重新生成并上传。切换回标准构建只需删除 `OJ_WEB_DOCKERFILE` 配置。
+
 首次启动会等待 MySQL TCP 认证、Redis 和 MQ 就绪。旧库升级还需按现有索引状态执行 `sql/migration-20261116-indexes.sql`；若曾执行早期租约迁移，使用 `sql/migrations/20261116_dispatch_utc_default.sql` 修正默认值，不重复添加字段。[排行对账与课程统计覆盖索引](sql/migrations/20261118_submission_covering_indexes.sql) 可重复执行，旧库建议补跑（新库已含）。镜像自检和真实提交不能由演示数据替代。
 
 若沿用早期只有七张表的数据库，备份并停止旧服务后，还需在目标数据库执行 [业务结构补齐迁移](sql/migrations/20261117_legacy_business_schema.sql)。它补齐 `user.status`、`problem.tags`、竞赛/公告/收藏表，并兼容旧 `nickname` 必填列；保留已有数据且可重复执行。直接导入 `schema.sql` 不会给已存在的表增加缺失字段。

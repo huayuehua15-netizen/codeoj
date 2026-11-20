@@ -2,6 +2,8 @@
 target/
 oj-web/dist/
 oj-web/node_modules/
+# 预构建部署产物（由构建机生成后放入，不入库；见 deploy/oj-web/Dockerfile.prebuilt）
+deploy/web-dist/
 
 # ===== 论文与内部材料（不入库）=====
 .docs/

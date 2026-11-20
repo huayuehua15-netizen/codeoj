@@ -1,0 +1,27 @@
+# =====================================================================
+# oj-web 预构建镜像（低内存服务器专用）
+#
+# 适用场景：服务器内存不足以在容器内完成 Vite 打包
+#          （构建 Monaco/ECharts 等大依赖通常需要 2GB+ 堆内存）。
+#
+# 与标准路径的区别：
+#   标准路径 deploy/oj-web/Dockerfile 在容器内执行 npm ci + npm run build，
+#   需要为构建阶段分配 2GB 以上内存；本文件改为直接复制预构建产物。
+#
+# 使用方法（两步）：
+#   1. 在构建机（内存充足）上生成产物并放入 deploy/web-dist/：
+#        cd oj-web && npm ci && npm run build
+#        rm -rf ../deploy/web-dist && cp -r dist ../deploy/web-dist
+#   2. 部署端在 deploy/.env 中指定本文件后构建：
+#        OJ_WEB_DOCKERFILE=deploy/oj-web/Dockerfile.prebuilt
+#        docker compose up -d --build oj-web
+#
+# 注意：产物目录为 deploy/web-dist（不在 .dockerignore 的 dist 排除规则内），
+#      且不入库（见 .gitignore），每次升级前端代码都需重新生成。
+# =====================================================================
+FROM nginx:1.25-alpine
+
+COPY deploy/nginx/default.conf /etc/nginx/conf.d/default.conf
+COPY deploy/web-dist /usr/share/nginx/html
+
+EXPOSE 80

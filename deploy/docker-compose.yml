@@ -117,7 +117,9 @@ services:
   oj-web:
     build:
       context: ..
-      dockerfile: deploy/oj-web/Dockerfile
+      # 默认在容器内构建前端；低内存服务器可设为 deploy/oj-web/Dockerfile.prebuilt，
+      # 改为使用构建机预先生成的 deploy/web-dist 产物（见该文件头部说明）
+      dockerfile: ${OJ_WEB_DOCKERFILE:-deploy/oj-web/Dockerfile}
     container_name: oj-web
     ports:
       - "80:80"
