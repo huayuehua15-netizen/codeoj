@@ -1369,3 +1369,31 @@ v5「校样」采用纸墨底、宋体标题、朱砂方印和报纸/书目式�
   **服务器 .env 已有 JWT_SECRET 时无需操作**；若 .env 缺该键，`docker compose up` 会启动失败，
   按 `.env.example` 补上即可。TZ 变更会让所有容器新写入的时间戳统一为北京时间。
 - 下次部署按 DEPLOY-SERVER-RUNTIME.md §4.3 重传 web-dist（本轮前端有大量变更）。
+
+---
+
+## 27. 功能扩容轮 + 二次复查（2026-11-21）
+
+### 27.1 新增四功能
+
+| 功能 | 说明 |
+|---|---|
+| **全局命令面板 Ctrl/⌘+K**（`CommandPalette.vue` 新组件） | 顶栏搜索入口 + 快捷键呼出；无输入列页面清单，有输入防抖搜题（版本号防竞态），`#编号` 直达；↑↓/Enter/Esc 全键盘操作；上下文切换式列表避免键盘索引空间重叠 |
+| **题库行内"我的状态"**（API.md v1.12 §4.4d） | 新端点 `GET /api/submissions/me/status-map`：一条聚合返回本人 AC 过/尝试过的题目 ID 集合（`MAX(status=2)`），题库页行首渲染绿勾 ✓（AC）/橙点（尝试过），替代逐题查询的 N+1。登录/登出切换与从题目页返回时自动刷新 |
+| **题目页"我的提交历史"侧栏** | 复用 `pageSubmissions?problemId` 取最近 5 条，状态同族色圆点 + 语言 + 相对时间；进页/WS 判定完成/轮询终态三处刷新，对着上次的错误改代码不必切页 |
+| **统计页能力雷达** | 三难度解题率 + 总体通过率的 ECharts 雷达（复用 statistics 数据零新请求），chart-grid 改 auto-fit 三列，实例随 unmounted dispose |
+
+### 27.2 复查轮修复（复查 Agent 报告 9 项确信问题，全修）
+
+- **P1**：Ctrl+Enter 绕过 submitting 互斥 + OS 键盘重复连环触发（补 `if (submitting.value) return` 与 `e.repeat` 守卫）；题库 URL 双向同步把 keyword v-model 变成逐键发请求（query watch 增加回声比对，与自身 replace 一致只刷标记不发请求）；index.css 清理 token 时漏掉自身 3 处消费（`--oj-paper`/`--oj-primary-deep`/`--oj-shadow-lg` 悬空 → EP 填充透明/主按钮按压透明/对话框阴影消失，改引现存等值）
+- **P2**：切题后"草稿已保存"显示旧题时间戳（load 时重置）；切题 600ms 防抖尾丢失（route watch 先 flush 旧题再 load）；竞赛组件复用切赛后秒表冻结/空转（timer 启停决策挪进 load()）；公告删除失败未捕获；networkErrorMessage 对 401/403 的弱文案
+- **P2-部署项**：TZ UTC→Asia/Shanghai 后存量时间戳一次性 +8h 修正（Redis 标记 `tz-fix-20261121` 幂等保护，生产受影响行极少）
+
+### 27.3 协同
+
+- A 侧在 dev 收口 API.md 至 v1.11（v1.7 totalCases/内存下限/queriedAt 更名 + B 侧 v1.8~v1.10 重编号），本轮合并冲突按"保留收口 + 新增 v1.12"解决；提交详情 `totalCases` 与内存下限说明保留。
+
+### 27.4 验证与部署
+
+- typecheck ✓ / 36 单测 ✓ / build ✓ / mvn verify BUILD SUCCESS ✓
+- 生产部署 HEAD `5247d8d`：重建 oj-server（新端点）+ oj-web（`index-Djbwm5H6.js`）；验收：登录 → 提交 A+B → 9 秒 AC → `/me/status-map` 返回 `{"acProblemIds":[1],"attemptedProblemIds":[]}`；头像/题库/首页探针全过
