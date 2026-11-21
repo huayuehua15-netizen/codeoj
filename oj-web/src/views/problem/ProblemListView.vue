@@ -120,7 +120,11 @@
             <router-link :to="`/problems/${row.id}`" class="entry">
               <span class="entry-id">#{{ row.id }}</span>
               <span class="entry-main">
-                <span class="entry-title">{{ row.title }}</span>
+                <span class="entry-title">
+                  <span v-if="rowStatus(row.id) === 'ac'" class="my-mark mark-ac" title="已通过" aria-label="已通过">✓</span>
+                  <span v-else-if="rowStatus(row.id) === 'attempted'" class="my-mark mark-attempted" title="尝试过" aria-label="尝试过">·</span>
+                  {{ row.title }}
+                </span>
                 <span v-if="row.tags && row.tags.length" class="entry-tags">
                   <span v-for="t in row.tags" :key="t" class="mini-tag">{{ t }}</span>
                 </span>
@@ -159,11 +163,14 @@ import { computed, onMounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { getProblemOverview, pageProblems, type Problem } from '@/api/problem'
 import { getLeaderboard } from '@/api/leaderboard'
+import { getMyStatusMap } from '@/api/submission'
 import { listAnnouncements, type AnnouncementItem } from '@/api/announcement'
+import { useUserStore } from '@/stores/user'
 import { DIFFICULTY_MAP } from '@/utils/status'
 
 const route = useRoute()
 const router = useRouter()
+const userStore = useUserStore()
 
 const problems = ref<Problem[]>([])
 const keyword = ref('')
@@ -185,6 +192,30 @@ function readQuery() {
   tag.value = typeof tg === 'string' ? tg : ''
   difficulty.value = diff === 1 || diff === 2 || diff === 3 ? diff : undefined
   page.value = Number.isInteger(p) && p >= 1 ? Math.min(p, 1000) : 1
+}
+
+// ---------- 题库行内"我的状态"（API.md v1.11 §4.4d） ----------
+const myStatus = ref<Map<number, 'ac' | 'attempted'>>(new Map())
+
+function rowStatus(id: number): 'ac' | 'attempted' | undefined {
+  return myStatus.value.get(id)
+}
+
+/** 一次请求拿全量做过题的 AC 标记；未登录清空。失败不渲染标记（不影响列表） */
+async function loadMyStatus() {
+  if (!userStore.isLoggedIn) {
+    myStatus.value = new Map()
+    return
+  }
+  try {
+    const m = await getMyStatusMap()
+    const map = new Map<number, 'ac' | 'attempted'>()
+    for (const id of m.acProblemIds || []) map.set(id, 'ac')
+    for (const id of m.attemptedProblemIds || []) if (!map.has(id)) map.set(id, 'attempted')
+    myStatus.value = map
+  } catch {
+    // 拦截器已提示；标记是增强信息，缺省不渲染
+  }
 }
 
 /** 概览数据集中管理：一次渲染、一处兜底 */
@@ -265,6 +296,7 @@ async function load() {
 onMounted(() => {
   readQuery()
   load()
+  loadMyStatus()
 
   getLeaderboard({ page: 1, size: 1 })
     .then((lb) => {
@@ -299,29 +331,43 @@ function querySnapshot() {
 /**
  * 筛选/页码 → URL（replace 不进历史栈）：
  * 刷新不丢筛选，「中等 + 动态规划 第 3 页」可以直接发给别人打开还原。
- * snapshot 相同时跳过（防止 readQuery→watch 回环，也兼容浏览器前进/后退）。
  */
 watch([keyword, tag, difficulty, page], () => {
-  const next = querySnapshot()
+  if (sameAsQuery(querySnapshot())) return
+  router.replace({ query: querySnapshot() })
+})
+
+/** 当前筛选状态是否与 URL query 一致（用于识别自己 replace 的回声，防止同步环） */
+function sameAsQuery(next: ReturnType<typeof querySnapshot>) {
   const current = route.query
-  const same =
+  return (
     String(current.keyword ?? '') === (next.keyword ?? '') &&
     String(current.tag ?? '') === (next.tag ?? '') &&
     String(current.difficulty ?? '') === String(next.difficulty ?? '') &&
     Number(current.page ?? 1) === (next.page ?? 1)
-  if (same) return
-  router.replace({ query: next })
-})
+  )
+}
 
-// 浏览器前进/后退：URL 变了 → 把筛选拨回对应状态（组件复用，setup 不会重跑）
+// 浏览器前进/后退：URL 变了 → 把筛选拨回对应状态（组件复用，setup 不会重跑）。
+// 先比对：若是本组件 router.replace 造成的回声（筛选其实没变），只刷新标记不重复 load——
+// 否则 keyword 的 v-model 会逐键触发"URL→load"链路，打一个词发 N 个请求。
 watch(
   () => route.query,
   () => {
     if (route.name !== 'problems') return
+    if (sameAsQuery(querySnapshot())) {
+      loadMyStatus()
+      return
+    }
     readQuery()
     load()
+    // 从题目页返回时刷新"我的状态"标记（可能刚 AC 了一题）
+    loadMyStatus()
   },
 )
+
+// 登录/登出切换：标记随之加载或清空
+watch(() => userStore.isLoggedIn, loadMyStatus)
 </script>
 
 <style scoped>
@@ -633,6 +679,32 @@ watch(
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+/* 行内"我的状态"（API.md v1.11）：AC 绿勾实心圆 / 尝试过橙色圆点，LeetCode 同款语义 */
+.my-mark {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 14px;
+  height: 14px;
+  margin-right: 6px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  vertical-align: -2px;
+}
+.mark-ac {
+  background: var(--oj-success);
+  color: #fff;
+  font-size: 9px;
+  font-weight: 800;
+  line-height: 1;
+}
+.mark-attempted {
+  border: 1.5px solid var(--oj-warning);
+  color: var(--oj-warning);
+  font-size: 16px;
+  font-weight: 800;
+  line-height: 0;
 }
 .entry:hover .entry-title {
   color: var(--oj-primary);

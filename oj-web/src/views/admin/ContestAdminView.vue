@@ -72,6 +72,7 @@ import {
   type ContestVO,
 } from '@/api/contest'
 import { pageProblems, type Problem } from '@/api/problem'
+import { contestStatus } from '@/utils/status'
 import { formatDateTime, serverTimeToPicker, toBodyDateTime } from '@/utils/datetime'
 import AdminShell from '@/components/AdminShell.vue'
 
@@ -84,8 +85,7 @@ const editingId = ref<number>()
 const form = reactive({ title: '', description: '', startTime: '', endTime: '', problemIds: [] as number[] })
 const timeRange = ref<[string, string] | null>(null)
 
-const statusInfo = (s: number) =>
-  [{ label: '未开始', type: 'info' }, { label: '进行中', type: 'success' }, { label: '已结束', type: 'info' }][s] ?? { label: '?', type: 'info' }
+const statusInfo = (s: number) => contestStatus(s)
 
 async function load() {
   loading.value = true

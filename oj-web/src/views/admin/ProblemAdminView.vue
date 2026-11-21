@@ -320,9 +320,13 @@ async function removeNotice(row: AnnouncementItem) {
   } catch {
     return
   }
-  await deleteAnnouncement(row.id)
-  ElMessage.success('已删除')
-  loadNotices()
+  try {
+    await deleteAnnouncement(row.id)
+    ElMessage.success('已删除')
+    loadNotices()
+  } catch {
+    // 拦截器已提示
+  }
 }
 
 onMounted(load)

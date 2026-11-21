@@ -116,17 +116,15 @@
 import { computed, onMounted, onUnmounted, ref } from 'vue'
 import { listContests, type ContestVO } from '@/api/contest'
 import { formatDateTime, parseServerTime } from '@/utils/datetime'
+import { CONTEST_STATUS_MAP } from '@/utils/status'
 
 const contests = ref<ContestVO[]>([])
 const loading = ref(true)
 const filter = ref<number | null>(null)
 let timer: number | undefined
 
-const STATUS: Record<number, { label: string }> = {
-  0: { label: '未开始' },
-  1: { label: '进行中' },
-  2: { label: '已结束' },
-}
+// 行内状态文案统一走 status.ts 的竞赛状态映射
+const STATUS = CONTEST_STATUS_MAP
 
 const FILTERS = [
   { label: '全部', value: null as number | null },

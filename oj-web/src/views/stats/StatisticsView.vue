@@ -108,12 +108,23 @@
         <p class="block-hint">柱状为提交数，折线为通过数。</p>
         <div ref="trendChart" class="chart"></div>
       </section>
+
+      <section class="block">
+        <div class="block-head">
+          <span class="block-no">04</span>
+          <h2 class="block-title">能力雷达</h2>
+          <span class="block-line" aria-hidden="true"></span>
+          <span class="block-en">RADAR</span>
+        </div>
+        <p class="block-hint">各难度解题率与总体通过率，面积越满说明覆盖越均衡。</p>
+        <div ref="radarChart" class="chart"></div>
+      </section>
     </div>
 
-    <!-- 04 明细 -->
+    <!-- 05 明细 -->
     <section class="block table-block">
       <div class="block-head">
-        <span class="block-no">04</span>
+        <span class="block-no">05</span>
         <h2 class="block-title">难度明细</h2>
         <span class="block-line" aria-hidden="true"></span>
         <span class="block-en">DETAIL</span>
@@ -167,9 +178,11 @@ const stat = ref<Statistics>(emptyStat())
 const loading = ref(false)
 const statusChart = ref<HTMLElement>()
 const trendChart = ref<HTMLElement>()
+const radarChart = ref<HTMLElement>()
 
 let statusInstance: echarts.ECharts | null = null
 let trendInstance: echarts.ECharts | null = null
+let radarInstance: echarts.ECharts | null = null
 
 /** 全站可用题目总数（各难度 totalCount 之和） */
 const totalProblems = computed(() =>
@@ -288,10 +301,52 @@ function renderCharts(trend: { date: string; total: number; accepted: number }[]
       ],
     })
   }
+
+  // 能力雷达：三难度解题率 + 总体通过率（复用 statistics 既有数据，无新请求）
+  if (radarChart.value) {
+    radarInstance = echarts.getInstanceByDom(radarChart.value) ?? echarts.init(radarChart.value)
+    const solveRate = (n: number) => {
+      const d = stat.value.byDifficulty.find((x) => x.difficulty === n)
+      return d && d.totalCount ? Math.round((d.availableSolvedCount / d.totalCount) * 100) : 0
+    }
+    radarInstance.setOption({
+      tooltip: {},
+      radar: {
+        indicator: [
+          { name: '简单解题率', max: 100 },
+          { name: '中等解题率', max: 100 },
+          { name: '困难解题率', max: 100 },
+          { name: '总体通过率', max: 100 },
+        ],
+        radius: '62%',
+        center: ['50%', '48%'],
+        axisName: { color: labelColor, fontSize: 10 },
+        splitLine: { lineStyle: { color: axisLine } },
+        splitArea: { show: false },
+        axisLine: { lineStyle: { color: axisLine } },
+      },
+      series: [
+        {
+          type: 'radar',
+          data: [
+            {
+              value: [solveRate(1), solveRate(2), solveRate(3), stat.value.acceptRate],
+              name: '能力覆盖',
+              areaStyle: { color: cssVar('--oj-primary-soft') },
+              lineStyle: { color: cssVar('--oj-primary'), width: 2 },
+              itemStyle: { color: cssVar('--oj-primary') },
+              symbolSize: 4,
+            },
+          ],
+        },
+      ],
+    })
+  }
 }
 
 function handleResize() {
   statusInstance?.resize()
+  radarInstance?.resize()
   trendInstance?.resize()
 }
 
@@ -314,8 +369,10 @@ onUnmounted(() => {
   window.removeEventListener('resize', handleResize)
   statusInstance?.dispose()
   trendInstance?.dispose()
+  radarInstance?.dispose()
   statusInstance = null
   trendInstance = null
+  radarInstance = null
 })
 </script>
 
@@ -514,7 +571,7 @@ onUnmounted(() => {
 
 .chart-grid {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
   gap: 18px;
   margin-top: 0;
 }

@@ -111,6 +111,20 @@ export function formatMemory(kb?: number | null): string {
 }
 
 /**
+ * 竞赛状态（论文 7.2：0 未开始 / 1 进行中 / 2 已结束）。
+ * 列表页、详情页、管理端三处原本各写一份映射，抽到这里统一文案与 el-tag 类型。
+ */
+export const CONTEST_STATUS_MAP: Record<number, { label: string; type: 'success' | 'info' }> = {
+  0: { label: '未开始', type: 'info' },
+  1: { label: '进行中', type: 'success' },
+  2: { label: '已结束', type: 'info' },
+}
+
+export function contestStatus(status?: number): { label: string; type: 'success' | 'info' } {
+  return (status != null ? CONTEST_STATUS_MAP[status] : undefined) ?? { label: '未知', type: 'info' }
+}
+
+/**
  * 难度映射（论文表 4-2：1=简单，2=中等，3=困难）。
  * color 供 el-tag / el-progress 使用，可直接是 CSS 变量引用。
  */

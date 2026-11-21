@@ -47,17 +47,17 @@
 
     <div class="settings-layout">
       <nav class="settings-nav" aria-label="设置分区">
-        <a
+        <button
           v-for="item in SECTION_LINKS"
           :key="item.id"
+          type="button"
           class="settings-nav-link"
           :class="{ active: activeSection === item.id }"
-          :href="`#${item.id}`"
           :aria-current="activeSection === item.id ? 'location' : undefined"
-          @click="activeSection = item.id"
+          @click="jumpTo(item.id)"
         >
           {{ item.no }} / {{ item.label }}
-        </a>
+        </button>
       </nav>
 
       <main class="settings-main">
@@ -284,6 +284,13 @@ function updateActiveSection() {
     window.scrollY + window.innerHeight >= document.documentElement.scrollHeight - 4
   if (reachedBottom) current = SECTION_LINKS[SECTION_LINKS.length - 1].id
   activeSection.value = current
+}
+
+/** 点击分区导航：立即高亮 + 平滑滚动。不用 <a href="#id">——它会往 URL 里塞 hash，
+ *  刷新/回退行为变怪；scroll-spy（onScroll）仍以实际滚动位置为准。 */
+function jumpTo(id: SectionId) {
+  activeSection.value = id
+  document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' })
 }
 
 function onScroll() {
@@ -656,27 +663,30 @@ async function refreshInfo() {
   padding: 8px 0;
 }
 
-.settings-nav a {
+.settings-nav button {
   padding: 10px 12px;
-  color: var(--oj-text-sub);
+  border: 0;
   border-left: 2px solid transparent;
+  background: none;
+  text-align: left;
   font-family: var(--oj-font-mono);
   font-size: 11px;
   font-weight: 700;
   letter-spacing: 0.04em;
-  text-decoration: none;
+  color: var(--oj-text-sub);
+  cursor: pointer;
   transition:
     color var(--oj-duration) var(--oj-ease),
     background var(--oj-duration) var(--oj-ease),
     border-color var(--oj-duration) var(--oj-ease);
 }
 
-.settings-nav a:hover {
+.settings-nav button:hover {
   color: var(--oj-text);
   background: var(--oj-gray-50);
 }
 
-.settings-nav a.active {
+.settings-nav button.active {
   color: var(--oj-primary);
   border-left-color: var(--oj-primary);
   background: var(--oj-primary-soft);
@@ -973,14 +983,15 @@ async function refreshInfo() {
     padding: 0;
   }
 
-  .settings-nav a {
+  .settings-nav button {
     border: 1px solid var(--oj-border);
+    border-left: 1px solid var(--oj-border);
     border-radius: var(--oj-radius-pill);
     background: var(--oj-card);
     padding: 7px 10px;
   }
 
-  .settings-nav a.active {
+  .settings-nav button.active {
     border-color: var(--oj-primary);
   }
 
