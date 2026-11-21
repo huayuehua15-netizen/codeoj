@@ -175,4 +175,16 @@ public interface SubmissionMapper extends BaseMapper<Submission>, SubmissionLeas
             " WHERE t.rn = 1 AND t.solvedFlag = 0 " +
             " ORDER BY t.created_at DESC")
     List<Map<String, Object>> wrongBookByUser(@Param("userId") Long userId);
+
+    /**
+     * 题库行内"我的状态"（API.md v1.11 §4.4d）：本人每个做过题目的 AC 标记。
+     *
+     * <p>一条聚合返回全部做过题（problem_id → 是否 AC 过），题库页据此渲染
+     * ✓（AC 过）/·（尝试过）/无标记（未做），避免逐题查询的 N+1。
+     * 行数 = 做过题的去重数（个人维度，量级小），无需分页。
+     */
+    @Select("SELECT problem_id AS problemId, MAX(status = 2) AS ac " +
+            "  FROM submission WHERE user_id = #{userId} " +
+            " GROUP BY problem_id")
+    List<Map<String, Object>> myProblemStatusByUser(@Param("userId") Long userId);
 }

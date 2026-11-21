@@ -39,6 +39,12 @@
         </nav>
 
         <div class="user-area">
+          <button type="button" class="palette-trigger" aria-label="打开命令面板（Ctrl+K）" @click="openPalette">
+            <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
+              <circle cx="11" cy="11" r="7" /><path d="M20 20 L16.5 16.5" />
+            </svg>
+            <span class="palette-kbd">Ctrl K</span>
+          </button>
           <template v-if="userStore.isLoggedIn">
             <el-dropdown trigger="click" @command="handleCommand">
               <button class="username" type="button" aria-haspopup="menu">
@@ -95,20 +101,28 @@
         </p>
       </div>
     </footer>
+
+    <CommandPalette ref="palette" />
   </div>
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, onUnmounted } from 'vue'
+import { computed, onMounted, onUnmounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { useUserStore } from '@/stores/user'
 import { logout } from '@/api/auth'
 import { connectWs, disconnectWs } from '@/api/ws'
+import CommandPalette from '@/components/CommandPalette.vue'
 
 const route = useRoute()
 const router = useRouter()
 const userStore = useUserStore()
+const palette = ref<InstanceType<typeof CommandPalette>>()
+
+function openPalette() {
+  palette.value?.openPalette()
+}
 
 const NAV_ROOTS = ['/home', '/problems', '/submissions', '/wrongbook', '/statistics', '/contests', '/leaderboard', '/announcements']
 
@@ -299,6 +313,34 @@ async function handleLogout() {
 .auth-link:hover {
   color: var(--oj-text);
 }
+/* 命令面板入口：细边幽灵按钮 + 等宽键位徽标 */
+.palette-trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 9px;
+  border: 1px solid var(--oj-border);
+  border-radius: 6px;
+  background: var(--oj-gray-50);
+  color: var(--oj-text-sub);
+  font-family: inherit;
+  cursor: pointer;
+  transition: color var(--oj-duration) var(--oj-ease), border-color var(--oj-duration) var(--oj-ease);
+}
+.palette-trigger:hover {
+  color: var(--oj-text);
+  border-color: var(--oj-border-strong);
+}
+.palette-kbd {
+  font-family: var(--oj-font-mono);
+  font-size: 8.5px;
+  letter-spacing: 0.05em;
+  color: var(--oj-text-weak);
+  border: 1px solid var(--oj-border);
+  border-radius: 3px;
+  padding: 1px 4px;
+  background: #fff;
+}
 .auth-cta {
   padding: 8px 15px;
   border-radius: 6px;
@@ -447,7 +489,8 @@ async function handleLogout() {
     display: none;
   }
   .uname,
-  .role-chip {
+  .role-chip,
+  .palette-kbd {
     display: none;
   }
 }

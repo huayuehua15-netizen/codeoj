@@ -126,7 +126,7 @@ import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { getContest, getContestRanking, type ContestDetail, type ContestRankItem } from '@/api/contest'
 import { formatDateTime, parseServerTime } from '@/utils/datetime'
-import { DIFFICULTY_MAP } from '@/utils/status'
+import { contestStatus, DIFFICULTY_MAP } from '@/utils/status'
 
 const route = useRoute()
 
@@ -151,8 +151,7 @@ const countdown = computed(() => {
 })
 
 function statusInfo(status: number) {
-  return [{ label: '未开始', type: 'info' }, { label: '进行中', type: 'success' }, { label: '已结束', type: 'info' }][status]
-    ?? { label: '未知', type: 'info' }
+  return contestStatus(status)
 }
 
 let timer: number | undefined
@@ -186,18 +185,20 @@ async function load() {
       rankLoading.value = false
     }
   }
+  // 秒表按最新状态决定启停：已结束不跑（省掉每秒一次的无谓重渲染）；
+  // 放在 load() 里而不是 onMounted——组件复用切到另一场竞赛时也能正确启停
+  window.clearInterval(timer)
+  if (contest.value.status !== 2) {
+    timer = window.setInterval(() => { nowTick.value++ }, 1000)
+  }
 }
 
 // P2-4：/contests/1 → /contests/2 复用同一组件时重新加载
 watch(() => route.params.id, load)
 
 onMounted(async () => {
+  // 秒表的启停决策在 load() 末尾按竞赛最新状态执行（含组件复用切赛的场景）
   await load()
-  // 已结束（status===2）的竞赛没有倒计时展示，1s 定时器只会白白触发重渲染——不启动；
-  // 未开始/进行中才需要秒级跳动。（倒计时基准目前取本机时钟；要精确对齐需契约提供服务器时间字段）
-  if (contest.value && contest.value.status !== 2) {
-    timer = window.setInterval(() => { nowTick.value++ }, 1000)
-  }
 })
 
 onUnmounted(() => window.clearInterval(timer))

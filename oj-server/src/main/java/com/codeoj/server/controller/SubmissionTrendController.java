@@ -9,6 +9,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -51,5 +52,24 @@ public class SubmissionTrendController {
     @GetMapping("/wrongbook")
     public R<List<Map<String, Object>>> wrongBook(@AuthenticationPrincipal LoginUser user) {
         return R.ok(submissionMapper.wrongBookByUser(user.userId()));
+    }
+
+    /**
+     * 题库行内"我的状态"（API.md v1.11 §4.4d）：本人 AC 过 / 尝试过的题目 ID 集合。
+     * attemptedProblemIds = 有提交但从未 AC（与错题本同口径），acProblemIds = AC 过。
+     * 题库页据此渲染 ✓ / · / 无标记。
+     */
+    @GetMapping("/me/status-map")
+    public R<Map<String, List<Long>>> myStatusMap(@AuthenticationPrincipal LoginUser user) {
+        List<Map<String, Object>> rows = submissionMapper.myProblemStatusByUser(user.userId());
+        List<Long> ac = new ArrayList<>();
+        List<Long> attempted = new ArrayList<>();
+        for (Map<String, Object> row : rows) {
+            if (!(row.get("problemId") instanceof Number pid)) continue;
+            Object acFlag = row.get("ac");
+            boolean isAc = acFlag instanceof Number n && n.intValue() == 1;
+            (isAc ? ac : attempted).add(pid.longValue());
+        }
+        return R.ok(Map.of("acProblemIds", ac, "attemptedProblemIds", attempted));
     }
 }

@@ -145,7 +145,7 @@
   --el-fill-color: var(--oj-gray-100);
   --el-fill-color-light: var(--oj-gray-50);
   --el-fill-color-lighter: var(--oj-gray-50);
-  --el-fill-color-extra-light: var(--oj-paper);
+  --el-fill-color-extra-light: var(--oj-bg);
   --el-fill-color-dark: var(--oj-gray-200);
   --el-fill-color-darker: var(--oj-gray-300);
   --el-fill-color-blank: var(--oj-card);
@@ -684,8 +684,8 @@ a {
   --el-button-text-color: #fff;
   --el-button-hover-bg-color: var(--oj-primary-hover);
   --el-button-hover-border-color: var(--oj-primary-hover);
-  --el-button-active-bg-color: var(--oj-primary-deep);
-  --el-button-active-border-color: var(--oj-primary-deep);
+  --el-button-active-bg-color: #1736b8;
+  --el-button-active-border-color: #1736b8;
 }
 .el-button.is-link {
   border: 0;
@@ -767,7 +767,7 @@ a {
   border: 1px solid var(--oj-border);
   border-radius: 10px;
   padding: 22px 24px;
-  box-shadow: var(--oj-shadow-lg);
+  box-shadow: 0 24px 50px -22px rgba(16, 24, 40, 0.35);
 }
 .el-dialog__title {
   font-family: var(--oj-font-display);

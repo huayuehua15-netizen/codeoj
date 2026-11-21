@@ -17,6 +17,7 @@ function networkErrorMessage(error: unknown): string {
     if (error.response) {
       // 后端非 2xx：业务码走不到这里，只剩 HTTP 语义
       if (error.response.status === 404) return '资源不存在'
+      if (error.response.status === 401 || error.response.status === 403) return '登录状态已失效或无权限访问'
       if (error.response.status >= 500) return '服务暂不可用，请稍后重试'
     }
     if (!error.response) return '网络连接失败，请检查网络'

@@ -1,6 +1,6 @@
 # CodeOJ 接口文档（前后端对接契约）
 
-> 版本：v1.11（2026-11-19）｜ 合并登记：A 侧 v1.7（提交详情 `totalCases` 与内存下限）与 B 侧 v1.8~v1.10（个人中心头像/签名、trend 366 天、语言分布、错题本）并行演进，本轮统一收口至 v1.11
+> 版本：v1.12（2026-11-21）｜ 新增 `GET /api/submissions/me/status-map` 题库行内"我的状态"（AC 过/尝试过的题目 ID 集合，§4.4d）。前序 v1.11：A/B 双线收口——A 侧 v1.7（提交详情 `totalCases` 与内存下限）、B 侧 v1.8~v1.10（个人中心头像/签名、trend 366 天、语言分布、错题本）
 > 适用：前端（oj-web）按此文档先行开发，后端按此文档补全实现。
 > 标注 ⚠️ 的接口：骨架已定契约，业务实现于第二阶段完成（前端可先按 mock 开发）。
 
@@ -437,6 +437,19 @@ Query 参数：`days`（默认 7，**上限 366**，v1.9 由 30 放宽以支持�
 | attempts | 该题总提交次数 |
 | lastStatus / lastLanguage / lastAt | 最近一次提交的状态码 / 语言 / 时间 |
 
+### 4.4d 题库行内"我的状态" `GET /api/submissions/me/status-map`（登录，v1.12 新增）
+
+**口径**：本人全部做过题的 AC 标记，题库页据此给行首渲染 ✓（AC 过）/ ·（尝试过）/ 无标记（未做）。
+`attemptedProblemIds` = 有提交但从未 AC（与错题本 §4.4c 同口径）；`acProblemIds` = AC 过的题。
+
+响应 `data`：
+
+```json
+{ "acProblemIds": [1, 3], "attemptedProblemIds": [5, 7] }
+```
+
+一次聚合返回全量做过题（个人维度去重，量级小），前端一次请求替换 N+1 逐题查询。
+
 ---
 
 ## 5. 排行榜 `/api/leaderboard`
@@ -632,8 +645,10 @@ new Client({
 | 2026-11-16 | v1.4 | 保留 v1.3 接口及 LoginUser Principal；补充 STOMP 黑名单/数据库状态鉴权、订阅白名单与 SEND 限制。提交事务及时间字段保持 B 契约，内部租约/补发采用 UTC | A 评测修复，待 B 评审 |
 | 2026-11-17 | v1.5 | 补齐当前统计/排行榜响应；课程/竞赛题组与用例导入校验；有历史或引用的题目禁止物理删除；无效分页处理 | 项目完整性改善，待评审 |
 | 2026-11-17 | v1.6 | 统计固定返回三个难度，新增在架解题数；新增题库概览与全站标签；题库横幅和筛选翻页口径修正，原响应字段保留 | 题库完善，待评审 |
+<<<<<<< HEAD
 | 2026-11-18 | v1.7 | 双线并行：A 侧——提交详情新增可空 `totalCases`、`cases` 继续返回已执行明细、Java/JavaScript 内存下限 64 MB；B 侧——§6.1 队列监控 `cachedAt` 更名 `queriedAt` | A/B |
 | 2026-11-19 | v1.8 | 个人中心扩展：`PUT /api/auth/profile` 签名、`PUT /api/auth/avatar` 头像（data URL + 魔数校验）、`GET /uploads/**` 公开静态资源；LoginVO 增加 `avatar`/`signature` | 成员 B |
 | 2026-11-19 | v1.9 | 个人主页数据支撑：`4.4a` trend 上限 30 → 366 天；`4.4b` `GET /api/submissions/languages` 语言分布 | 成员 B |
 | 2026-11-19 | v1.10 | `4.4c` `GET /api/submissions/wrongbook` 错题本（尝试过且未 AC 的题目聚合） | 成员 B |
 | 2026-11-19 | v1.11 | 合并收口：A/B 双线版本号并行演进（均自 v1.7 起），本轮统一登记 | 成员 B |
+| 2026-11-21 | v1.12 | 新增 `4.4d` `GET /api/submissions/me/status-map`：题库行内"我的状态"（AC 过/尝试过的题目 ID 集合，一次聚合替代逐题查询） | 成员 B |

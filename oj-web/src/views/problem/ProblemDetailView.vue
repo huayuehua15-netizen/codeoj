@@ -238,6 +238,24 @@
         </div>
         <p class="idle-note">提交后无需手动刷新。评测机空闲时通常几秒内返回；高峰期请以队列状态为准。</p>
       </section>
+
+      <!-- 本题提交历史：对着上次的错误改代码，不必切去提交记录页 -->
+      <section v-if="userStore.isLoggedIn && mySubmissions.length" class="judge-card history-card">
+        <div class="judge-head">
+          <span class="judge-title">我的提交</span>
+          <span class="folio">HISTORY · {{ mySubmissions.length }}</span>
+        </div>
+        <ul class="history-list">
+          <li v-for="s in mySubmissions" :key="s.id">
+            <router-link :to="`/submissions/${s.id}`" class="history-item">
+              <span class="history-dot" :style="{ color: statusColor(s.status) }" aria-hidden="true">●</span>
+              <span class="history-status">{{ statusLabel(s.status) }}</span>
+              <span class="history-lang">{{ langLabel(s.language) }}</span>
+              <span class="history-time">{{ relativeTime(s.createdAt) }}</span>
+            </router-link>
+          </li>
+        </ul>
+      </section>
     </aside>
   </div>
 </template>
@@ -249,11 +267,12 @@ import { ElMessage, ElMessageBox } from 'element-plus'
 import { isFavorited, toggleFavorite } from '@/api/favorite'
 import { runInSandbox, type RunResult } from '@/utils/jsRunner'
 import { getProblem, type Problem } from '@/api/problem'
-import { submitCode, getSubmission } from '@/api/submission'
+import { submitCode, getSubmission, pageSubmissions, type SubmissionDetail } from '@/api/submission'
 import { useUserStore } from '@/stores/user'
 import { usePreferencesStore } from '@/stores/preferences'
 import { onJudgePush } from '@/api/ws'
 import { loadDraft, saveDraft } from '@/utils/draft'
+import { relativeTime } from '@/utils/datetime'
 import {
   CODE_TEMPLATES,
   DIFFICULTY_MAP,
@@ -324,6 +343,8 @@ onUnmounted(() => {
 
 /** Ctrl/⌘ + Enter 快捷提交：Monaco 未占用该组合键，事件会冒泡到 window——编辑器内外都生效 */
 function onGlobalKeydown(e: KeyboardEvent) {
+  // 按住不放的 OS 键盘重复会连环触发 keydown，一次按压打出多个提交请求
+  if (e.repeat) return
   if (!(e.ctrlKey || e.metaKey) || e.key !== 'Enter') return
   if (!code.value.trim()) return
   e.preventDefault()
@@ -405,6 +426,26 @@ const favorited = ref(false)
 const running = ref(false)
 const consoleInput = ref('')
 const consoleResult = ref<RunResult>()
+
+// ---------- 本题提交历史：不用切页就能看到上次的错误 ----------
+const mySubmissions = ref<SubmissionDetail[]>([])
+
+async function loadHistory() {
+  if (!userStore.isLoggedIn || !problem.value) {
+    mySubmissions.value = []
+    return
+  }
+  try {
+    const data = await pageSubmissions({ problemId: problem.value.id, page: 1, size: 5 })
+    mySubmissions.value = data.records || []
+  } catch {
+    // 拦截器已提示；历史是辅助信息，失败静默
+  }
+}
+
+function langLabel(code: string) {
+  return LANGUAGE_OPTIONS.find((l) => l.value === code)?.label ?? code
+}
 
 /** 剪贴板复制（样例输入/输出）：失败静默提示，不打断答题流程 */
 async function copyText(text: string) {
@@ -507,15 +548,21 @@ async function load() {
   // 恢复该题该语言的草稿：上次没提交的代码比空白模板更接近用户意图
   restoreDraft(language.value)
   favorited.value = false
+  // 清掉上一题残留的"草稿已保存"时间戳，避免切题后显示误导性的旧时间
+  draftSavedAt.value = ''
   loadFav()
+  loadHistory()
 }
 
 async function handleSubmit() {
+  // 互斥守卫：按钮 :loading 只挡鼠标，键盘路径（Ctrl+Enter）也要拦
+  if (submitting.value) return
   // 未登录：不再是被禁用的死按钮，直接带跳转目标去登录
   if (!userStore.isLoggedIn) {
     router.push({ name: 'login', query: { redirect: route.fullPath } })
     return
   }
+  if (!code.value.trim()) return
   stopPolling()
   currentSubmissionId.value = undefined
   result.value = undefined
@@ -558,6 +605,7 @@ const unsubscribe = onJudgePush((payload) => {
       memoryUsedKb: payload.data.memoryUsedKb,
     }
     stopPolling()
+    loadHistory()
   }
 })
 
@@ -603,6 +651,7 @@ function startPolling() {
           memoryUsedKb: detail.memoryUsedKb ?? undefined,
         }
         stopPolling()
+        loadHistory()
       } else if (detail.status === 1) {
         judgeState.value = 'JUDGING'
       }
@@ -637,6 +686,11 @@ watch(
     // 离开本页（跳到无 :id 的路由）时 params 变 undefined，组件即将卸载：
     // 不能再触发 load 落到"题目不存在"分支，也不能覆盖草稿
     if (!route.params.id) return
+    // 切题前把旧题防抖窗口里的最后一次编辑同步落盘（此刻 problem.value 还是旧题），
+    // 否则 load() 重置 code 会取消待写 timer，旧题最后 600ms 的输入就丢了
+    if (draftTimer) clearTimeout(draftTimer)
+    const oldPid = draftProblemId()
+    if (oldPid) saveDraft(oldPid, language.value, code.value)
     stopPolling()
     resetJudge()
     load()
@@ -1200,6 +1254,53 @@ onMounted(() => window.addEventListener('keydown', onGlobalKeydown))
   display: flex;
   gap: 6px;
   flex-shrink: 0;
+}
+
+/* 本题提交历史 */
+.history-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.history-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 2px;
+  border-top: 1px solid var(--oj-border);
+  font-size: 11.5px;
+  color: var(--oj-text-sub);
+  transition: color var(--oj-duration) var(--oj-ease);
+}
+.history-item:hover {
+  color: var(--oj-text);
+}
+.history-item:hover .history-status {
+  color: var(--oj-primary);
+}
+.history-dot {
+  font-size: 8px;
+  line-height: 1;
+  flex-shrink: 0;
+}
+.history-status {
+  font-weight: 650;
+  color: var(--oj-text);
+  width: 58px;
+  flex-shrink: 0;
+}
+.history-lang {
+  font-family: var(--oj-font-mono);
+  font-size: 10px;
+  color: var(--oj-text-weak);
+  width: 70px;
+  flex-shrink: 0;
+}
+.history-time {
+  margin-left: auto;
+  font-family: var(--oj-font-mono);
+  font-size: 10px;
+  color: var(--oj-text-weak);
 }
 .judge-abort {
   margin-top: 9px;

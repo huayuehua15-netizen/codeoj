@@ -96,3 +96,15 @@ export interface WrongBookItem {
 export function getWrongBook() {
   return http.get<never, WrongBookItem[]>('/api/submissions/wrongbook')
 }
+
+export interface MyStatusMap {
+  /** AC 过的题目 ID */
+  acProblemIds: number[]
+  /** 有提交但从未 AC 的题目 ID（与错题本同口径） */
+  attemptedProblemIds: number[]
+}
+
+/** 题库行内"我的状态"（API.md v1.11 §4.4d）：AC 过/尝试过的题目 ID 集合，一次请求 */
+export function getMyStatusMap() {
+  return http.get<never, MyStatusMap>('/api/submissions/me/status-map')
+}
