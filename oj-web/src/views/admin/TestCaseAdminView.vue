@@ -219,6 +219,9 @@ function isValidProblemId() {
 watch(
   () => route.params.id,
   () => {
+    // 离开本页（跳到无 :id 参数的路由）时 params.id 变 undefined——
+    // 此时组件即将卸载，绝不能触发校验兜底把用户"劫持"回题目列表
+    if (!route.params.id) return
     problemId.value = String(route.params.id ?? '')
     cases.value = []
     pasteText.value = ''

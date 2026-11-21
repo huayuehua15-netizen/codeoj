@@ -47,6 +47,15 @@ const userStore = useUserStore()
 const form = reactive({ username: (route.query.username as string) || '', password: '' })
 const loading = ref(false)
 
+/**
+ * 开放重定向防护：redirect 是 query 传入的任意字符串。
+ * 只放行站内路径（必须以单个 / 开头），拦掉 https://、//evil.com、反斜杠等外站跳转。
+ */
+function safeRedirect(raw: unknown): string {
+  const value = typeof raw === 'string' ? raw : ''
+  return value.startsWith('/') && !value.startsWith('//') && !value.includes('\\') ? value : '/problems'
+}
+
 async function handleLogin() {
   if (!form.username || !form.password) {
     ElMessage.warning('请输入用户名与密码')
@@ -58,7 +67,7 @@ async function handleLogin() {
     userStore.setLogin(data)
     connectWs()
     ElMessage.success('登录成功')
-    router.push((route.query.redirect as string) || '/problems')
+    router.push(safeRedirect(route.query.redirect))
   } finally {
     loading.value = false
   }

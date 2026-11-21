@@ -111,15 +111,20 @@ function openCreate() {
 
 async function openEdit(row: ContestVO) {
   editingId.value = row.id
-  const detail = await getContest(row.id)
-  Object.assign(form, {
-    title: detail.title,
-    description: detail.description || '',
-    problemIds: detail.problems.map((p) => p.problemId),
-  })
-  // 服务端 UTC → 本地时区回填，避免编辑后时间窗整体偏移
-  timeRange.value = [serverTimeToPicker(detail.startTime), serverTimeToPicker(detail.endTime)]
-  dialogVisible.value = true
+  // 详情失败时不开空弹窗（拦截器已提示），避免用户对着空表单误保存覆盖原题组
+  try {
+    const detail = await getContest(row.id)
+    Object.assign(form, {
+      title: detail.title,
+      description: detail.description || '',
+      problemIds: detail.problems.map((p) => p.problemId),
+    })
+    // 服务端 UTC → 本地时区回填，避免编辑后时间窗整体偏移
+    timeRange.value = [serverTimeToPicker(detail.startTime), serverTimeToPicker(detail.endTime)]
+    dialogVisible.value = true
+  } catch {
+    editingId.value = undefined
+  }
 }
 
 async function save() {

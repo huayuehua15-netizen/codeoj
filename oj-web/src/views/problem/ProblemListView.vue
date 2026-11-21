@@ -155,11 +155,15 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 import { getProblemOverview, pageProblems, type Problem } from '@/api/problem'
 import { getLeaderboard } from '@/api/leaderboard'
 import { listAnnouncements, type AnnouncementItem } from '@/api/announcement'
 import { DIFFICULTY_MAP } from '@/utils/status'
+
+const route = useRoute()
+const router = useRouter()
 
 const problems = ref<Problem[]>([])
 const keyword = ref('')
@@ -170,6 +174,18 @@ const page = ref(1)
 const size = ref(10)
 const total = ref(0)
 const loading = ref(false)
+
+/** 从 URL query 恢复筛选状态（分享链接/刷新不丢筛选）；非法值静默回落 */
+function readQuery() {
+  const kw = route.query.keyword
+  const tg = route.query.tag
+  const diff = Number(route.query.difficulty)
+  const p = Number(route.query.page)
+  keyword.value = typeof kw === 'string' ? kw : ''
+  tag.value = typeof tg === 'string' ? tg : ''
+  difficulty.value = diff === 1 || diff === 2 || diff === 3 ? diff : undefined
+  page.value = Number.isInteger(p) && p >= 1 ? Math.min(p, 1000) : 1
+}
 
 /** 概览数据集中管理：一次渲染、一处兜底 */
 const overview = ref({ totalProblems: 0, solvers: 0, submits: 0, acceptRate: 0 })
@@ -247,6 +263,7 @@ async function load() {
  * - 解题者 / 累计提交 / 整体通过率 走排行榜 summary（后端是整表聚合）
  */
 onMounted(() => {
+  readQuery()
   load()
 
   getLeaderboard({ page: 1, size: 1 })
@@ -268,6 +285,43 @@ onMounted(() => {
     .then((list) => { announcements.value = list.slice(0, 5) })
     .catch(() => { /* 公告失败不影响列表 */ })
 })
+
+/** 把当前筛选序列化为 URL query（空值不占参数） */
+function querySnapshot() {
+  return {
+    keyword: keyword.value || undefined,
+    tag: tag.value || undefined,
+    difficulty: difficulty.value ?? undefined,
+    page: page.value > 1 ? page.value : undefined,
+  }
+}
+
+/**
+ * 筛选/页码 → URL（replace 不进历史栈）：
+ * 刷新不丢筛选，「中等 + 动态规划 第 3 页」可以直接发给别人打开还原。
+ * snapshot 相同时跳过（防止 readQuery→watch 回环，也兼容浏览器前进/后退）。
+ */
+watch([keyword, tag, difficulty, page], () => {
+  const next = querySnapshot()
+  const current = route.query
+  const same =
+    String(current.keyword ?? '') === (next.keyword ?? '') &&
+    String(current.tag ?? '') === (next.tag ?? '') &&
+    String(current.difficulty ?? '') === String(next.difficulty ?? '') &&
+    Number(current.page ?? 1) === (next.page ?? 1)
+  if (same) return
+  router.replace({ query: next })
+})
+
+// 浏览器前进/后退：URL 变了 → 把筛选拨回对应状态（组件复用，setup 不会重跑）
+watch(
+  () => route.query,
+  () => {
+    if (route.name !== 'problems') return
+    readQuery()
+    load()
+  },
+)
 </script>
 
 <style scoped>

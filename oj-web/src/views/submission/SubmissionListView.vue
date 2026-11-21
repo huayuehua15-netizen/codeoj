@@ -53,7 +53,7 @@
           start-placeholder="开始时间"
           end-placeholder="结束时间"
           value-format="YYYY-MM-DDTHH:mm:ss"
-          @change="activePreset = ''"
+          @change="onRangeChange"
         />
       </div>
       <div class="query-presets" role="group" aria-label="快捷时间范围">
@@ -242,6 +242,12 @@ async function load() {
 function search() {
   page.value = 1
   load()
+}
+
+/** 时间范围改动即查（与状态选择器同口径），并清掉快捷区间高亮，避免"改完以为生效了" */
+function onRangeChange() {
+  activePreset.value = ''
+  search()
 }
 
 function reset() {

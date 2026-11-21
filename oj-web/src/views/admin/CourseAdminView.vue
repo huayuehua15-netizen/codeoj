@@ -117,16 +117,21 @@ function openCreate() {
 
 async function openEdit(row: Course) {
   editingId.value = row.id
-  Object.assign(form, {
-    name: row.name,
-    description: row.description || '',
-    problemIds: [],
-  })
-  // 后端 problems() 已 orderByAsc(CourseProblem::getSortOrder) 升序返回，
-  // 这里再做一次本地 sort 是冗余的，直接按返回顺序取 problemId。
-  const cps = await getCourseProblems(row.id)
-  form.problemIds = cps.map((cp) => cp.problemId)
-  dialogVisible.value = true
+  // 题组查询失败时不开半空弹窗（拦截器已提示），避免误保存把题组清空
+  try {
+    Object.assign(form, {
+      name: row.name,
+      description: row.description || '',
+      problemIds: [],
+    })
+    // 后端 problems() 已 orderByAsc(CourseProblem::getSortOrder) 升序返回，
+    // 这里再做一次本地 sort 是冗余的，直接按返回顺序取 problemId。
+    const cps = await getCourseProblems(row.id)
+    form.problemIds = cps.map((cp) => cp.problemId)
+    dialogVisible.value = true
+  } catch {
+    editingId.value = undefined
+  }
 }
 
 async function save() {

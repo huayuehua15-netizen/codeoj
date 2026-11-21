@@ -1297,3 +1297,73 @@ v5「校样」采用纸墨底、宋体标题、朱砂方印和报纸/书目式�
 - 设置页头像上传依赖浏览器 `createImageBitmap` 与 Canvas；现代 Chromium/Edge/Firefox 可用，
   不支持时提示图片处理失败。
 - 偏好是浏览器本地数据，换设备或清理站点数据后回到默认；这是产品设计，不是同步缺陷。
+
+---
+
+## 26. 全站深审优化轮：3 安全 P0 + 体验批量修复 + 编辑器升级（2026-11-21）
+
+本轮由三次并行代码审计驱动（前端逐文件 / oj-server 业务逐文件 / 前后端契约对齐），审计确认
+整体契约对齐质量高（API 路径/参数/字段、WS 协议、路由守卫零不一致），在此基础上落地以下改动。
+
+### 26.1 安全与正确性 P0（后端）
+
+| # | 问题 | 修复 |
+|---|---|---|
+| 1 | `AuthController.clientIp` 无条件信任 `X-Forwarded-For` 首段：`$proxy_add_x_forwarded_for` 会把客户端自带的伪造头拼在前面，每次请求换个假 IP 即绕过注册/登录限流与失败锁定 | 只信任 Nginx 写入的 `X-Real-IP`（`$remote_addr`，不可伪造），直连回退 `getRemoteAddr()` |
+| 2 | `docker-compose.yml` 的 `JWT_SECRET` 有仓库内默认值回退，生产忘设环境变量时任何拿到仓库的人可签发任意 userId/role 的令牌 | 改为 `${JWT_SECRET:?}` 强制必填，缺省直接启动失败并给出生成指引 |
+| 3 | 竞赛排名罚时把「非 AC 且非 CE」一律计错误：排队中(0)/判题中(1)/系统错误(8) 也被罚 20 分钟，判题未完成时排名被污染 | 新增 `isWrongAttempt()` 口径：仅 WA/TLE/MLE/RE 计罚，CE 沿用惯例不计 |
+| 4 | 时钟混用：compose 容器无 TZ（JVM 走 UTC），而 `createQueued` 硬编码 Asia/Shanghai，同一张表两种时钟 | compose 为 oj-server/oj-judge/mysql 统一 `TZ: Asia/Shanghai`（与 API.md §0.1「前端不换算」约定一致） |
+
+### 26.2 前端 P0
+
+- **TestCaseAdminView**：`watch(route.params.id)` 在离开本页时（params 变 undefined）触发「编号不合法」
+  兜底，把用户正要去的导航劫持回题目列表——加 `if (!route.params.id) return` 守卫。
+- **ProfileView**：`onMounted` 首行 `refreshUserInfo` 无 catch，非 40100 失败时 5 个数据请求全不发，
+  整页假空态 + unhandled rejection——try/catch 后继续走 allSettled 块。
+- **ProblemDetailView**：WS `JUDGE_FINISHED` 分支丢 `timeUsedMs/memoryUsedKb`（仅轮询路径才有副标题），
+  推送帧字段补全。
+
+### 26.3 编辑器与题目页升级（新功能）
+
+- **代码草稿自动保存**（新增 `utils/draft.ts` + 7 个单测）：按「题目+语言」维度落 localStorage，
+  600ms 防抖；模板原文/空串不落盘；卸载前同步落盘一次防抖尾不丢；恢复时编辑器脚注显示
+  「已恢复草稿」、保存后显示「草稿已保存 HH:mm」；提交成功后保留草稿（LeetCode 同款行为）。
+- **Ctrl/⌘ + Enter 快捷提交**：Monaco 未占用该组合键，window keydown 编辑器内外都生效。
+- **未登录提交按钮可点击**：跳 `/login?redirect=/problems/:id`，不再是禁用死按钮。
+- **判定卡家族色**：绿（AC）/橙（TLE·MLE·CE）/红（WA·RE·SE）三族配色 + `statusGlyph`（✓/!/✕），
+  替换原二值 is-ok/is-bad；`utils/status.ts` 的 STATUS_COLOR 重构为 token 名 + `statusColor()` 统一解析，
+  ECharts 环形图与全站同族同色（无 DOM 环境回退 `var(--oj-x)` 串，既有单测契约不变）。
+- **轮询容错**：连续失败 3 次才中止（原单次网络抖动即清空判题进度）。
+
+### 26.4 体验与一致性批量（P1）
+
+- 开放重定向防护：LoginView 的 `redirect` 只放行站内路径（拦 `//evil.com`、反斜杠、绝对 URL）。
+- 注册页前端校验对齐后端 @Valid（用户名 2-50 位字符集、邮箱格式、密码 6-32）。
+- 题库筛选与 URL 双向同步：刷新/分享链接还原筛选与页码，浏览器前进/后退同样还原（带回环守卫）。
+- 管理端搜索重置页码（题目/用户）；`edit()` 先取详情再开弹窗（题目/竞赛/课程，失败不开半空弹窗）；
+  公告发布 loading 防双击、公告删除加确认、用户提权/降权加确认（与其余敏感操作同口径）。
+- 提交记录时间范围改动即查（与状态选择器同口径）；竞赛已结束不再跑秒级定时器。
+- ProfileView 语言标签统一走 `LANGUAGE_OPTIONS`（python3 → Python3，与提交记录页一致）。
+
+### 26.5 工程卫生
+
+- `.gitignore` 补 `deploy/web-dist/`（预构建产物此前处于未跟踪裸奔状态）。
+- 删除 oj-server 空 `resources/mapper` 目录；AboutView 4 处 `chapter-line` 死节点与死样式；
+  router 「meta.title 从未消费」的历史注释（早已消费）。
+- index.css 清理 16 个零引用的 v4/v5 兼容别名 token（gradient-*/on-brand-*/glow/grid-line/code-inset/
+  shadow-brand/paper/card-hl/gold-light/silver-light/primary-deep/radius-sm/shadow-lg/info-soft/
+  success-border/accent/pulse-*），并做全量 token 引用完整性校验（67 个引用全部有定义）。
+- 根目录 `.tmp-*.log` 调试残渣清理（2 个被运行中进程占用，属 gitignore 范围不影响仓库）。
+
+### 26.6 验证
+
+- 前端：`npm run typecheck` exit 0；36/36 单测（+7 草稿用例）；`npm run build` exit 0。
+- 后端：`mvn verify` 通过（oj-server 43/43，oj-common/oj-judge 原量通过）。
+- compose YAML 语法校验通过。
+
+### 26.7 待办与知会（成员 A）
+
+- deploy/docker-compose.yml 的 TZ 与 JWT_SECRET 变更属共用区改动，已按 §3.4-6 知会：
+  **服务器 .env 已有 JWT_SECRET 时无需操作**；若 .env 缺该键，`docker compose up` 会启动失败，
+  按 `.env.example` 补上即可。TZ 变更会让所有容器新写入的时间戳统一为北京时间。
+- 下次部署按 DEPLOY-SERVER-RUNTIME.md §4.3 重传 web-dist（本轮前端有大量变更）。

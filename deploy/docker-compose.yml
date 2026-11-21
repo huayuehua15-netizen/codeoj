@@ -9,7 +9,8 @@ services:
     environment:
       MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-123456}
       MYSQL_DATABASE: codeoj
-      TZ: UTC
+      # SQL NOW() 与 JVM 时间戳同钟（见 oj-server 的 TZ 注释）
+      TZ: Asia/Shanghai
     volumes:
       - mysql-data:/var/lib/mysql
       - ../sql/schema.sql:/docker-entrypoint-initdb.d/schema.sql:ro
@@ -62,11 +63,14 @@ services:
       MYSQL_DB: codeoj
       MYSQL_USER: root
       MYSQL_PASSWORD: ${MYSQL_ROOT_PASSWORD:-123456}
+      # 时钟统一 Asia/Shanghai（API.md §0.1：服务端时间即北京时间，前端不做换算）。
+      # 缺此设置时 JVM 默认 UTC，而 MySQL/前端按 Shanghai 展示——同一张表两种时钟混写。
+      TZ: Asia/Shanghai
       REDIS_HOST: redis
       RABBITMQ_HOST: rabbitmq
       RABBITMQ_USER: ${RABBITMQ_USER:-guest}
       RABBITMQ_PASSWORD: ${RABBITMQ_PASSWORD:-guest}
-      JWT_SECRET: ${JWT_SECRET:-codeoj-dev-jwt-secret-0123456789abcdef0123456789abcdef}
+      JWT_SECRET: ${JWT_SECRET:?JWT_SECRET 未设置——生产密钥不允许回退到仓库内默认值，请在 deploy/.env 中生成（openssl rand -base64 48）}
       # 头像落盘目录（API.md v1.8）：容器内路径与静态映射 /uploads/** 对齐
       OJ_UPLOAD_ROOT_DIR: /app/uploads
       OJ_UPLOAD_AVATAR_DIR: /app/uploads/avatars
@@ -96,6 +100,8 @@ services:
       RABBITMQ_USER: ${RABBITMQ_USER:-guest}
       RABBITMQ_PASSWORD: ${RABBITMQ_PASSWORD:-guest}
       ENGINE_MODE: ${ENGINE_MODE:-real}         # 生产默认真实沙箱判题；本地联调可设 mock
+      # 与 oj-server 统一时钟（时间戳写入与展示口径一致，见 API.md §0.1）
+      TZ: Asia/Shanghai
       JUDGE_CONCURRENCY: ${JUDGE_CONCURRENCY:-4} # 实例内并发消费线程数
       MAX_PARALLEL_CONTAINERS: ${MAX_PARALLEL_CONTAINERS:-4} # 实例内并行沙箱容器上限（与宿主机内存匹配）
     depends_on:

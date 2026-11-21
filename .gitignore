@@ -2,9 +2,13 @@
 target/
 oj-web/dist/
 oj-web/node_modules/
+# 低内存服务器预构建产物（DEPLOY-SERVER-RUNTIME.md §4.3）：本地打包上传用，不入库
+deploy/web-dist/
 
 # ===== 论文与内部材料（不入库）=====
 .docs/
+# 服务器运维实录含 root 密码明文，绝不能进公开仓库（远端 GitHub public）
+docs/DEPLOY-SERVER-RUNTIME.md
 
 # ===== 工具状态 =====
 .mimosa/

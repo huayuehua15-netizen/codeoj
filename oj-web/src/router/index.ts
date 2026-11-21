@@ -179,7 +179,7 @@ router.beforeEach((to) => {
   }
 })
 
-// P2-2：meta.title 定义了 20 处却从未消费，所有页签都显示 index.html 的固定标题
+// 页签标题：路由 meta.title 由 afterEach 统一消费
 router.afterEach((to) => {
   const title = to.meta.title as string | undefined
   document.title = title ? `${title} · ${APP_NAME}` : APP_NAME

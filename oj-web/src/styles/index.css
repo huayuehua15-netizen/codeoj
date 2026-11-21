@@ -10,8 +10,6 @@
   /* ---------- 底与面 ---------- */
   --oj-bg: #f4f6f9;
   --oj-card: #ffffff;
-  --oj-paper: #f4f6f9;
-  --oj-paper-2: #eef1f5;
   --oj-gray-50: #f8fafc;
   --oj-gray-100: #f1f4f7;
   --oj-gray-200: #e4e9ef;
@@ -23,30 +21,24 @@
   --oj-gray-800: #1d2939;
   --oj-gray-900: #101828;
   --oj-white: #ffffff;
-  --oj-card-hl: none;
 
   /* ---------- 线 ---------- */
   --oj-border: #e4e8ee;
   --oj-border-strong: #cfd6e0;
-  --oj-rule-ink: #cfd6e0;
 
   /* ---------- 信号色 ---------- */
   --oj-primary: #2855ff;
   --oj-primary-hover: #1d43d8;
-  --oj-primary-deep: #1736b8;
   --oj-primary-soft: #eef2ff;
-  --oj-accent: #2855ff;
   --oj-seal: #2855ff;          /* 兼容旧变量名，语义改为品牌蓝 */
   --oj-seal-hover: #1d43d8;
   --oj-seal-soft: #eef2ff;
   --oj-info: #2855ff;
-  --oj-info-soft: #eef2ff;
   --oj-info-border: #c7d4ff;
 
   /* ---------- 判题状态 ---------- */
   --oj-success: #0e9f6e;
   --oj-success-soft: #e8f7f0;
-  --oj-success-border: #b9e6d3;
   --oj-warning: #d97706;
   --oj-warning-soft: #fff6e8;
   --oj-warning-border: #f0d7ad;
@@ -63,9 +55,7 @@
 
   /* ---------- 名次 ---------- */
   --oj-gold: #b7791f;
-  --oj-gold-light: #fdf3e1;
   --oj-silver: #667085;
-  --oj-silver-light: #f2f4f7;
   --oj-bronze: #a15c2f;
   --oj-bronze-light: #fdf0e7;
 
@@ -90,38 +80,10 @@
   /* ---------- 形态 ---------- */
   --oj-radius: 10px;
   --oj-radius-md: 6px;
-  --oj-radius-sm: 4px;
   --oj-radius-pill: 999px;
   --oj-shadow-sm: 0 1px 2px rgba(16, 24, 40, 0.04);
   --oj-shadow: 0 2px 8px rgba(16, 24, 40, 0.06);
-  --oj-shadow-lg: 0 24px 50px -22px rgba(16, 24, 40, 0.35);
-  --oj-shadow-brand: 0 10px 30px -18px rgba(40, 85, 255, 0.35);
   --oj-ring-primary: 0 0 0 3px rgba(40, 85, 255, 0.14);
-
-  /* ---------- 兼容别名 ---------- */
-  --oj-gradient-brand: #2855ff;
-  --oj-gradient-brand-deep: #1736b8;
-  --oj-gradient-brand-live: #2855ff;
-  --oj-gradient-page: none;
-  --oj-on-brand: #ffffff;
-  --oj-on-brand-90: rgba(255, 255, 255, 0.9);
-  --oj-on-brand-85: rgba(255, 255, 255, 0.85);
-  --oj-on-brand-82: rgba(255, 255, 255, 0.82);
-  --oj-on-brand-75: rgba(255, 255, 255, 0.75);
-  --oj-on-brand-70: rgba(255, 255, 255, 0.7);
-  --oj-on-brand-28: rgba(255, 255, 255, 0.28);
-  --oj-on-brand-16: rgba(255, 255, 255, 0.16);
-  --oj-on-brand-08: rgba(255, 255, 255, 0.08);
-  --oj-glow-accent: none;
-  --oj-grid-line-04: rgba(40, 85, 255, 0.06);
-  --oj-code-inset: inset 0 0 0 1px rgba(255, 255, 255, 0.06);
-  --oj-shadow-brand-lg: 0 18px 40px -24px rgba(40, 85, 255, 0.4);
-  --oj-shadow-brand-lg-hover: 0 22px 50px -24px rgba(40, 85, 255, 0.5);
-
-  /* ---------- 状态脉冲 ---------- */
-  --oj-pulse-dot: #0e9f6e;
-  --oj-pulse-ring: rgba(14, 159, 110, 0.25);
-  --oj-pulse-ring-out: rgba(14, 159, 110, 0);
 
   /* ---------- 节奏 ---------- */
   --oj-ease: cubic-bezier(0.2, 0, 0, 1);

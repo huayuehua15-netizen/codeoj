@@ -116,7 +116,13 @@
               </svg>
               运行
             </el-button>
-            <el-button type="primary" class="submit-btn" :loading="submitting" :disabled="!userStore.isLoggedIn || !code.trim()" @click="handleSubmit">
+            <el-button
+              type="primary"
+              class="submit-btn"
+              :loading="submitting"
+              :disabled="userStore.isLoggedIn && !code.trim()"
+              @click="handleSubmit"
+            >
               {{ userStore.isLoggedIn ? '提交代码' : '登录后提交' }}
             </el-button>
           </div>
@@ -124,7 +130,9 @@
         <CodeEditor v-model="code" :language="language" />
         <div class="editor-foot">
           <span>{{ language.toUpperCase() }} · SYNTAX HIGHLIGHT</span>
-          <span>Ctrl / ⌘ + C COPY</span>
+          <span v-if="draftSavedAt" class="draft-chip">草稿已保存 {{ draftSavedAt }}</span>
+          <span v-else-if="draftRestored" class="draft-chip">已恢复草稿</span>
+          <span>Ctrl / ⌘ + Enter 提交</span>
         </div>
       </div>
 
@@ -171,14 +179,18 @@
           <el-step title="结果" />
         </el-steps>
 
-        <div v-else-if="result" class="verdict" :class="result.status === 2 ? 'is-ok' : 'is-bad'">
-          <span class="verdict-icon" aria-hidden="true">{{ result.status === 2 ? '✓' : '✗' }}</span>
+        <div
+          v-else-if="result"
+          class="verdict"
+          :style="{ background: statusTint(result.status), color: statusColor(result.status) }"
+        >
+          <span class="verdict-icon" aria-hidden="true">{{ statusGlyph(result.status) }}</span>
           <div class="verdict-text">
             <p class="verdict-label">{{ statusLabel(result.status) }}</p>
             <p class="verdict-meta">{{ resultSubTitle || '判题结果已推送' }}</p>
           </div>
           <div class="verdict-actions">
-            <el-button size="small" @click="$router.push(`/submissions/${result.submissionId}`)">查看明细</el-button>
+            <el-button size="small" @click="router.push(`/submissions/${result.submissionId}`)">查看明细</el-button>
             <el-button size="small" type="primary" @click="resetJudge">再交一次</el-button>
           </div>
         </div>
@@ -232,7 +244,7 @@
 
 <script setup lang="ts">
 import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
-import { useRoute } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { isFavorited, toggleFavorite } from '@/api/favorite'
 import { runInSandbox, type RunResult } from '@/utils/jsRunner'
@@ -241,11 +253,21 @@ import { submitCode, getSubmission } from '@/api/submission'
 import { useUserStore } from '@/stores/user'
 import { usePreferencesStore } from '@/stores/preferences'
 import { onJudgePush } from '@/api/ws'
-import { CODE_TEMPLATES, DIFFICULTY_MAP, LANGUAGE_OPTIONS, statusLabel } from '@/utils/status'
+import { loadDraft, saveDraft } from '@/utils/draft'
+import {
+  CODE_TEMPLATES,
+  DIFFICULTY_MAP,
+  LANGUAGE_OPTIONS,
+  statusColor,
+  statusGlyph,
+  statusLabel,
+  statusTint,
+} from '@/utils/status'
 import MarkdownPreview from '@/components/MarkdownPreview.vue'
 import CodeEditor from '@/components/CodeEditor.vue'
 
 const route = useRoute()
+const router = useRouter()
 const userStore = useUserStore()
 const prefs = usePreferencesStore()
 
@@ -255,6 +277,58 @@ const language = ref(prefs.defaultLanguage)
 const prevLanguage = ref(prefs.defaultLanguage)
 const code = ref('')
 const submitting = ref(false)
+
+// ---------- 代码草稿（localStorage，题目+语言维度） ----------
+// 编辑器是核心场景：误刷新/切走页面/浏览器崩溃都不该丢未提交的代码。
+// 草稿在提交成功后保留（它就是用户最新成果，LeetCode 同款行为），清空代码或换回模板时自动清掉。
+const draftSavedAt = ref('')
+const draftRestored = ref(false)
+let draftTimer: ReturnType<typeof setTimeout> | null = null
+
+function draftProblemId(): string | undefined {
+  const id = problem.value?.id
+  return id == null ? undefined : String(id)
+}
+
+/** 恢复草稿：与模板不同才算"用户写的东西"，恢复成功给出一次性提示 */
+function restoreDraft(lang: string) {
+  const pid = draftProblemId()
+  const draft = pid ? loadDraft(pid, lang) : undefined
+  draftRestored.value = !!draft && draft !== code.value
+  if (draftRestored.value && draft) {
+    code.value = draft
+    ElMessage.success('已自动恢复上次编辑的草稿')
+  }
+}
+
+watch(
+  [code, language],
+  ([value, lang]) => {
+    const pid = draftProblemId()
+    if (!pid) return
+    if (draftTimer) clearTimeout(draftTimer)
+    // 600ms 防抖：连续打字只落一次盘；模板原文/空串由 saveDraft 内部拦截
+    draftTimer = setTimeout(() => {
+      saveDraft(pid, lang, value)
+      if (loadDraft(pid, lang)) draftSavedAt.value = new Date().toLocaleTimeString('zh-CN', { hour12: false })
+    }, 600)
+  },
+)
+onUnmounted(() => {
+  if (draftTimer) clearTimeout(draftTimer)
+  window.removeEventListener('keydown', onGlobalKeydown)
+  const pid = draftProblemId()
+  // 卸载前同步落盘一次，防抖窗口内的最后几笔不丢
+  if (pid) saveDraft(pid, language.value, code.value)
+})
+
+/** Ctrl/⌘ + Enter 快捷提交：Monaco 未占用该组合键，事件会冒泡到 window——编辑器内外都生效 */
+function onGlobalKeydown(e: KeyboardEvent) {
+  if (!(e.ctrlKey || e.metaKey) || e.key !== 'Enter') return
+  if (!code.value.trim()) return
+  e.preventDefault()
+  handleSubmit()
+}
 
 // 判题状态机（论文 5.7）：WebSocket 消息与 HTTP 响应共同推进状态迁移
 const judgeState = ref<'IDLE' | 'SUBMITTING' | 'QUEUED' | 'JUDGING' | 'FINISHED'>('IDLE')
@@ -374,13 +448,14 @@ async function toggleFav() {
   }
 }
 
-/** 切换语言后统一收尾：换模板 + 重新预填样例 1 */
+/** 切换语言后统一收尾：换模板 + 重填样例 1 + 恢复该语言的草稿 */
 function applyLanguage(lang: string) {
   code.value = CODE_TEMPLATES[lang] ?? ''
   prevLanguage.value = lang
   consoleInput.value = problem.value?.samples?.[0]?.input ?? ''
   // 换语言后上一次的控制台输出不再对应当前代码，清掉避免误读
   consoleResult.value = undefined
+  restoreDraft(lang)
 }
 
 function onLanguageChange(lang: string) {
@@ -429,11 +504,18 @@ async function load() {
   // 控制台输入预填样例 1（进页面即可见，运行时所见即所得）
   consoleInput.value = problem.value.samples?.[0]?.input ?? ''
   consoleResult.value = undefined
+  // 恢复该题该语言的草稿：上次没提交的代码比空白模板更接近用户意图
+  restoreDraft(language.value)
   favorited.value = false
   loadFav()
 }
 
 async function handleSubmit() {
+  // 未登录：不再是被禁用的死按钮，直接带跳转目标去登录
+  if (!userStore.isLoggedIn) {
+    router.push({ name: 'login', query: { redirect: route.fullPath } })
+    return
+  }
   stopPolling()
   currentSubmissionId.value = undefined
   result.value = undefined
@@ -448,7 +530,7 @@ async function handleSubmit() {
     // 尽快赋值：QUEUED 推送若晚于本响应即可命中（早到的已在 handler 里忽略）
     currentSubmissionId.value = data.submissionId
     judgeState.value = 'QUEUED'
-    // 订阅推送兜底：若 WebSocket 未送达，定时回查结果
+    // 提交成功：草稿保留（即最新成果），订阅推送兜底：若 WebSocket 未送达，定时回查结果
     startPolling()
   } catch {
     // 拦截器已提示具体原因（42901/40003/40002/网络），此处只负责退出不可操作状态
@@ -468,7 +550,13 @@ const unsubscribe = onJudgePush((payload) => {
     judgeState.value = 'JUDGING'
   } else if (payload.type === 'JUDGE_FINISHED' && payload.data.status != null) {
     judgeState.value = 'FINISHED'
-    result.value = { submissionId: payload.data.submissionId, status: payload.data.status }
+    // 推送帧自带耗时/内存（api/ws.ts 接口已定义），带上它主链路无需再等轮询回查
+    result.value = {
+      submissionId: payload.data.submissionId,
+      status: payload.data.status,
+      timeUsedMs: payload.data.timeUsedMs,
+      memoryUsedKb: payload.data.memoryUsedKb,
+    }
     stopPolling()
   }
 })
@@ -478,12 +566,16 @@ let pollTimer: ReturnType<typeof setInterval> | null = null
 let pollStartedAt = 0
 let pollGeneration = 0
 let pollBusy = false
+let pollFailures = 0
 /** 轮询总时长上限：判题排队久或实例掉线时不无限轮询 */
 const POLL_TIMEOUT_MS = 180_000
+/** 连续失败容忍次数：一次网络抖动不该清空整个判题进度（WS 恰好断开时用户会失去全部指示） */
+const POLL_MAX_FAILURES = 3
 
 function startPolling() {
   stopPolling()
   const generation = pollGeneration
+  pollFailures = 0
   pollStartedAt = Date.now()
   pollTimer = setInterval(async () => {
     if (generation !== pollGeneration || pollBusy) return
@@ -516,8 +608,13 @@ function startPolling() {
       }
     } catch {
       if (generation !== pollGeneration || submissionId !== currentSubmissionId.value) return
-      // 单次失败即停（40100/40400/网络抖动），避免每 2s 刷一次错误提示
-      abortJudge()
+      // 连续失败达上限才中止（40100/40400/网络抖动）；偶发抖动只跳过本次，
+      // 避免一次抖动就清空判题进度——WS 恰好断开时用户会对进行中的提交彻底失去指示
+      pollFailures += 1
+      if (pollFailures >= POLL_MAX_FAILURES) {
+        abortJudge()
+        ElMessage.warning('结果查询连续失败，已停止等待；请稍后到「提交记录」查看')
+      }
     } finally {
       if (generation === pollGeneration) pollBusy = false
     }
@@ -537,6 +634,9 @@ function stopPolling() {
 watch(
   () => route.params.id,
   () => {
+    // 离开本页（跳到无 :id 的路由）时 params 变 undefined，组件即将卸载：
+    // 不能再触发 load 落到"题目不存在"分支，也不能覆盖草稿
+    if (!route.params.id) return
     stopPolling()
     resetJudge()
     load()
@@ -550,6 +650,7 @@ onUnmounted(() => {
 })
 
 onMounted(load)
+onMounted(() => window.addEventListener('keydown', onGlobalKeydown))
 </script>
 
 <style scoped>
@@ -881,6 +982,10 @@ onMounted(load)
   letter-spacing: 0.05em;
   color: var(--oj-code-comment);
 }
+/* 草稿标记：深色代码区上用成功绿（与 editor-dot 同源），表达"你的代码已保存" */
+.editor-foot .draft-chip {
+  color: #57d9a3;
+}
 
 /* 控制台 */
 .console-panel {
@@ -1057,16 +1162,9 @@ onMounted(load)
   gap: 14px;
   padding: 13px 14px;
   border: 1px solid var(--oj-border);
+  border-left: 3px solid currentColor; /* 族色（绿/橙/红）由模板 :style 注入，图标与标题继承同族色 */
   border-radius: 7px;
   background: var(--oj-gray-50);
-}
-.verdict.is-ok {
-  border-left: 3px solid var(--oj-success);
-  background: var(--oj-success-soft);
-}
-.verdict.is-bad {
-  border-left: 3px solid var(--oj-danger);
-  background: var(--oj-danger-soft);
 }
 .verdict-icon {
   width: 34px;
@@ -1081,12 +1179,6 @@ onMounted(load)
   font-weight: 700;
   border: 1px solid currentColor;
 }
-.verdict.is-ok .verdict-icon {
-  color: var(--oj-success);
-}
-.verdict.is-bad .verdict-icon {
-  color: var(--oj-danger);
-}
 .verdict-text {
   flex: 1;
   min-width: 0;
@@ -1096,12 +1188,7 @@ onMounted(load)
   font-weight: 750;
   line-height: 1.2;
   letter-spacing: -0.02em;
-}
-.verdict.is-ok .verdict-label {
-  color: var(--oj-success);
-}
-.verdict.is-bad .verdict-label {
-  color: var(--oj-danger);
+  color: inherit; /* 判定族色由父级 :style 决定：AC 绿 / 超限橙 / 错误红 */
 }
 .verdict-meta {
   margin: 3px 0 0;

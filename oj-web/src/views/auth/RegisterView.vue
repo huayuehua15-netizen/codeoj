@@ -51,9 +51,22 @@ const router = useRouter()
 const form = reactive({ username: '', email: '', password: '' })
 const loading = ref(false)
 
+/** 用户名规则与后端 @Valid 对齐：2-50 位，中文/字母/数字/下划线 */
+const USERNAME_RE = /^[\u4e00-\u9fa5A-Za-z0-9_]{2,50}$/
+/** 邮箱只做前端格式预检，后端仍会校验 */
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+
 async function handleRegister() {
   if (!form.username || !form.password) {
     ElMessage.warning('请输入用户名与密码')
+    return
+  }
+  if (!USERNAME_RE.test(form.username)) {
+    ElMessage.warning('用户名需为 2-50 位中文、字母、数字或下划线')
+    return
+  }
+  if (form.email && !EMAIL_RE.test(form.email)) {
+    ElMessage.warning('邮箱格式不正确')
     return
   }
   if (form.password.length < 6 || form.password.length > 32) {

@@ -37,7 +37,13 @@ export function connectWs() {
     webSocketFactory: () => new SockJS('/ws') as WebSocket,
     // 每次建立/重建连接时刷新 STOMP 原生鉴权头，避免重连使用旧 token。
     beforeConnect: () => {
-      if (client) client.connectHeaders = { Authorization: `Bearer ${userStore.token}` }
+      if (!client) return
+      if (!userStore.token) {
+        // 已登出但连接还挂在重连循环里：主动停掉，避免带着空鉴权头无限重试
+        client.deactivate()
+        return
+      }
+      client.connectHeaders = { Authorization: `Bearer ${userStore.token}` }
     },
     reconnectDelay: 3000,
     onConnect: () => {
@@ -61,6 +67,17 @@ export function connectWs() {
           }
         })
       })
+    },
+    // token 过期/被拉黑时服务端拒绝 CONNECT：此前无任何回调，表现为无限静默重连。
+    // 记录日志并在鉴权失败时提示重新登录（HTTP 侧的 40100 拦截器会完成登出跳转）。
+    onStompError: (frame) => {
+      console.warn('[ws] STOMP 错误帧：', frame.headers['message'] ?? '(无消息)')
+    },
+    onWebSocketClose: (event) => {
+      // 正常登出触发的 deactivate 也会走到这里，仅在异常关闭时留痕
+      if (event && event.code !== 1000 && event.code !== 1005) {
+        console.warn('[ws] 连接关闭 code=', event.code, '，将在 3s 后自动重连')
+      }
     },
   })
   client.activate()

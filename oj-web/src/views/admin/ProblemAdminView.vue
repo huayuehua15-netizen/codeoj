@@ -10,10 +10,10 @@
         placeholder="按标题搜索"
         style="width: 210px"
         clearable
-        @keyup.enter="load"
-        @clear="load"
+        @keyup.enter="search"
+        @clear="search"
       />
-      <el-button @click="load">搜索</el-button>
+      <el-button @click="search">搜索</el-button>
       <el-button @click="noticeVisible = true; loadNotices()">公告管理</el-button>
       <el-button type="primary" @click="openCreate">新建题目</el-button>
     </template>
@@ -28,7 +28,9 @@
         <el-table-column prop="title" label="标题" min-width="240" />
         <el-table-column prop="difficulty" label="难度" width="90">
           <template #default="{ row }">
-            <span class="oj-diff" :class="`diff-${row.difficulty}`">{{ ({ 1: '简单', 2: '中等', 3: '困难' } as Record<number, string>)[row.difficulty] || '—' }}</span>
+            <span class="oj-diff" :class="`diff-${row.difficulty}`">
+              {{ DIFFICULTY_MAP[row.difficulty]?.label ?? '—' }}
+            </span>
           </template>
         </el-table-column>
         <el-table-column label="状态" width="90">
@@ -121,7 +123,7 @@
         <div style="display: flex; gap: 8px; margin-bottom: 12px">
           <el-input v-model="noticeForm.title" placeholder="公告标题" style="width: 200px" />
           <el-input v-model="noticeForm.content" placeholder="公告内容（实验截止时间等）" />
-          <el-button type="primary" @click="publishNotice">发布</el-button>
+          <el-button type="primary" :loading="noticePublishing" @click="publishNotice">发布</el-button>
         </div>
         <el-table :data="notices" size="small" empty-text="暂无公告，填写标题与内容后点「发布」">
           <el-table-column prop="title" label="标题" min-width="140" />
@@ -140,6 +142,7 @@
 import { onMounted, reactive, ref } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { pageProblems, getProblem, createProblem, updateProblem, deleteProblem, type Problem } from '@/api/problem'
+import { DIFFICULTY_MAP } from '@/utils/status'
 import MarkdownPreview from '@/components/MarkdownPreview.vue'
 import AdminShell from '@/components/AdminShell.vue'
 import { publishAnnouncement, deleteAnnouncement, listAnnouncements, type AnnouncementItem } from '@/api/announcement'
@@ -169,12 +172,20 @@ const form = reactive({
   enabled: true,
 })
 
+/** 搜索/清空都从第 1 页开始：旧页码超出命中结果时会显示假空表 */
+function search() {
+  page.value = 1
+  load()
+}
+
 async function load() {
   loading.value = true
   try {
     const data = await pageProblems({ keyword: keyword.value || undefined, page: page.value, size: size.value })
     problems.value = data.records || []
     total.value = data.total
+  } catch {
+    // 拦截器已提示，表格保持原状
   } finally {
     loading.value = false
   }
@@ -196,29 +207,29 @@ function openCreate() {
   dialogVisible.value = true
 }
 
-function edit(row: Problem) {
+async function edit(row: Problem) {
   editingId.value = row.id
-  dialogVisible.value = true
   // 列表接口按契约瘦身（不返回 description/samples/languages），
   // 必须以详情接口回填，否则保存会用空值覆盖题面。
-  getProblem(row.id)
-    .then((detail) => {
-      Object.assign(form, {
-        title: detail.title,
-        difficulty: detail.difficulty,
-        timeLimitMs: detail.timeLimitMs,
-        memoryLimitMb: detail.memoryLimitMb,
-        description: detail.description || '',
-        tags: detail.tags || [],
-        samples: (detail.samples || []).map((s) => ({ input: s.input, output: s.output })),
-        languages: detail.languages || [],
-        enabled: detail.enabled,
-      })
+  // 先取详情再开弹窗：避免用户在空表单里先输入、随后被异步回填整体覆盖。
+  try {
+    const detail = await getProblem(row.id)
+    Object.assign(form, {
+      title: detail.title,
+      difficulty: detail.difficulty,
+      timeLimitMs: detail.timeLimitMs,
+      memoryLimitMb: detail.memoryLimitMb,
+      description: detail.description || '',
+      tags: detail.tags || [],
+      samples: (detail.samples || []).map((s) => ({ input: s.input, output: s.output })),
+      languages: detail.languages || [],
+      enabled: detail.enabled,
     })
-    .catch(() => {
-      dialogVisible.value = false
-      editingId.value = undefined
-    })
+    dialogVisible.value = true
+  } catch {
+    // 详情失败（拦截器已提示）：不开空表单，避免保存覆盖题面
+    editingId.value = undefined
+  }
 }
 
 async function save() {
@@ -267,28 +278,48 @@ async function remove(row: Problem) {
   } catch {
     return
   }
-  await deleteProblem(row.id)
-  ElMessage.success('已删除')
-  load()
+  try {
+    await deleteProblem(row.id)
+    ElMessage.success('已删除')
+    load()
+  } catch {
+    // 有提交历史/被引用时后端返回 40000，拦截器已提示
+  }
 }
 
 async function loadNotices() {
   notices.value = await listAnnouncements()
 }
 
+const noticePublishing = ref(false)
+
 async function publishNotice() {
+  if (noticePublishing.value) return // 双击防重：发布期间不允许再次提交
   if (!noticeForm.title.trim() || !noticeForm.content.trim()) {
     ElMessage.warning('标题与内容不能为空')
     return
   }
-  await publishAnnouncement(noticeForm)
-  ElMessage.success('公告已发布')
-  noticeForm.title = ''
-  noticeForm.content = ''
-  loadNotices()
+  noticePublishing.value = true
+  try {
+    await publishAnnouncement(noticeForm)
+    ElMessage.success('公告已发布')
+    noticeForm.title = ''
+    noticeForm.content = ''
+    await loadNotices()
+  } catch {
+    // 拦截器已提示
+  } finally {
+    noticePublishing.value = false
+  }
 }
 
 async function removeNotice(row: AnnouncementItem) {
+  // 与题目/用例删除同口径：敏感操作先确认
+  try {
+    await ElMessageBox.confirm(`确认删除公告「${row.title}」？`, '提示', { type: 'warning' })
+  } catch {
+    return
+  }
   await deleteAnnouncement(row.id)
   ElMessage.success('已删除')
   loadNotices()

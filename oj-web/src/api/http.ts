@@ -1,7 +1,28 @@
 import axios from 'axios'
 import { ElMessage } from 'element-plus'
 import { useUserStore } from '@/stores/user'
+import { disconnectWs } from '@/api/ws'
 import router from '@/router'
+
+/**
+ * 把 axios 原生错误转成用户能读懂的中文提示。
+ * 原生 message 是英文技术串（"Network Error"/"timeout of 15000ms exceeded"），
+ * 直接弹给用户既吓人又没信息量。
+ */
+function networkErrorMessage(error: unknown): string {
+  if (error instanceof axios.AxiosError) {
+    if (error.code === 'ECONNABORTED' || /timeout/i.test(error.message)) {
+      return '请求超时，请检查网络后重试'
+    }
+    if (error.response) {
+      // 后端非 2xx：业务码走不到这里，只剩 HTTP 语义
+      if (error.response.status === 404) return '资源不存在'
+      if (error.response.status >= 500) return '服务暂不可用，请稍后重试'
+    }
+    if (!error.response) return '网络连接失败，请检查网络'
+  }
+  return '网络错误，请稍后重试'
+}
 
 /**
  * HTTP 客户端（论文 4.5）：统一返回结构 {code, message, data}，
@@ -30,6 +51,8 @@ function handleSessionExpired(message?: string) {
   if (sessionExpiredHandling) return
   sessionExpiredHandling = true
   useUserStore().logout()
+  // token 已失效：显式断开推送连接，不让 STOMP 层带着过期凭证继续重连
+  disconnectWs()
   const current = router.currentRoute.value
   ElMessage.error(message || '登录已过期，请重新登录')
   router
@@ -64,7 +87,7 @@ http.interceptors.response.use(
     return body
   },
   (error) => {
-    ElMessage.error(error.message || '网络错误')
+    ElMessage.error(networkErrorMessage(error))
     return Promise.reject(error)
   },
 )

@@ -224,9 +224,9 @@ public class ContestServiceImpl implements ContestService {
                     k -> new PerUser(new HashMap<>(), new TreeMap<>()));
             if (s.getStatus() == SubmissionStatus.ACCEPTED.getCode()) {
                 pu.firstAc().putIfAbsent(s.getProblemId(), s.getCreatedAt());
-            } else if (s.getStatus() != SubmissionStatus.COMPILE_ERROR.getCode()
-                    && pu.firstAc().get(s.getProblemId()) == null) {
-                // 该题尚未 AC 的错误提交计罚时（CE 不计，ACM 惯例）
+            } else if (isWrongAttempt(s.getStatus()) && pu.firstAc().get(s.getProblemId()) == null) {
+                // 该题尚未 AC 的"真判错"提交才计罚时：CE 不计是 ACM 惯例，
+                // 排队/判题中/系统错误根本不是成绩——旧实现把它们全算成错误白罚 20 分钟。
                 pu.wrongCount().merge(s.getProblemId(), 1, Integer::sum);
             }
         }
@@ -275,5 +275,17 @@ public class ContestServiceImpl implements ContestService {
             ranks.get(i).setRank(i + 1);
         }
         return ranks;
+    }
+
+    /**
+     * ACM 罚时口径：只有"真判错"计错误提交——WA/TLE/MLE/RE。
+     * CE 不计是惯例；排队中/判题中/系统错误不是成绩（可能还会改判），不能罚——
+     * 旧实现把这三个状态一律按错误罚 20 分钟，判题没跑完时排名被污染。
+     */
+    private static boolean isWrongAttempt(int status) {
+        return status == SubmissionStatus.WRONG_ANSWER.getCode()
+                || status == SubmissionStatus.TIME_LIMIT_EXCEEDED.getCode()
+                || status == SubmissionStatus.MEMORY_LIMIT_EXCEEDED.getCode()
+                || status == SubmissionStatus.RUNTIME_ERROR.getCode();
     }
 }
