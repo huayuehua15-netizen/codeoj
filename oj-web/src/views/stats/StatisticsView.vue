@@ -150,7 +150,7 @@
 import { computed, nextTick, onMounted, onUnmounted, ref } from 'vue'
 import * as echarts from 'echarts'
 import { getStatistics, getTrend, type Statistics } from '@/api/submission'
-import { cssVar } from '@/utils/status'
+import { cssVar, statusColor } from '@/utils/status'
 
 const emptyStat = (): Statistics => ({
   byDifficulty: [],
@@ -197,18 +197,9 @@ function rateColor(rate: number) {
   return cssVar('--oj-danger', '#a33326')
 }
 
-/** 各判题状态的配色：与 utils/status.ts 的 STATUS_COLOR 语义保持一致 */
+/** 各判题状态的配色：直接复用 utils/status.ts 的 statusColor，图表与全站同族同色不再漂移 */
 function statusChartColor(status: number): string {
-  switch (status) {
-    case 2: return cssVar('--oj-success')
-    case 3: return cssVar('--oj-warning')
-    case 4: return cssVar('--oj-info')
-    case 5: return cssVar('--oj-bronze-light')
-    case 6: return cssVar('--oj-danger')
-    case 7: return cssVar('--oj-silver')
-    case 8: return cssVar('--oj-gray-900')
-    default: return cssVar('--oj-gray-300')
-  }
+  return statusColor(status)
 }
 
 function renderCharts(trend: { date: string; total: number; accepted: number }[]) {

@@ -46,11 +46,18 @@ public class AuthController {
         return R.ok(authService.login(dto, clientIp(request)));
     }
 
-    /** 客户端 IP：优先代理头，回退直连地址（Nginx 反代场景，论文 4.2） */
+    /**
+     * 客户端 IP（论文 4.2 的反代场景）。
+     *
+     * 只信任 X-Real-IP：它由我们自己的 Nginx 用 $remote_addr 写入，客户端伪造不了。
+     * 不再读 X-Forwarded-For 首段——$proxy_add_x_forwarded_for 会把客户端自带
+     * 的伪造头拼在前面，攻击者每请求换一个假 IP 就能绕过注册/登录限流与失败锁定。
+     * 直连（本地 Vite 代理/无反代）时没有 X-Real-IP，回退 getRemoteAddr()。
+     */
     private static String clientIp(HttpServletRequest request) {
-        String xff = request.getHeader("X-Forwarded-For");
-        if (xff != null && !xff.isBlank()) {
-            return xff.split(",")[0].trim();
+        String realIp = request.getHeader("X-Real-IP");
+        if (realIp != null && !realIp.isBlank()) {
+            return realIp.trim();
         }
         return request.getRemoteAddr();
     }

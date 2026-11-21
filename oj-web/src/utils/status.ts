@@ -35,23 +35,32 @@ export function cssVar(name: string, fallback = '#8a8f98'): string {
 }
 
 /**
- * 状态主色：用于「彩色圆点 + 文字」的专业 OJ 呈现（替代通用 el-tag）。
- * 同族状态同色：AC 绿 / WA·RE·SE 红 / TLE·MLE·CE 橙 / 判题中主题色 / 排队中灰。
+ * 状态主色 token：同族状态同色（AC 绿 / WA·RE·SE 红 / TLE·MLE·CE 橙 / 判题中主题色 / 排队中灰）。
+ * 只存 token 名；需要真实色值（ECharts canvas 等）的地方统一走 statusColor() 解析，
+ * 列表、图表、判定卡从此不会各写一份映射漂移。
  */
-const STATUS_COLOR: Record<number, string> = {
-  0: 'var(--oj-gray-500)',
-  1: 'var(--oj-primary)',
-  2: 'var(--oj-success)',
-  3: 'var(--oj-danger)',
-  4: 'var(--oj-warning)',
-  5: 'var(--oj-warning)',
-  6: 'var(--oj-danger)',
-  7: 'var(--oj-warning)',
-  8: 'var(--oj-danger)',
+const STATUS_TOKEN: Record<number, string> = {
+  0: '--oj-gray-500',
+  1: '--oj-primary',
+  2: '--oj-success',
+  3: '--oj-danger',
+  4: '--oj-warning',
+  5: '--oj-warning',
+  6: '--oj-danger',
+  7: '--oj-warning',
+  8: '--oj-danger',
 }
 
+const GRAY_TOKEN = '--oj-gray-500'
+
+/**
+ * 状态主色：浏览器里解析为真实色值（ECharts canvas 等拿不到 CSS 变量的场景用）；
+ * 无 DOM 环境（node 单测）退回 `var(--oj-x)` 引用串，保持与 CSS 同源。
+ */
 export function statusColor(status?: number) {
-  return status != null ? STATUS_COLOR[status] || 'var(--oj-gray-500)' : 'var(--oj-gray-500)'
+  const token = status != null ? STATUS_TOKEN[status] ?? GRAY_TOKEN : GRAY_TOKEN
+  if (typeof document === 'undefined') return `var(${token})`
+  return cssVar(token)
 }
 
 /**
@@ -71,6 +80,16 @@ const STATUS_TINT: Record<number, string> = {
 
 export function statusTint(status?: number) {
   return status != null ? STATUS_TINT[status] || STATUS_TINT[0] : STATUS_TINT[0]
+}
+
+/**
+ * 判定卡图标：通过 ✓ / 超限类（TLE·MLE·CE）！/ 失败 ✕。
+ * 与 statusColor 同族配套：CE·TLE·MLE 是"值得警惕"而不是"彻底错误"，不该一律打红叉。
+ */
+export function statusGlyph(status?: number): string {
+  if (status === 2) return '✓'
+  if (status === 4 || status === 5 || status === 7) return '!'
+  return '✕'
 }
 
 /**

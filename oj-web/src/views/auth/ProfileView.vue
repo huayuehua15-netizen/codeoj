@@ -278,7 +278,7 @@ import { useUserStore } from '@/stores/user'
 import { formatDateTime, relativeTime } from '@/utils/datetime'
 import { buildHeatmapGrid, type HeatmapGrid } from '@/utils/heatmap'
 import { cropToSquareDataUrl } from '@/utils/avatar'
-import { statusColor, statusLabel, formatTimeUsed } from '@/utils/status'
+import { statusColor, statusLabel, formatTimeUsed, LANGUAGE_OPTIONS } from '@/utils/status'
 
 const userStore = useUserStore()
 
@@ -325,11 +325,9 @@ const difficultyRows = computed(() => {
   })
 })
 
-const LANG_LABELS: Record<string, string> = {
-  c: 'C', cpp: 'C++', java: 'Java', python3: 'Python', js: 'JavaScript',
-}
 function langLabel(code: string) {
-  return LANG_LABELS[code] ?? code
+  // 统一走 status.ts 的语言表（python3 → Python3），与提交记录页同一口径
+  return LANGUAGE_OPTIONS.find((l) => l.value === code)?.label ?? code
 }
 function langPercent(total: number) {
   const max = langDist.value[0]?.total || 1
@@ -337,8 +335,15 @@ function langPercent(total: number) {
 }
 
 onMounted(async () => {
-  info.value = await userStore.refreshUserInfo()
+  // 资料接口失败（非 40100 的网络抖动/500）不能拖垮整页：
+  // 拦截器已弹出原因，这里继续发出数据请求，让各区块按各自失败态呈现
+  try {
+    info.value = await userStore.refreshUserInfo()
+  } catch {
+    // 40100 由响应拦截器统一登出跳转；其余错误吞掉，下方数据块照常加载
+  }
   heatmapLoading.value = true
+  favLoading.value = true
   try {
     const [stat, trend, langs, recentPage, favs] = await Promise.allSettled([
       getStatistics(),

@@ -5,8 +5,8 @@
     description="调整用户角色、封禁或解封账号，以及重置密码。"
   >
     <template #actions>
-      <el-input v-model="keyword" placeholder="按用户名搜索" style="width: 210px" clearable @keyup.enter="load" />
-      <el-button @click="load">搜索</el-button>
+      <el-input v-model="keyword" placeholder="按用户名搜索" style="width: 210px" clearable @keyup.enter="search" @clear="search" />
+      <el-button @click="search">搜索</el-button>
     </template>
 
     <p class="admin-hint">封禁后账号立即无法登录，既有登录态同时失效。</p>
@@ -88,16 +88,35 @@ async function load() {
     const data = await pageAdminUsers({ keyword: keyword.value || undefined, page: page.value, size: size.value })
     users.value = data.records || []
     total.value = data.total
+  } catch {
+    // 拦截器已提示
   } finally {
     loading.value = false
   }
 }
 
+/** 搜索/清空从第 1 页开始：停留在末页时输入新关键词会看到假空表 */
+function search() {
+  page.value = 1
+  load()
+}
+
 async function setRole(row: AdminUserItem) {
   const target = row.role === 1 ? 0 : 1
-  await changeUserRole(row.id, target)
-  ElMessage.success(target === 1 ? '已提为教师' : '已降为学生')
-  load()
+  // 提权/降权立即改变别人的能力边界，与其余敏感操作同口径先确认
+  const action = target === 1 ? `确认为教师` : `降为学生`
+  try {
+    await ElMessageBox.confirm(`确认将「${row.username}」${action}？`, '提示', { type: 'warning' })
+  } catch {
+    return
+  }
+  try {
+    await changeUserRole(row.id, target)
+    ElMessage.success(target === 1 ? '已提为教师' : '已降为学生')
+    load()
+  } catch {
+    // 拦截器已提示
+  }
 }
 
 async function toggleBan(row: AdminUserItem) {

@@ -23,7 +23,6 @@
           <div class="chapter-head">
             <span class="chapter-no">01</span>
             <h2>如何提交第一道题</h2>
-            <span class="chapter-line" aria-hidden="true"></span>
           </div>
           <ol class="steps">
             <li v-for="(s, i) in STEPS" :key="i" class="step">
@@ -40,7 +39,6 @@
           <div class="chapter-head">
             <span class="chapter-no">02</span>
             <h2>判题状态对照表</h2>
-            <span class="chapter-line" aria-hidden="true"></span>
             <span class="chapter-meta">9 种判题状态 · 与判题机一致</span>
           </div>
           <div class="status-table">
@@ -64,7 +62,6 @@
           <div class="chapter-head">
             <span class="chapter-no">03</span>
             <h2>常见问题</h2>
-            <span class="chapter-line" aria-hidden="true"></span>
           </div>
           <el-collapse class="faq">
             <el-collapse-item v-for="(q, i) in FAQ" :key="i" :title="q.q">
@@ -77,7 +74,6 @@
           <div class="chapter-head">
             <span class="chapter-no">04</span>
             <h2>关于 CodeOJ</h2>
-            <span class="chapter-line" aria-hidden="true"></span>
           </div>
           <p class="about-p">
             CodeOJ 是一个基于 Spring Boot 3 + Vue 3 + Docker 的在线代码评测与编程练习平台：
@@ -242,9 +238,6 @@ const STACK = [
   font-weight: 750;
   letter-spacing: -0.03em;
   white-space: nowrap;
-}
-.chapter-line {
-  display: none;
 }
 .chapter-meta {
   margin-left: auto;

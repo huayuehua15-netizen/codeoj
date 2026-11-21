@@ -193,7 +193,11 @@ watch(() => route.params.id, load)
 
 onMounted(async () => {
   await load()
-  timer = window.setInterval(() => { nowTick.value++ }, 1000)
+  // 已结束（status===2）的竞赛没有倒计时展示，1s 定时器只会白白触发重渲染——不启动；
+  // 未开始/进行中才需要秒级跳动。（倒计时基准目前取本机时钟；要精确对齐需契约提供服务器时间字段）
+  if (contest.value && contest.value.status !== 2) {
+    timer = window.setInterval(() => { nowTick.value++ }, 1000)
+  }
 })
 
 onUnmounted(() => window.clearInterval(timer))
