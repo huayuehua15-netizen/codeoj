@@ -645,7 +645,6 @@ new Client({
 | 2026-11-16 | v1.4 | 保留 v1.3 接口及 LoginUser Principal；补充 STOMP 黑名单/数据库状态鉴权、订阅白名单与 SEND 限制。提交事务及时间字段保持 B 契约，内部租约/补发采用 UTC | A 评测修复，待 B 评审 |
 | 2026-11-17 | v1.5 | 补齐当前统计/排行榜响应；课程/竞赛题组与用例导入校验；有历史或引用的题目禁止物理删除；无效分页处理 | 项目完整性改善，待评审 |
 | 2026-11-17 | v1.6 | 统计固定返回三个难度，新增在架解题数；新增题库概览与全站标签；题库横幅和筛选翻页口径修正，原响应字段保留 | 题库完善，待评审 |
-<<<<<<< HEAD
 | 2026-11-18 | v1.7 | 双线并行：A 侧——提交详情新增可空 `totalCases`、`cases` 继续返回已执行明细、Java/JavaScript 内存下限 64 MB；B 侧——§6.1 队列监控 `cachedAt` 更名 `queriedAt` | A/B |
 | 2026-11-19 | v1.8 | 个人中心扩展：`PUT /api/auth/profile` 签名、`PUT /api/auth/avatar` 头像（data URL + 魔数校验）、`GET /uploads/**` 公开静态资源；LoginVO 增加 `avatar`/`signature` | 成员 B |
 | 2026-11-19 | v1.9 | 个人主页数据支撑：`4.4a` trend 上限 30 → 366 天；`4.4b` `GET /api/submissions/languages` 语言分布 | 成员 B |
