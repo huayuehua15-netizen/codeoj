@@ -1397,3 +1397,50 @@ v5「校样」采用纸墨底、宋体标题、朱砂方印和报纸/书目式�
 
 - typecheck ✓ / 36 单测 ✓ / build ✓ / mvn verify BUILD SUCCESS ✓
 - 生产部署 HEAD `5247d8d`：重建 oj-server（新端点）+ oj-web（`index-Djbwm5H6.js`）；验收：登录 → 提交 A+B → 9 秒 AC → `/me/status-map` 返回 `{"acProblemIds":[1],"attemptedProblemIds":[]}`；头像/题库/首页探针全过
+
+---
+
+## 28. JS 场景题（函数实现题）：判题协议与全端适配（2026-11-22）
+
+用户反馈：JS 题只有一行注释模板、且是"读 stdin 输出 stdout"的 ACM 模式，对前端不友好——
+前端应当做**场景题/函数实现题**（实现题面约定的函数，平台传参比对返回值，蓝桥杯/LeetCode 风格）。
+
+### 28.1 判题协议（judge 零改动）
+
+题目新增可空列 `entry_function`（入口函数名）。非空且语言为 js 时，oj-server 在判题入库前把
+提交包装为"用户代码 + 平台调用器"：调用器从 stdin 读**本条用例**的 JSON 参数列表、展开传参
+调用一次入口函数、stdout 输出返回值（字符串原样、其余 JSON.stringify）。judge 收到的仍是
+可直接执行的 stdin/stdout 脚本——MQ 消息体、状态机、比对协议零变化；结果页按
+`/*__OJ_HARNESS__*/` 标记剥离调用器，展示的始终是学生原始代码。
+
+**关键修正（首版踩坑）**：调用器初版按"一次读多组循环调用"设计，与 judge"每条用例独立运行
+一次"的模型冲突，首验 WA；同时用例 input 的语义定为**参数列表**（`solve(a,b)` → `[1,2]`；
+参数本身是数组时套一层，`dedupe(arr)` → `[[1,2,3]]`），本地 node 模拟 4/4 PASS 后重发。
+
+### 28.2 改动面
+
+- **oj-common**：Problem 实体加可空 `entryFunction`（纯增量，CONTRACT v1.4 已知会 A）
+- **sql**：schema + 幂等迁移 `20261122_problem_entry_function.sql`；种子题
+  `sql/seeds/20261122_js_function_problems.sql`（幂等）
+- **oj-server**：`JsFunctionHarness`（wrap/strip/入口名白名单防注入，+5 单测）；
+  createQueued 按题包装；detail 按标记剥离；ProblemFormDTO/Service 校验（填函数名必须允许 js，
+  否则 40000）；函数题用例导入校验 input 为 JSON 数组
+- **oj-web**：`utils/jsHarness.ts`（与 Java 版逐行同协议）；函数题编辑器给入口函数签名模板；
+  控制台「运行」按同一协议传参显示返回值；题面加"函数题 · 入口 xxx"标签；管理端表单加
+  入口函数名字段与参数列表说明
+
+### 28.3 种子题（生产已灌）
+
+| id | 题 | 入口 | 用例 |
+|---|---|---|---|
+| 51 | 数组去重（函数实现）· 简单 | `dedupe` | 5 |
+| 52 | 命名风格转换（函数实现）· 中等 | `toCamelCase` | 6 |
+
+### 28.4 验证与部署
+
+- typecheck ✓ / 36 前端单测 ✓ / build ✓ / mvn verify（oj-server 50 + judge 47）✓
+- 本地 node 模拟判题 4/4 PASS；生产端到端：正确解 **AC（5/5 用例）**、错误解 WA、
+  详情 code 剥离还原学生原始代码 ✓
+- 生产 HEAD `8a36d64`：迁移+种子已执行、oj-server/oj-web 已重建
+- 协同备注：远端 main 在本轮期间被推进至 5247d8d（dev→main，非本会话操作）——
+  按协作规范 main 前进应由成员 B 执行，请确认是否本人操作；若非，建议与 A 对齐 main 的前进纪律
