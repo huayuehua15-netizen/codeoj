@@ -31,34 +31,28 @@ export function wrapJsFunction(userCode: string, entry: string): string {
   return `${userCode.replace(/\s+$/, '')}\n\n${JS_HARNESS_MARK}\n${buildHarness(entry)}`
 }
 
-/** 与 oj-server JsFunctionHarness.buildHarness 保持逐行一致 */
+/** 与 oj-server JsFunctionHarness.buildHarness 保持逐行一致：单条用例单次调用 */
 function buildHarness(entry: string): string {
   return `(async () => {
   const __raw = require("fs").readFileSync(0, "utf8");
-  const __cases = JSON.parse(__raw || "[]");
-  const __out = [];
-  for (const __args of __cases) {
-    let __r;
-    try {
-      __r = await ${entry}(...__args);
-    } catch (__e) {
-      __out.push("RuntimeError: " + ((__e && __e.message) || __e));
-      continue;
-    }
-    __out.push(typeof __r === "string" ? __r : (__r === undefined ? "undefined" : JSON.stringify(__r)));
+  const __args = JSON.parse(__raw || "[]");
+  let __r;
+  try {
+    __r = await ${entry}(...__args);
+  } catch (__e) {
+    console.log("RuntimeError: " + ((__e && __e.message) || __e));
+    return;
   }
-  console.log(__out.join("\\n"));
+  console.log(typeof __r === "string" ? __r : (__r === undefined ? "undefined" : JSON.stringify(__r)));
 })();
 `
 }
 
 /**
- * 函数题"运行"自测：把控制台的单组参数 JSON（如 `[1,2]`）包成调用器输入并执行用户代码。
- * 输入本身已是数组时按多组处理（`[[1,2],[3,4]]`）。
+ * 函数题"运行"自测输入：stdin 即本条用例的 JSON 参数数组。
+ * 用户没填参数时给空数组（调用无参函数也能跑）。
  */
 export function functionRunInput(rawInput: string): string {
   const trimmed = (rawInput ?? '').trim()
-  if (!trimmed) return '[]'
-  if (trimmed.startsWith('[[')) return trimmed
-  return JSON.stringify([JSON.parse(trimmed)])
+  return trimmed || '[]'
 }

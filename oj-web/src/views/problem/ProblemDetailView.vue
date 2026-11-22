@@ -469,6 +469,7 @@ async function runConsole() {
   if (language.value === 'js' && problem.value.entryFunction) {
     running.value = true
     try {
+      // 与判题同协议：stdin = 本条用例的 JSON 参数数组，调用一次入口函数
       const judged = wrapJsFunction(code.value, problem.value.entryFunction)
       consoleResult.value = await runInSandbox(judged, functionRunInput(consoleInput.value), 5000)
     } finally {

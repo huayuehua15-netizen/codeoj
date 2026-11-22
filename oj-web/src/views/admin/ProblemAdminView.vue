@@ -121,7 +121,7 @@
               maxlength="64"
             />
             <span class="entry-fn-hint">
-              场景题模式：学生实现该函数，判题时平台传参并比对返回值；用例输入须为 JSON 参数数组（如 [1,2]）
+              场景题模式：学生实现该函数，平台按「用例输入 = 参数列表 JSON」传参并比对返回值——如 solve(a,b) 的用例输入为 [1,2]；参数本身是数组时套一层，如 dedupe(arr) 为 [[1,2,3]]
             </span>
           </el-form-item>
           <el-form-item label="上架"><el-switch v-model="form.enabled" /></el-form-item>

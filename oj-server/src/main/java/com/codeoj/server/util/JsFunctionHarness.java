@@ -50,26 +50,24 @@ public final class JsFunctionHarness {
     }
 
     /**
-     * 调用器：stdin 读 JSON 参数数组 → 逐组调用入口函数 → stdout 逐行输出返回值。
-     * 字符串返回值原样输出，其余 JSON 序列化（与用例 expectedOutput 的存储约定一致）；
-     * 入口函数抛异常时该用例输出 "RuntimeError: ..." 行（比对不通过判 WA，错误信息可见）。
+     * 调用器：stdin 读**本条用例**的 JSON 参数数组 → 调用一次入口函数 → stdout 输出返回值。
+     * judge 的判题模型是"每条用例独立运行一次程序"（input 进 stdin、stdout 比对 expected），
+     * 所以这里是单次调用而非多组循环。字符串返回值原样输出，其余 JSON 序列化
+     * （与用例 expectedOutput 的存储约定一致）；入口函数抛异常时输出
+     * "RuntimeError: ..." 行（比对不通过判 WA，错误信息可见）。
      */
     private static String buildHarness(String entry) {
         return "(async () => {\n"
                 + "  const __raw = require(\"fs\").readFileSync(0, \"utf8\");\n"
-                + "  const __cases = JSON.parse(__raw || \"[]\");\n"
-                + "  const __out = [];\n"
-                + "  for (const __args of __cases) {\n"
-                + "    let __r;\n"
-                + "    try {\n"
-                + "      __r = await " + entry + "(...__args);\n"
-                + "    } catch (__e) {\n"
-                + "      __out.push(\"RuntimeError: \" + ((__e && __e.message) || __e));\n"
-                + "      continue;\n"
-                + "    }\n"
-                + "    __out.push(typeof __r === \"string\" ? __r : (__r === undefined ? \"undefined\" : JSON.stringify(__r)));\n"
+                + "  const __args = JSON.parse(__raw || \"[]\");\n"
+                + "  let __r;\n"
+                + "  try {\n"
+                + "    __r = await " + entry + "(...__args);\n"
+                + "  } catch (__e) {\n"
+                + "    console.log(\"RuntimeError: \" + ((__e && __e.message) || __e));\n"
+                + "    return;\n"
                 + "  }\n"
-                + "  console.log(__out.join(\"\\n\"));\n"
+                + "  console.log(typeof __r === \"string\" ? __r : (__r === undefined ? \"undefined\" : JSON.stringify(__r)));\n"
                 + "})();\n";
     }
 }
