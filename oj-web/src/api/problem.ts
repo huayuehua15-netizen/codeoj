@@ -11,6 +11,8 @@ export interface Problem {
   timeLimitMs: number
   memoryLimitMb: number
   languages?: string[]
+  /** JS 场景题（函数实现题）入口函数名；null/undefined = 标准 stdin/stdout 题（API.md v1.12） */
+  entryFunction?: string | null
   submitCount: number
   acceptedCount: number
   enabled: boolean

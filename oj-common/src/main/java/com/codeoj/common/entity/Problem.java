@@ -47,6 +47,15 @@ public class Problem {
     @TableField(typeHandler = JacksonTypeHandler.class)
     private List<String> languages;
 
+    /**
+     * JS 场景题（函数实现题）入口函数名，如 "solve"。
+     * NULL = 标准 stdin/stdout 题（全部既有题目不受影响）；
+     * 非空 = oj-server 在入库判题代码前包装"用户代码 + 调用器"，
+     * judge 收到的仍是可直接执行的 stdin/stdout 代码，判题端协议零变化。
+     * 2026-11-22 增量字段（B 侧提出，纯新增可空列）——知会 A 侧备案。
+     */
+    private String entryFunction;
+
     /** 提交总数（冗余统计） */
     private Integer submitCount;
 

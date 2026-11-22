@@ -49,6 +49,15 @@ public class ProblemFormDTO {
     @NotEmpty
     private List<@Pattern(regexp = "c|cpp|java|python3|js") String> languages;
 
+    /**
+     * JS 场景题（函数实现题）入口函数名，如 "solve"。
+     * 留空 = 标准 stdin/stdout 题（既有题目不受影响）；填了则判题走"平台调用器"协议，
+     * 测试用例 input 须为 JSON 参数数组（如 [1,2]），expectedOutput 为期望返回值。
+     */
+    @Size(max = 64, message = "入口函数名不得超过 64 字符")
+    @Pattern(regexp = "^[A-Za-z_$][A-Za-z0-9_$]*$", message = "入口函数名必须是合法 JS 标识符")
+    private String entryFunction;
+
     /** 是否上架 */
     private Boolean enabled = true;
 

@@ -58,6 +58,7 @@
         <div class="prob-tags">
           <span class="tag-caption">支持语言</span>
           <span v-for="l in allowedLanguages" :key="l.value" class="tag tag-lang">{{ l.label }}</span>
+          <span v-if="problem.entryFunction" class="tag tag-fn" title="实现该入口函数，平台按返回值判分">函数题 · 入口 {{ problem.entryFunction }}</span>
           <span v-for="t in problem.tags || []" :key="t" class="tag">{{ t }}</span>
         </div>
       </header>
@@ -148,13 +149,15 @@
           v-model="consoleInput"
           type="textarea"
           :rows="3"
-          placeholder="自定义测试输入（留空则使用样例 1 输入）"
+          :placeholder="isFunctionProblem
+            ? '输入参数 JSON（如 [1,2]），运行后显示函数返回值；样例格式见题面'
+            : '自定义测试输入（留空则使用样例 1 输入）'"
           class="console-input"
         />
         <div v-if="consoleResult" class="console-out" :class="{ err: !!consoleResult.error }">
           <div v-if="consoleResult.error" class="console-err">✕ {{ consoleResult.error }}</div>
           <pre class="console-stdout">{{ consoleResult.stdout || '(无输出)' }}</pre>
-          <div class="console-meta">耗时 {{ consoleResult.elapsedMs }}ms · 浏览器沙箱（仅 JS）</div>
+          <div class="console-meta">{{ isFunctionProblem ? '返回值 · ' : '' }}耗时 {{ consoleResult.elapsedMs }}ms · 浏览器沙箱（仅 JS）</div>
         </div>
       </div>
 
@@ -273,6 +276,7 @@ import { usePreferencesStore } from '@/stores/preferences'
 import { onJudgePush } from '@/api/ws'
 import { loadDraft, saveDraft } from '@/utils/draft'
 import { relativeTime } from '@/utils/datetime'
+import { functionRunInput, functionTemplate, wrapJsFunction } from '@/utils/jsHarness'
 import {
   CODE_TEMPLATES,
   DIFFICULTY_MAP,
@@ -458,9 +462,20 @@ async function copyText(text: string) {
 }
 
 /** 控制台运行：浏览器沙箱执行当前代码（仅 JS 题）。
- *  输入框为空时显式填入样例 1 输入（所见即所得）。 */
+ *  函数题：输入是参数 JSON（如 [1,2]），平台调用器传参并显示返回值；
+ *  IO 题：输入留空时显式填入样例 1 输入（所见即所得）。 */
 async function runConsole() {
   if (!problem.value) return
+  if (language.value === 'js' && problem.value.entryFunction) {
+    running.value = true
+    try {
+      const judged = wrapJsFunction(code.value, problem.value.entryFunction)
+      consoleResult.value = await runInSandbox(judged, functionRunInput(consoleInput.value), 5000)
+    } finally {
+      running.value = false
+    }
+    return
+  }
   if (!consoleInput.value.trim() && problem.value.samples?.[0]?.input) {
     consoleInput.value = problem.value.samples[0].input
   }
@@ -489,9 +504,20 @@ async function toggleFav() {
   }
 }
 
+/** JS 场景题（函数实现题）：实现题面约定的入口函数，判题时平台调用器传参并比对返回值 */
+const isFunctionProblem = computed(() => !!problem.value?.entryFunction)
+
+/** 初始代码：函数题给带入口函数名的签名模板（IO 题沿用通用模板） */
+function initialTemplate(lang: string): string {
+  if (lang === 'js' && problem.value?.entryFunction) {
+    return functionTemplate(problem.value.entryFunction)
+  }
+  return CODE_TEMPLATES[lang] ?? ''
+}
+
 /** 切换语言后统一收尾：换模板 + 重填样例 1 + 恢复该语言的草稿 */
 function applyLanguage(lang: string) {
-  code.value = CODE_TEMPLATES[lang] ?? ''
+  code.value = initialTemplate(lang)
   prevLanguage.value = lang
   consoleInput.value = problem.value?.samples?.[0]?.input ?? ''
   // 换语言后上一次的控制台输出不再对应当前代码，清掉避免误读
@@ -541,7 +567,7 @@ async function load() {
     language.value = allowedLanguages.value[0]?.value || 'cpp'
   }
   prevLanguage.value = language.value
-  code.value = CODE_TEMPLATES[language.value] ?? ''
+  code.value = initialTemplate(language.value)
   // 控制台输入预填样例 1（进页面即可见，运行时所见即所得）
   consoleInput.value = problem.value.samples?.[0]?.input ?? ''
   consoleResult.value = undefined
@@ -841,6 +867,11 @@ onMounted(() => window.addEventListener('keydown', onGlobalKeydown))
   color: var(--oj-primary);
   border-color: var(--oj-info-border);
   background: var(--oj-primary-soft);
+}
+.tag-fn {
+  color: var(--oj-success);
+  border-color: var(--oj-success-soft);
+  background: var(--oj-success-soft);
 }
 
 .statement-section {

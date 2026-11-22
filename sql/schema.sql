@@ -49,6 +49,7 @@ CREATE TABLE IF NOT EXISTS `problem` (
   `time_limit_ms`   INT          NOT NULL DEFAULT 1000 COMMENT '时间限制（毫秒）',
   `memory_limit_mb` INT          NOT NULL DEFAULT 256 COMMENT '内存限制（MB）',
   `languages`       JSON         COMMENT '允许提交的语言数组',
+  `entry_function`  VARCHAR(64)  COMMENT 'JS 场景题入口函数名；NULL=标准 stdin/stdout 题，非空时 server 在判题前包装调用器',
   `submit_count`    INT          NOT NULL DEFAULT 0 COMMENT '提交总数（冗余统计）',
   `accepted_count`  INT          NOT NULL DEFAULT 0 COMMENT '通过总数（冗余统计）',
   `enabled`         TINYINT(1)   NOT NULL DEFAULT 1 COMMENT '是否上架',

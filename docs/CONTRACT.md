@@ -1,6 +1,6 @@
 # CodeOJ 模块对接契约
 
-> 版本：v1.3 ｜ 更新日期：2026-11-18
+> 版本：v1.4 ｜ 更新日期：2026-11-22
 > 适用当前 A 评测链路修复分支。oj-server 与 oj-judge 通过数据库、RabbitMQ、Redis 协作，共享实体和 SQL 契约由 oj-common 提供。部署升级步骤见第 8 节。
 
 ## 1. MQ 协议
@@ -253,5 +253,6 @@ oj-judge 数据库写入范围仍为 submission 的状态/租约/发送窗口、
 | 2026-11-16 | v1.1 | 成员 B：WebSocket LoginUser Principal 与 CONNECT 鉴权约定 |
 | 2026-11-16 | v1.2 | 租约与 token 写回校验；持久 QUEUING 周期补发；共享 SQL；去重榜单；墙钟时间；可信 supervisor；执行/用例隔离；real 默认及拒绝伪判；数据库迁移 |
 | 2026-11-18 | v1.3 | 记录投递确认、Docker 瞬时故障延迟重试、用例快照和总数、语言内存下限及超时判定修正 |
+| 2026-11-22 | v1.4 | 成员 B：JS 场景题（函数实现题）。`problem` 表新增可空 `entry_function`（oj-common Problem 实体同步加可空字段，纯增量）；非空且语言为 js 时，oj-server 在判题入库前把提交包装为"用户代码 + 平台调用器"（stdin 读 JSON 参数数组 → 逐组调用入口函数 → stdout 输出返回值）。**MQ 消息体、状态机、比对协议零变化**——judge 读到的 code 仍为可直接执行的 stdin/stdout 脚本；详情展示由 server 按标记剥离调用器。迁移脚本 `sql/migrations/20261122_problem_entry_function.sql`（幂等）。已知会 A |
 
 业务时间 created_at/judged_at 沿用成员 B 的 Asia/Shanghai DATETIME、序列化及查询契约；内部 judge_lease_until/next_dispatch_at 统一 UTC 数据库时钟。next_dispatch_at 默认表达式显式 UTC，不能改为按上海会话生成的 CURRENT_TIMESTAMP。CONNECT 使用 LoginUser 身份，校验签名、黑名单及数据库用户状态，只允许 /user/queue/judge 订阅，拒绝客户端 SEND。

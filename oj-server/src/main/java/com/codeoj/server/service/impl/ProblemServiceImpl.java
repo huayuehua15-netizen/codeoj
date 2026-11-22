@@ -104,6 +104,7 @@ public class ProblemServiceImpl implements ProblemService {
     @Override
     public Long create(ProblemFormDTO form) {
         requireAllowedLanguages(form.getLanguages());
+        requireEntryFunctionConsistent(form);
         Problem p = new Problem();
         p.setTitle(form.getTitle());
         p.setDescription(form.getDescription());
@@ -112,6 +113,7 @@ public class ProblemServiceImpl implements ProblemService {
         p.setTimeLimitMs(form.getTimeLimitMs());
         p.setMemoryLimitMb(form.getMemoryLimitMb());
         p.setLanguages(form.getLanguages());
+        p.setEntryFunction(blankToNull(form.getEntryFunction()));
         p.setTags(form.getTags());
         p.setEnabled(form.getEnabled());
         p.setSubmitCount(0);
@@ -125,6 +127,7 @@ public class ProblemServiceImpl implements ProblemService {
     @Override
     public void update(Long id, ProblemFormDTO form) {
         requireAllowedLanguages(form.getLanguages());
+        requireEntryFunctionConsistent(form);
         Problem p = getById(id);
         p.setTitle(form.getTitle());
         p.setDescription(form.getDescription());
@@ -133,10 +136,27 @@ public class ProblemServiceImpl implements ProblemService {
         p.setTimeLimitMs(form.getTimeLimitMs());
         p.setMemoryLimitMb(form.getMemoryLimitMb());
         p.setLanguages(form.getLanguages());
+        p.setEntryFunction(blankToNull(form.getEntryFunction()));
         p.setTags(form.getTags());
         p.setEnabled(form.getEnabled());
         p.setUpdatedAt(LocalDateTime.now());
         problemMapper.updateById(p);
+    }
+
+    /**
+     * 场景题约束：入口函数名只对 JS 场景题有意义——填了函数名却不允许 js 提交，
+     * 或允许 js 提交却留空（该题只能以 stdin/stdout 方式作答），都是配置矛盾。
+     * 两类不一致直接 40000，避免建出一个"提交了必判错"的题。
+     */
+    private void requireEntryFunctionConsistent(ProblemFormDTO form) {
+        boolean hasEntry = form.getEntryFunction() != null && !form.getEntryFunction().isBlank();
+        if (hasEntry && !form.getLanguages().contains("js")) {
+            throw new BizException(ResultCode.BAD_REQUEST.getCode(), "填写了入口函数名的题目必须允许 JavaScript 提交");
+        }
+    }
+
+    private String blankToNull(String value) {
+        return value == null || value.isBlank() ? null : value.strip();
     }
 
     /**

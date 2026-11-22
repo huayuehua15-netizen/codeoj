@@ -113,6 +113,17 @@
               <el-checkbox value="js">JavaScript</el-checkbox>
             </el-checkbox-group>
           </el-form-item>
+          <el-form-item label="入口函数名">
+            <el-input
+              v-model="form.entryFunction"
+              placeholder="JS 场景题填入口函数名（如 solve），留空为标准 IO 题"
+              style="width: 320px"
+              maxlength="64"
+            />
+            <span class="entry-fn-hint">
+              场景题模式：学生实现该函数，判题时平台传参并比对返回值；用例输入须为 JSON 参数数组（如 [1,2]）
+            </span>
+          </el-form-item>
           <el-form-item label="上架"><el-switch v-model="form.enabled" /></el-form-item>
         </el-form>
         <template #footer>
@@ -172,6 +183,7 @@ const form = reactive({
   tags: [] as string[],
   samples: [] as { input: string; output: string }[],
   languages: ['c', 'cpp', 'java', 'python3', 'js'] as string[],
+  entryFunction: '',
   enabled: true,
 })
 const minimumMemoryMb = computed(() =>
@@ -207,6 +219,7 @@ function openCreate() {
     tags: [],
     samples: [],
     languages: ['c', 'cpp', 'java', 'python3', 'js'],
+    entryFunction: '',
     enabled: true,
   })
   dialogVisible.value = true
@@ -228,6 +241,7 @@ async function edit(row: Problem) {
       tags: detail.tags || [],
       samples: (detail.samples || []).map((s) => ({ input: s.input, output: s.output })),
       languages: detail.languages || [],
+      entryFunction: detail.entryFunction || '',
       enabled: detail.enabled,
     })
     dialogVisible.value = true
@@ -378,5 +392,13 @@ onMounted(load)
   padding: 12px;
   max-height: 260px;
   overflow: auto;
+}
+/* 入口函数名说明：小字放输入框下方，说明场景题协议 */
+.entry-fn-hint {
+  display: block;
+  margin-top: 4px;
+  font-size: 10.5px;
+  line-height: 1.6;
+  color: var(--oj-text-weak);
 }
 </style>

@@ -23,6 +23,7 @@ import com.codeoj.server.security.LoginUser;
 import com.codeoj.server.service.IdempotentLockService;
 import com.codeoj.server.service.RateLimiter;
 import com.codeoj.server.service.SubmissionService;
+import com.codeoj.server.util.JsFunctionHarness;
 import com.codeoj.server.util.PageUtils;
 import com.codeoj.server.vo.JudgeCaseVO;
 import com.codeoj.server.vo.StatisticsVO;
@@ -153,7 +154,7 @@ public class SubmissionServiceImpl implements SubmissionService {
         s.setUserId(userId);
         s.setProblemId(dto.getProblemId());
         s.setLanguage(dto.getLanguage());
-        s.setCode(dto.getCode());
+        s.setCode(storedCode(problem, dto));
         s.setStatus(SubmissionStatus.QUEUING.getCode());
         s.setJudgeAttempts(0);
         s.setJudgeSnapshotKey(snapshotKey);
@@ -162,6 +163,18 @@ public class SubmissionServiceImpl implements SubmissionService {
         submissionMapper.insert(s);
         log.info("submission queued, id={}, user={}, problem={}", s.getId(), userId, dto.getProblemId());
         return s.getId();
+    }
+
+    /**
+     * 判题入库代码：JS 场景题（entry_function 非空且语言为 js）包装"用户代码 + 平台调用器"，
+     * judge 读到的仍是可直接执行的 stdin/stdout 脚本；其余题目原样入库。
+     * 结果页展示时由 {@link JsFunctionHarness#strip} 按标记剥离还原。
+     */
+    private String storedCode(Problem problem, SubmitDTO dto) {
+        if (problem.getEntryFunction() != null && Language.JS.getCode().equals(dto.getLanguage())) {
+            return JsFunctionHarness.wrap(dto.getCode(), problem.getEntryFunction());
+        }
+        return dto.getCode();
     }
 
     private String storeSnapshot(JudgeSnapshot snapshot) {
@@ -221,7 +234,7 @@ public class SubmissionServiceImpl implements SubmissionService {
         Problem p = problemMapper.selectById(s.getProblemId());
         vo.setProblemTitle(p != null ? p.getTitle() : null);
         vo.setLanguage(s.getLanguage());
-        vo.setCode(s.getCode());
+        vo.setCode(JsFunctionHarness.strip(s.getCode()));
         vo.setStatus(s.getStatus());
         vo.setStatusDesc(SubmissionStatus.of(s.getStatus()).getDesc());
         vo.setTimeUsedMs(s.getTimeUsedMs());
