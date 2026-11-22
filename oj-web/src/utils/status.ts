@@ -141,16 +141,18 @@ export const DIFFICULTY_MAP: Record<number, { label: string; color: string; toke
  */
 export const CODE_TEMPLATES: Record<string, string> = {
   js: `// JavaScript 标准输入输出模板（Node 环境）
-// 输入会通过标准输入一次性给出（样例输入见题面），按空白拆分逐个取用：
+// 输入通过标准输入一次性给出，格式以题面「输入格式」和样例为准：
 const input = require("fs").readFileSync(0, "utf8");
+
+// 按空白拆分取多个值（最常见）：
 const tokens = input.trim() ? input.trim().split(/\\s+/) : [];
+// 按行拆分（每行一个测试点/多行结构时）：
+// const lines = input.split(/\\r?\\n/);
 
-// 例：题面输入为两个整数 a、b 时
-const a = Number(tokens[0]);
-const b = Number(tokens[1]);
+// TODO：按题面格式解析输入，在这里实现你的解法
+// 例：输入是两个整数 a、b 时 → const [a, b] = tokens.map(Number)
 
-// 在此编写你的代码，结果用 console.log 输出
-console.log(a + b);
+// 结果用 console.log(...) 输出（每行一个答案，与题面「输出格式」一致）
 `,
 
   c: `#include <stdio.h>
