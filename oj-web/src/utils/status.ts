@@ -136,9 +136,21 @@ export const DIFFICULTY_MAP: Record<number, { label: string; color: string; toke
 
 /**
  * 五语言模板代码（论文 5.7：按题目允许的语言切换语法模式并载入对应模板代码）。
+ * JS 给两套：标准 IO 题带 stdin 读取骨架（学生照题面输入格式解析 tokens），
+ * 场景题（entryFunction 非空）由 ProblemDetailView 换成入口函数签名模板（utils/jsHarness）。
  */
 export const CODE_TEMPLATES: Record<string, string> = {
-  js: `// 在此编写你的代码
+  js: `// JavaScript 标准输入输出模板（Node 环境）
+// 输入会通过标准输入一次性给出（样例输入见题面），按空白拆分逐个取用：
+const input = require("fs").readFileSync(0, "utf8");
+const tokens = input.trim() ? input.trim().split(/\\s+/) : [];
+
+// 例：题面输入为两个整数 a、b 时
+const a = Number(tokens[0]);
+const b = Number(tokens[1]);
+
+// 在此编写你的代码，结果用 console.log 输出
+console.log(a + b);
 `,
 
   c: `#include <stdio.h>

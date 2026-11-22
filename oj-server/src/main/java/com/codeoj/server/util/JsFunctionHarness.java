@@ -19,6 +19,9 @@ public final class JsFunctionHarness {
     /** 调用器起始标记：详情页按它剥离平台注入的调用器部分 */
     public static final String HARNESS_MARK = "/*__OJ_HARNESS__*/";
 
+    /** console 重定向前奏的结束标记：剥离时连同前奏一起还原用户原始代码 */
+    public static final String PRELUDE_MARK = "/*__OJ_PRE__*/";
+
     /** 入口函数名白名单：标识符字符集，防止把任意代码片段注入用户源码 */
     private static final String ENTRY_PATTERN = "[A-Za-z_$][A-Za-z0-9_$]*";
 
@@ -29,45 +32,76 @@ public final class JsFunctionHarness {
         return code != null && code.contains(HARNESS_MARK);
     }
 
-    /** 拼接"用户代码 + 调用器"作为判题代码（entryFunction 空/空白时原样返回） */
+    /** 拼接"console 重定向前奏 + 用户代码 + 调用器"作为判题代码（entryFunction 空/空白时原样返回） */
     public static String wrap(String userCode, String entryFunction) {
         if (entryFunction == null || entryFunction.isBlank()) return userCode;
         String entry = entryFunction.strip();
         if (!entry.matches(ENTRY_PATTERN)) {
             throw new IllegalArgumentException("入口函数名必须是合法 JS 标识符: " + entryFunction);
         }
-        return userCode.stripTrailing() + "\n\n" + HARNESS_MARK + "\n" + buildHarness(entry);
+        // 前奏必须在用户代码之前：学生习惯在顶层（函数外）写 console.log 调试，
+        // 只重定向调用器内的 console 管不住顶层语句——stdout 是判题比对保留区。
+        return ";\n" + CONSOLE_REDIRECT + "\n" + PRELUDE_MARK + "\n"
+                + userCode.stripTrailing() + "\n\n" + HARNESS_MARK + "\n" + buildHarness(entry);
     }
 
     /**
-     * 从入库代码剥离调用器，还原用户原始代码（结果页展示用）。
+     * 从入库代码剥离前奏与调用器，还原用户原始代码（结果页展示用）。
      * 无标记（标准题/历史数据）原样返回。
      */
     public static String strip(String storedCode) {
         if (!isWrapped(storedCode)) return storedCode;
-        int idx = storedCode.indexOf(HARNESS_MARK);
-        return storedCode.substring(0, idx).stripTrailing();
+        String userPart = storedCode.substring(0, storedCode.indexOf(HARNESS_MARK));
+        int preludeEnd = userPart.indexOf(PRELUDE_MARK);
+        if (preludeEnd >= 0) {
+            userPart = userPart.substring(preludeEnd + PRELUDE_MARK.length());
+        }
+        return userPart.stripLeading().stripTrailing();
     }
 
+    /** console 重定向语句（前奏）：学生代码里 console.* 是调试习惯，统一进 stderr，
+     *  stdout 是判题比对保留区。放在用户代码之前才能管住顶层语句。 */
+    private static final String CONSOLE_REDIRECT =
+            "console.log = console.info = console.debug = console.table = console.trace ="
+                    + " (...__a) => process.stderr.write(__a.map(String).join(\" \") + \"\\n\");";
+
     /**
-     * 调用器：stdin 读**本条用例**的 JSON 参数数组 → 调用一次入口函数 → stdout 输出返回值。
+     * 调用器：stdin 读**本条用例**的 JSON 参数列表 → 调用一次入口函数 → 输出返回值。
      * judge 的判题模型是"每条用例独立运行一次程序"（input 进 stdin、stdout 比对 expected），
      * 所以这里是单次调用而非多组循环。字符串返回值原样输出，其余 JSON 序列化
      * （与用例 expectedOutput 的存储约定一致）；入口函数抛异常时输出
      * "RuntimeError: ..." 行（比对不通过判 WA，错误信息可见）。
+     *
+     * <p>防御点（本地边界矩阵实测，改协议时务必重测）：
+     * <ol>
+     * <li>调用器开头 {@code ;}：学生代码末尾常不写分号，末行若以 console.log(...) 结尾，
+     *     会被 JS 自动分号插入(ASI)与本调用器的 {@code (async …)} 拼成调用链，整份代码崩；</li>
+     * <li>console 重定向前奏插在用户代码之前（见 {@link #CONSOLE_REDIRECT}），
+     *     最终输出走 process.stdout.write 直写，不经被重定向的 console；</li>
+     * <li>返回值序列化纳入 try：循环引用等对象会让 JSON.stringify 抛错；错误消息截首行
+     *     （Node 部分报错自带多行堆栈提示，多行会破坏逐行比对）。</li>
+     * </ol>
      */
     private static String buildHarness(String entry) {
-        return "(async () => {\n"
+        return ";\n"
+                + "(async () => {\n"
                 + "  const __raw = require(\"fs\").readFileSync(0, \"utf8\");\n"
                 + "  const __args = JSON.parse(__raw || \"[]\");\n"
                 + "  let __r;\n"
                 + "  try {\n"
                 + "    __r = await " + entry + "(...__args);\n"
                 + "  } catch (__e) {\n"
-                + "    console.log(\"RuntimeError: \" + ((__e && __e.message) || __e));\n"
+                + "    process.stdout.write(\"RuntimeError: \" + firstLine((__e && __e.message) || __e) + \"\\n\");\n"
                 + "    return;\n"
                 + "  }\n"
-                + "  console.log(typeof __r === \"string\" ? __r : (__r === undefined ? \"undefined\" : JSON.stringify(__r)));\n"
-                + "})();\n";
+                + "  let __s;\n"
+                + "  try {\n"
+                + "    __s = typeof __r === \"string\" ? __r : (__r === undefined ? \"undefined\" : JSON.stringify(__r));\n"
+                + "  } catch (__e) {\n"
+                + "    __s = \"RuntimeError: \" + firstLine((__e && __e.message) || __e);\n"
+                + "  }\n"
+                + "  process.stdout.write(__s + \"\\n\");\n"
+                + "})();\n"
+                + "function firstLine(v) { return String(v).split(\"\\n\")[0]; }\n";
     }
 }
