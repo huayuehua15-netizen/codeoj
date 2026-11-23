@@ -18,9 +18,9 @@
         </div>
 
         <div v-if="courseId" class="course-context">
-          <span class="course-context-tag">课程作业</span>
-          <span>本次提交会计入该课程的完成进度</span>
-          <router-link :to="`/courses/${courseId}`" class="course-context-link">返回课程</router-link>
+          <span class="course-context-tag">班级作业</span>
+          <span>本次提交会计入该班级作业进度</span>
+          <router-link :to="`/courses/${courseId}`" class="course-context-link">返回作业</router-link>
         </div>
 
         <div class="title-row">

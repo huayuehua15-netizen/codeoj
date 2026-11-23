@@ -4,7 +4,7 @@
       <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
         <path d="M19 12H5M11 6l-6 6 6 6" />
       </svg>
-      我的课程
+      班级作业
     </router-link>
 
     <div v-loading="loading" class="detail-shell">
@@ -12,14 +12,13 @@
         <header class="course-head">
           <div class="head-main">
             <div class="head-kicker">
-              <span class="kicker">CLASSROOM</span>
+              <span class="kicker">ASSIGNMENT</span>
               <span class="course-no mono">#{{ String(course.id).padStart(3, '0') }}</span>
             </div>
             <h1 class="course-title">{{ course.name }}</h1>
             <p v-if="course.description" class="course-desc">{{ course.description }}</p>
             <div class="head-meta">
               <span>教师 {{ course.teacherName || '未署名' }}</span>
-              <span>{{ course.memberCount }} 位同学</span>
               <span v-if="course.joinedAt">加入于 {{ formatDateTime(course.joinedAt) }}</span>
             </div>
           </div>
@@ -31,7 +30,7 @@
           </aside>
         </header>
 
-        <section class="progress-strip" aria-label="课程完成情况">
+        <section class="progress-strip" aria-label="作业完成情况">
           <div class="progress-main">
             <div class="progress-caption">
               <span>完成进度</span>
@@ -66,7 +65,7 @@
           <header class="panel-head">
             <div>
               <p class="kicker">PROBLEM SET</p>
-              <h2 id="problem-set-title">课程题目</h2>
+              <h2 id="problem-set-title">作业题目</h2>
               <p class="panel-sub">按教师安排的顺序完成；截止后的通过会标记为迟交，但仍保留记录。</p>
             </div>
             <el-button type="primary" :disabled="!course.problems.length" @click="goNext">
@@ -126,13 +125,13 @@
           </div>
 
           <div v-if="!course.problems.length" class="empty-problems">
-            教师还没有为这门课程添加题目，稍后再来看看。
+            教师还没有为这次作业添加题目，稍后再来看看。
           </div>
         </section>
 
         <footer class="course-foot">
-          <p>课程进度只统计加入班级后的提交；退出后重新加入会从新的加入时间重新计算。</p>
-          <button type="button" class="leave-btn" @click="onLeave">退出课程</button>
+          <p>作业进度只统计加入班级后的提交；退出后重新加入会从新的加入时间重新计算。</p>
+          <button type="button" class="leave-btn" @click="onLeave">退出班级</button>
         </footer>
       </template>
 
@@ -142,19 +141,19 @@
             <circle cx="20" cy="20" r="14" /><path d="M20 12v9M20 26h.01" />
           </svg>
         </div>
-        <h2>{{ forbidden ? '你还不是这门课程的成员' : '课程打不开' }}</h2>
+        <h2>{{ forbidden ? '你还不是这个班级的成员' : '作业打不开' }}</h2>
         <p>
           {{
             forbidden
-              ? '请向任课教师索取邀请码，加入后即可查看课程题目与进度。'
+              ? '请向任课教师索取邀请码，加入后即可查看作业题目与进度。'
               : loadError
           }}
         </p>
         <form v-if="forbidden" class="error-join" @submit.prevent="onJoin">
-          <el-input v-model="joinCode" placeholder="输入课程邀请码" maxlength="12" @input="normalizeCode" />
-          <el-button type="primary" native-type="submit" :loading="joining">加入课程</el-button>
+          <el-input v-model="joinCode" placeholder="输入班级邀请码" maxlength="12" @input="normalizeCode" />
+          <el-button type="primary" native-type="submit" :loading="joining">加入班级</el-button>
         </form>
-        <router-link to="/courses" class="error-back">返回我的课程</router-link>
+        <router-link to="/courses" class="error-back">返回班级作业</router-link>
       </div>
     </div>
   </div>
@@ -208,7 +207,7 @@ const deadlineState = computed(() => {
   const c = course.value
   const d = parseServerTime(c?.deadline)
   if (!d) {
-    return { key: 'open', label: '长期开放', value: '不限时', hint: '按自己的节奏完成课程题目' }
+    return { key: 'open', label: '长期开放', value: '不限时', hint: '按自己的节奏完成作业题目' }
   }
   const diff = d.getTime() - nowTick.value
   if (diff <= 0) {
@@ -274,7 +273,7 @@ async function load() {
     course.value = await getCourseDetail(String(route.params.id))
   } catch (error) {
     course.value = null
-    const message = error instanceof Error ? error.message : '课程加载失败'
+    const message = error instanceof Error ? error.message : '作业加载失败'
     loadError.value = message
     forbidden.value = message.includes('无权限')
   } finally {
@@ -303,8 +302,8 @@ async function onJoin() {
 async function onLeave() {
   try {
     await ElMessageBox.confirm(
-      '退出后，这门课程将不再出现在「我的课程」；重新加入会从新的加入时间重新计算进度。',
-      '退出课程',
+      '退出后，这个班级将不再出现在「班级作业」；重新加入会从新的加入时间重新计算进度。',
+      '退出班级',
       { type: 'warning', confirmButtonText: '确认退出', cancelButtonText: '再想想' },
     )
   } catch {
@@ -312,7 +311,7 @@ async function onLeave() {
   }
   try {
     await leaveCourse(String(route.params.id))
-    ElMessage.success('已退出课程')
+    ElMessage.success('已退出班级')
     router.push('/courses')
   } catch {
     // 拦截器已提示

@@ -70,13 +70,13 @@ const router = createRouter({
           path: 'courses',
           name: 'courses',
           component: () => import('@/views/course/CourseListView.vue'),
-          meta: { title: '我的课程', requiresAuth: true },
+          meta: { title: '班级作业', requiresAuth: true },
         },
         {
           path: 'courses/:id',
           name: 'course-detail',
           component: () => import('@/views/course/CourseDetailView.vue'),
-          meta: { title: '课程详情', requiresAuth: true },
+          meta: { title: '作业详情', requiresAuth: true },
         },
         {
           path: 'contests',
@@ -142,7 +142,7 @@ const router = createRouter({
           path: 'admin/courses',
           name: 'admin-courses',
           component: () => import('@/views/admin/CourseAdminView.vue'),
-          meta: { title: '课程班级', requiresAuth: true, requiresAdmin: true },
+          meta: { title: '班级作业', requiresAuth: true, requiresAdmin: true },
         },
         {
           path: 'admin/contests',

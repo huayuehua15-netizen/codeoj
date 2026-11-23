@@ -2,40 +2,22 @@
   <div class="course-page">
     <header class="page-head course-head">
       <div>
-        <p class="kicker">CLASSROOM</p>
-        <h1 class="page-head-title">我的课程</h1>
+        <p class="kicker">ASSIGNMENTS</p>
+        <h1 class="page-head-title">班级作业</h1>
         <p class="page-head-sub">
-          教师创建班级后会生成邀请码。加入后，这里会按截止时间跟踪每一道课程的完成情况。
+          教师发作业后会生成邀请码。加入后按截止时间查看题目与完成情况。
         </p>
       </div>
-      <dl class="course-totals" aria-label="课程完成概览">
-        <div class="total-item">
-          <dt>COURSES</dt>
-          <dd>{{ courses.length }}</dd>
-        </div>
-        <div class="total-item">
-          <dt>SOLVED</dt>
-          <dd>{{ totalSolved }}<small>/{{ totalProblems }}</small></dd>
-        </div>
-        <div class="total-item">
-          <dt>ON TIME</dt>
-          <dd>{{ totalOnTime }}<small>题</small></dd>
-        </div>
-        <div class="total-item">
-          <dt>PROGRESS</dt>
-          <dd>{{ overallPercent }}<small>%</small></dd>
-        </div>
-      </dl>
     </header>
 
     <section class="join-panel" aria-labelledby="join-title">
       <div class="join-copy">
         <p class="kicker">JOIN A CLASS</p>
         <h2 id="join-title">用邀请码加入班级</h2>
-        <p>向任课教师索取 4–12 位邀请码。加入后即可看到课程题目、截止时间与个人进度。</p>
+        <p>向任课教师索取 4–12 位邀请码。加入后即可看到题目、截止时间与个人进度。</p>
       </div>
       <form class="join-form" @submit.prevent="onJoin">
-        <label class="sr-only" for="join-code">课程邀请码</label>
+        <label class="sr-only" for="join-code">班级邀请码</label>
         <el-input
           id="join-code"
           v-model="joinCode"
@@ -52,7 +34,7 @@
           </template>
         </el-input>
         <el-button type="primary" native-type="submit" :loading="joining" :disabled="!joinCode.trim()">
-          加入课程
+          加入班级
         </el-button>
       </form>
     </section>
@@ -60,8 +42,8 @@
     <section class="course-section" aria-labelledby="my-courses-title">
       <div class="section-head">
         <div>
-          <p class="kicker">ENROLLED</p>
-          <h2 id="my-courses-title">已加入的课程</h2>
+          <p class="kicker">JOINED</p>
+          <h2 id="my-courses-title">已加入的班级</h2>
         </div>
         <p class="section-meta">按状态与截止时间排序 · 共 {{ courses.length }} 门</p>
       </div>
@@ -84,12 +66,11 @@
           <h3 class="course-title">
             <router-link :to="`/courses/${course.id}`">{{ course.name }}</router-link>
           </h3>
-          <p class="course-desc">{{ course.description || '暂无课程说明' }}</p>
+          <p class="course-desc">{{ course.description || '暂无作业说明' }}</p>
 
           <div class="course-meta">
             <span>教师 {{ course.teacherName || '未署名' }}</span>
             <span>{{ course.problemCount }} 题</span>
-            <span>{{ course.memberCount }} 人</span>
           </div>
 
           <div class="progress-caption">
@@ -103,7 +84,7 @@
           <div class="card-foot">
             <span class="deadline-text">{{ deadlineInfo(course.deadline).text }}</span>
             <router-link :to="`/courses/${course.id}`" class="card-link">
-              {{ course.problemCount && course.solvedCount >= course.problemCount ? '回顾课程' : '进入课程' }}
+              {{ course.problemCount && course.solvedCount >= course.problemCount ? '回顾作业' : '进入作业' }}
               <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                 <path d="M5 12h14M13 6l6 6-6 6" />
               </svg>
@@ -119,8 +100,8 @@
             <path d="M9 34a4 4 0 0 1 4-4h22" /><path d="M16 18h12M16 24h8" />
           </svg>
         </div>
-        <h3>还没有加入任何课程</h3>
-        <p>向老师要到邀请码后，在上面输入即可看到作业与进度。没有课程也可以先去题库自由练习。</p>
+        <h3>还没有加入任何班级</h3>
+        <p>向老师要到邀请码后，在上面输入即可看到作业与进度。没有班级也可以先去题库自由练习。</p>
         <router-link to="/problems" class="empty-link">去题库练习</router-link>
       </div>
     </section>
@@ -128,7 +109,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
+import { onBeforeUnmount, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { joinCourse, listMyCourses, type StudentCourse } from '@/api/course'
@@ -141,13 +122,6 @@ const joining = ref(false)
 const joinCode = ref('')
 const nowTick = ref(Date.now())
 let clock: number | undefined
-
-const totalProblems = computed(() => courses.value.reduce((sum, c) => sum + c.problemCount, 0))
-const totalSolved = computed(() => courses.value.reduce((sum, c) => sum + c.solvedCount, 0))
-const totalOnTime = computed(() => courses.value.reduce((sum, c) => sum + c.onTimeSolvedCount, 0))
-const overallPercent = computed(() =>
-  totalProblems.value ? Math.round((totalSolved.value * 100) / totalProblems.value) : 0,
-)
 
 type DeadlineState = { key: 'running' | 'ended' | 'open'; label: string; text: string }
 
@@ -223,41 +197,6 @@ onBeforeUnmount(() => window.clearInterval(clock))
 
 .course-head {
   align-items: flex-end;
-}
-.course-totals {
-  display: flex;
-  margin: 0;
-  padding: 0;
-  flex-shrink: 0;
-}
-.total-item {
-  padding: 0 20px;
-  border-left: 1px solid var(--oj-border);
-  text-align: right;
-}
-.total-item:last-child {
-  padding-right: 0;
-}
-.total-item dt {
-  font-family: var(--oj-font-mono);
-  font-size: 8.5px;
-  letter-spacing: 0.1em;
-  color: var(--oj-text-weak);
-}
-.total-item dd {
-  margin: 5px 0 0;
-  font-family: var(--oj-font-mono);
-  font-size: 25px;
-  line-height: 1;
-  font-weight: 600;
-  letter-spacing: -0.04em;
-  color: var(--oj-text);
-}
-.total-item dd small {
-  margin-left: 2px;
-  font-size: 11px;
-  font-weight: 500;
-  color: var(--oj-text-sub);
 }
 
 /* 加入班级：左侧说明，右侧输入，像一张真正的课程登记卡 */
@@ -554,9 +493,6 @@ onBeforeUnmount(() => window.clearInterval(clock))
   .join-input {
     flex: 1;
     width: auto;
-  }
-  .course-totals {
-    display: none;
   }
   .course-grid {
     grid-template-columns: 1fr;
