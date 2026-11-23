@@ -2,13 +2,12 @@
   <div class="settings-page">
     <header class="settings-head">
       <div>
-        <p class="kicker">ACCOUNT / CONTROL</p>
         <h1>账号设置</h1>
         <p class="settings-sub">
           管理公开资料、登录安全与在线编辑器偏好。账号资料写回服务端，编辑器偏好只保存在当前浏览器。
         </p>
       </div>
-      <router-link class="back-link" to="/profile">返回个人中心 <span aria-hidden="true">→</span></router-link>
+      <router-link class="back-link" to="/profile">返回个人中心</router-link>
     </header>
 
     <section class="identity-strip" aria-label="当前账号">
@@ -34,15 +33,15 @@
       <div class="identity-copy">
         <div class="identity-name">
           <strong>{{ userStore.username || '未登录' }}</strong>
-          <span class="role-chip" :class="{ admin: userStore.isAdmin }">{{ roleLabel }}</span>
+          <span class="role-text">{{ roleLabel }}</span>
         </div>
-        <p class="identity-meta mono">
-          UID {{ info?.userId ?? userStore.userId }}
+        <p class="identity-meta">
+          ID {{ info?.userId ?? userStore.userId }}
           <span aria-hidden="true">·</span>
           {{ info?.email || '邮箱未设置' }}
         </p>
       </div>
-      <span class="identity-state"><span class="state-dot" aria-hidden="true" />已登录</span>
+      <span class="identity-state">已登录</span>
     </section>
 
     <div class="settings-layout">
@@ -56,7 +55,7 @@
           :aria-current="activeSection === item.id ? 'location' : undefined"
           @click="jumpTo(item.id)"
         >
-          {{ item.no }} / {{ item.label }}
+          {{ item.label }}
         </button>
       </nav>
 
@@ -64,7 +63,6 @@
         <section id="account" class="settings-panel">
           <div class="panel-head">
             <div>
-              <p class="kicker">01 / IDENTITY</p>
               <h2>账号资料</h2>
             </div>
             <span class="panel-note">用户名与角色不可修改</span>
@@ -109,7 +107,6 @@
         <section id="security" class="settings-panel">
           <div class="panel-head">
             <div>
-              <p class="kicker">02 / SECURITY</p>
               <h2>登录安全</h2>
             </div>
             <span class="panel-note">密码修改后当前令牌立即失效</span>
@@ -151,7 +148,6 @@
         <section id="editor" class="settings-panel">
           <div class="panel-head">
             <div>
-              <p class="kicker">03 / EDITOR</p>
               <h2>编辑器偏好</h2>
             </div>
             <span class="panel-note">仅保存在当前浏览器</span>
@@ -197,8 +193,8 @@
 
           <div class="editor-preview">
             <div class="preview-head">
-              <span class="kicker">EDITOR PREVIEW</span>
-              <span class="mono">{{ prefs.fontSize }}px · TAB {{ prefs.tabSize }}{{ prefs.wordWrap ? ' · WRAP' : '' }}</span>
+              <span>编辑器预览</span>
+              <span>{{ prefs.fontSize }}px · 缩进 {{ prefs.tabSize }}{{ prefs.wordWrap ? ' · 自动换行' : '' }}</span>
             </div>
             <pre
               class="preview-code"
@@ -216,7 +212,6 @@
         <section id="local" class="settings-panel panel-quiet">
           <div class="panel-head">
             <div>
-              <p class="kicker">04 / LOCAL</p>
               <h2>本地数据</h2>
             </div>
           </div>
@@ -469,9 +464,9 @@ async function refreshInfo() {
 
 <style scoped>
 .settings-page {
-  max-width: 1180px;
+  max-width: 1120px;
   margin: 0 auto;
-  padding: 48px 32px 80px;
+  padding: 36px 32px 80px;
 }
 
 .settings-head {
@@ -482,22 +477,13 @@ async function refreshInfo() {
   margin-bottom: 24px;
 }
 
-.kicker {
-  margin: 0;
-  color: var(--oj-primary);
-  font-family: var(--oj-font-mono);
-  font-size: 11px;
-  font-weight: 700;
-  letter-spacing: 0.16em;
-}
-
 .settings-head h1 {
-  margin: 8px 0 0;
+  margin: 0;
   color: var(--oj-text);
   font-family: var(--oj-font-display);
-  font-size: clamp(30px, 3.2vw, 42px);
-  font-weight: 800;
-  letter-spacing: -0.035em;
+  font-size: 26px;
+  font-weight: 750;
+  letter-spacing: -0.03em;
 }
 
 .settings-sub {
@@ -529,8 +515,7 @@ async function refreshInfo() {
   margin-bottom: 24px;
   background: var(--oj-card);
   border: 1px solid var(--oj-border);
-  border-radius: var(--oj-radius);
-  box-shadow: var(--oj-shadow-sm);
+  border-radius: 4px;
 }
 
 .avatar-button {
@@ -600,22 +585,9 @@ async function refreshInfo() {
   font-weight: 800;
 }
 
-.role-chip {
-  padding: 2px 8px;
-  color: var(--oj-primary);
-  background: var(--oj-primary-soft);
-  border: 1px solid rgba(40, 85, 255, 0.16);
-  border-radius: var(--oj-radius-pill);
-  font-family: var(--oj-font-mono);
-  font-size: 9px;
-  font-weight: 700;
-  letter-spacing: 0.08em;
-}
-
-.role-chip.admin {
-  color: var(--oj-warning);
-  background: var(--oj-warning-soft);
-  border-color: var(--oj-warning-border);
+.role-text {
+  color: var(--oj-text-weak);
+  font-size: 10.5px;
 }
 
 .identity-meta {
@@ -634,18 +606,9 @@ async function refreshInfo() {
   align-items: center;
   gap: 6px;
   margin-left: auto;
-  color: var(--oj-success);
-  font-family: var(--oj-font-mono);
-  font-size: 11px;
-  font-weight: 700;
+  color: var(--oj-text-sub);
+  font-size: 10.5px;
   white-space: nowrap;
-}
-
-.state-dot {
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background: var(--oj-success);
 }
 
 .settings-layout {
@@ -659,37 +622,29 @@ async function refreshInfo() {
   position: sticky;
   top: 92px;
   display: grid;
-  gap: 2px;
-  padding: 8px 0;
+  gap: 4px;
+  padding: 4px 0;
 }
 
 .settings-nav button {
-  padding: 10px 12px;
+  padding: 9px 0;
   border: 0;
-  border-left: 2px solid transparent;
   background: none;
   text-align: left;
-  font-family: var(--oj-font-mono);
-  font-size: 11px;
-  font-weight: 700;
-  letter-spacing: 0.04em;
+  font-size: 12px;
+  font-weight: 600;
   color: var(--oj-text-sub);
   cursor: pointer;
-  transition:
-    color var(--oj-duration) var(--oj-ease),
-    background var(--oj-duration) var(--oj-ease),
-    border-color var(--oj-duration) var(--oj-ease);
+  transition: color var(--oj-duration) var(--oj-ease);
 }
 
 .settings-nav button:hover {
   color: var(--oj-text);
-  background: var(--oj-gray-50);
 }
 
 .settings-nav button.active {
   color: var(--oj-primary);
-  border-left-color: var(--oj-primary);
-  background: var(--oj-primary-soft);
+  background: none;
 }
 
 .settings-main {
@@ -701,11 +656,10 @@ async function refreshInfo() {
 
 .settings-panel {
   min-width: 0;
-  padding: 26px;
+  padding: 22px;
   background: var(--oj-card);
   border: 1px solid var(--oj-border);
-  border-radius: var(--oj-radius);
-  box-shadow: var(--oj-shadow-sm);
+  border-radius: 4px;
   scroll-margin-top: 92px;
 }
 
@@ -904,10 +858,6 @@ async function refreshInfo() {
   color: var(--oj-code-text-sub);
   border-bottom: 1px solid var(--oj-code-border);
   font-size: 10px;
-}
-
-.preview-head .kicker {
-  color: var(--oj-code-keyword);
 }
 
 .preview-code {

@@ -6,51 +6,31 @@
         <h1 class="page-head-title">排行榜</h1>
         <p class="page-head-sub">按解题数排序，同数者先达成者在前。榜单只记录结果，不记录资历。</p>
       </div>
-      <dl class="honor-totals" aria-label="全站统计">
-        <div class="total">
-          <dt>SOLVERS</dt>
-          <dd>{{ summary.solverCount }}</dd>
-        </div>
-        <div class="total">
-          <dt>MAX AC</dt>
-          <dd>{{ summary.maxAcCount }}</dd>
-        </div>
-        <div class="total">
-          <dt>SUBMISSIONS</dt>
-          <dd>{{ summary.totalSubmit }}</dd>
-        </div>
-        <div class="total">
-          <dt>AC RATE</dt>
-          <dd>{{ summary.overallAcceptRate }}<small>%</small></dd>
-        </div>
-      </dl>
+      <p class="honor-meta" aria-label="全站统计">
+        <span>{{ summary.solverCount }} 位解题者</span>
+        <span>最高 {{ summary.maxAcCount }} 题</span>
+        <span>{{ summary.totalSubmit }} 次提交</span>
+        <span>通过率 {{ summary.overallAcceptRate }}%</span>
+      </p>
     </header>
 
-    <!-- 前三名：轻量领奖台，1 号居中 -->
-    <section v-if="podium.length" class="podium" aria-label="前三名">
-      <div
+    <!-- 前三名：一条横向名单，不做领奖台 -->
+    <section v-if="podium.length" class="top-three" aria-label="前三名">
+      <article
         v-for="entry in podium"
         :key="entry.userId"
-        class="place"
-        :class="`place-${entry.rank}`"
+        class="top-item"
+        :class="`top-${entry.rank}`"
       >
-        <div class="place-top">
-          <span class="place-rank">{{ String(entry.rank).padStart(2, '0') }}</span>
-          <span class="place-tag">TOP {{ entry.rank }}</span>
-        </div>
-        <span class="place-avatar" :style="{ background: avatarColor(entry.userId) }">
+        <span class="top-rank">{{ String(entry.rank).padStart(2, '0') }}</span>
+        <span class="top-avatar" :style="{ background: avatarColor(entry.rank) }">
           <img v-if="entry.avatar" class="avatar-img" :src="entry.avatar" alt="" />
           <template v-else>{{ (entry.username || '?').slice(0, 1).toUpperCase() }}</template>
         </span>
-        <span class="place-name">{{ entry.username || `用户 ${entry.userId}` }}</span>
-        <span class="place-ac">
-          <b>{{ entry.acCount }}</b>
-          <small>AC</small>
-        </span>
-        <span class="place-rate" :class="rateClass(entry.acceptRate)">
-          通过率 {{ entry.acceptRate ?? 0 }}%
-        </span>
-      </div>
+        <span class="top-name">{{ entry.username || `用户 ${entry.userId}` }}</span>
+        <span class="top-rate">{{ entry.acceptRate ?? 0 }}%</span>
+        <span class="top-ac">{{ entry.acCount }}<small>AC</small></span>
+      </article>
     </section>
 
     <section class="roster-card">
@@ -87,7 +67,7 @@
         <el-table-column label="解题者" min-width="210">
           <template #default="{ row }">
             <div class="user-cell">
-              <span class="avatar" :style="{ background: avatarColor(row.userId) }" aria-hidden="true">
+              <span class="avatar" :style="{ background: avatarColor(row.rank) }" aria-hidden="true">
                 <img v-if="row.avatar" class="avatar-img" :src="row.avatar" alt="" />
                 <template v-else>{{ (row.username || '?').slice(0, 1).toUpperCase() }}</template>
               </span>
@@ -103,7 +83,7 @@
               <span class="ac-track" aria-hidden="true">
                 <span
                   class="ac-fill"
-                  :style="{ width: `${maxAc ? Math.round((row.acCount / maxAc) * 100) : 0}%`, background: progressColor(row.rank) }"
+                  :style="{ width: `${maxAc ? Math.round((row.acCount / maxAc) * 100) : 0}%` }"
                 />
               </span>
             </div>
@@ -180,14 +160,6 @@ function reload() {
   load()
 }
 
-/** 前三名用金/银/铜，其余用品牌蓝 */
-function progressColor(rank: number) {
-  if (rank === 1) return 'var(--oj-gold)'
-  if (rank === 2) return 'var(--oj-silver)'
-  if (rank === 3) return 'var(--oj-bronze)'
-  return 'var(--oj-primary)'
-}
-
 /** 通过率分级配色：>=60 绿、>=30 橙、否则红 */
 function rateClass(rate?: number) {
   const r = rate ?? 0
@@ -196,17 +168,9 @@ function rateClass(rate?: number) {
   return 'low'
 }
 
-/** 稳定取色的头像底色：统一深灰蓝，不做彩虹拼盘 */
-const AVATAR_COLORS = [
-  'var(--oj-gray-700)',
-  'var(--oj-gray-800)',
-  'var(--oj-gray-900)',
-  'var(--oj-primary)',
-  'var(--oj-bronze)',
-  'var(--oj-silver)',
-]
-function avatarColor(userId: number) {
-  return AVATAR_COLORS[Math.abs(userId) % AVATAR_COLORS.length]
+/** 只给第一名一点颜色，其余统一石墨色，避免彩色头像拼盘 */
+function avatarColor(rank: number) {
+  return rank === 1 ? 'var(--oj-primary)' : 'var(--oj-gray-700)'
 }
 
 function rankRowClass({ row }: { row: LeaderboardItem }) {
@@ -218,176 +182,98 @@ onMounted(load)
 
 <style scoped>
 .leaderboard-page {
-  max-width: 1200px;
+  max-width: 1120px;
   margin: 0 auto;
-  padding: 44px 32px 64px;
+  padding: 36px 32px 64px;
 }
 
 .honor-head {
   align-items: flex-end;
 }
-.honor-totals {
+.honor-meta {
   display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 0;
   margin: 0;
-  padding: 0;
-  flex-shrink: 0;
-}
-.total {
-  padding: 0 20px;
-  border-left: 1px solid var(--oj-border);
-  text-align: right;
-}
-.total:last-child {
-  padding-right: 0;
-}
-.total dt {
-  font-family: var(--oj-font-mono);
-  font-size: 8.5px;
-  letter-spacing: 0.1em;
+  padding-bottom: 2px;
+  font-size: 10.5px;
   color: var(--oj-text-weak);
 }
-.total dd {
-  margin: 5px 0 0;
-  font-family: var(--oj-font-mono);
-  font-size: 25px;
-  line-height: 1;
-  font-weight: 600;
-  letter-spacing: -0.04em;
-}
-.total dd small {
-  font-size: 11px;
-  color: var(--oj-text-sub);
-}
-
-/* ---------- 前三名 ---------- */
-.podium {
-  display: grid;
-  grid-template-areas: 'second first third';
-  grid-template-columns: 1fr 1.24fr 1fr;
-  gap: 14px;
-  margin: 30px 0 24px;
-  align-items: end;
-}
-.place {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 7px;
-  padding: 18px 18px 18px;
-  background: var(--oj-card);
-  border: 1px solid var(--oj-border);
-  border-top: 3px solid var(--oj-border-strong);
-  border-radius: 10px;
-  box-shadow: var(--oj-shadow-sm);
-}
-.place-1 {
-  grid-area: first;
-  padding-top: 24px;
-  padding-bottom: 22px;
-  border-top-color: var(--oj-primary);
-  box-shadow: 0 14px 30px -24px rgba(16, 24, 40, 0.28);
-}
-.place-2 {
-  grid-area: second;
-  border-top-color: var(--oj-silver);
-}
-.place-3 {
-  grid-area: third;
-  border-top-color: var(--oj-bronze);
-}
-.place-top {
-  width: 100%;
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-}
-.place-rank {
-  font-family: var(--oj-font-mono);
-  font-size: 38px;
-  font-weight: 600;
-  line-height: 0.9;
-  letter-spacing: -0.06em;
+.honor-meta span + span::before {
+  content: '·';
+  margin: 0 8px;
   color: var(--oj-gray-300);
 }
-.place-1 .place-rank {
-  font-size: 48px;
-  color: var(--oj-primary);
+
+/* ---------- 前三名：横向名单 ---------- */
+.top-three {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  margin: 18px 0 20px;
+  border-top: 1px solid var(--oj-border);
+  border-bottom: 1px solid var(--oj-border);
 }
-.place-tag {
-  padding: 1px 6px;
-  border: 1px solid var(--oj-border);
-  border-radius: 3px;
-  background: var(--oj-gray-50);
+.top-item {
+  display: grid;
+  grid-template-columns: 24px 30px minmax(0, 1fr) auto auto;
+  gap: 10px;
+  align-items: center;
+  padding: 11px 16px;
+  border-right: 1px solid var(--oj-border);
+}
+.top-item:last-child {
+  border-right: 0;
+}
+.top-rank {
   font-family: var(--oj-font-mono);
-  font-size: 8px;
-  letter-spacing: 0.06em;
+  font-size: 10px;
   color: var(--oj-text-weak);
 }
-.place-1 .place-tag {
+.top-1 .top-rank {
   color: var(--oj-primary);
-  border-color: var(--oj-info-border);
-  background: var(--oj-primary-soft);
+  font-weight: 700;
 }
-.place-avatar {
-  width: 44px;
-  height: 44px;
-  border-radius: 8px;
+.top-avatar {
+  width: 28px;
+  height: 28px;
+  border-radius: 4px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   color: #fff;
-  font-size: 17px;
+  font-size: 11px;
   font-weight: 700;
   overflow: hidden;
-  margin-top: 4px;
-}
-.place-1 .place-avatar {
-  width: 52px;
-  height: 52px;
-  font-size: 20px;
 }
 .avatar-img {
   width: 100%;
   height: 100%;
   object-fit: cover;
 }
-.place-name {
-  max-width: 100%;
-  font-size: 15px;
-  font-weight: 700;
-  letter-spacing: -0.02em;
+.top-name {
+  min-width: 0;
+  font-size: 12.5px;
+  font-weight: 600;
   color: var(--oj-text);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
-.place-1 .place-name {
-  font-size: 17px;
-}
-.place-ac {
-  display: flex;
-  align-items: baseline;
-  gap: 3px;
-}
-.place-ac b {
+.top-rate {
   font-family: var(--oj-font-mono);
-  font-size: 28px;
-  line-height: 1;
-  color: var(--oj-text);
-  font-weight: 600;
-  letter-spacing: -0.04em;
-}
-.place-1 .place-ac b {
-  font-size: 34px;
-}
-.place-ac small {
-  font-family: var(--oj-font-mono);
-  font-size: 9px;
+  font-size: 9.5px;
   color: var(--oj-text-weak);
 }
-.place-rate {
-  font-size: 10px;
-  letter-spacing: 0.01em;
+.top-ac {
+  font-family: var(--oj-font-mono);
+  font-size: 12px;
+  color: var(--oj-text);
+}
+.top-ac small {
+  margin-left: 3px;
+  font-size: 8px;
+  color: var(--oj-text-weak);
 }
 .good { color: var(--oj-success); }
 .mid { color: var(--oj-warning); }
@@ -397,8 +283,7 @@ onMounted(load)
 .roster-card {
   background: var(--oj-card);
   border: 1px solid var(--oj-border);
-  border-radius: 10px;
-  box-shadow: var(--oj-shadow-sm);
+  border-radius: 4px;
   overflow: hidden;
 }
 .roster-head {
@@ -406,14 +291,14 @@ onMounted(load)
   align-items: flex-end;
   justify-content: space-between;
   gap: 20px;
-  padding: 16px 18px 13px;
+  padding: 13px 16px 12px;
   border-bottom: 1px solid var(--oj-border);
 }
 .roster-title h2 {
-  margin: 4px 0 0;
-  font-size: 19px;
-  font-weight: 750;
-  letter-spacing: -0.03em;
+  margin: 0;
+  font-size: 16px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
 }
 .roster-tools {
   display: flex;
@@ -421,9 +306,7 @@ onMounted(load)
   gap: 12px;
 }
 .roster-sub {
-  font-family: var(--oj-font-mono);
-  font-size: 8.5px;
-  letter-spacing: 0.05em;
+  font-size: 10.5px;
   color: var(--oj-text-weak);
 }
 
@@ -433,30 +316,25 @@ onMounted(load)
 .roster-table :deep(.el-table__inner-wrapper::before) {
   display: none;
 }
+.roster-table :deep(.el-table__row td) {
+  border-bottom: 1px solid var(--oj-border);
+}
+.roster-table :deep(.el-table__row:last-child td) {
+  border-bottom: 0;
+}
 .rank-mark {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-width: 26px;
-  height: 22px;
-  padding: 0 5px;
-  border-radius: 4px;
-  background: var(--oj-gray-50);
-  border: 1px solid var(--oj-border);
+  display: inline-block;
+  min-width: 22px;
   font-family: var(--oj-font-mono);
-  font-size: 10px;
+  font-size: 10.5px;
   font-weight: 600;
 }
 .mark-1 {
   color: var(--oj-primary);
-  background: var(--oj-primary-soft);
-  border-color: var(--oj-info-border);
 }
-.mark-2 {
-  color: var(--oj-silver);
-}
+.mark-2,
 .mark-3 {
-  color: var(--oj-bronze);
+  color: var(--oj-text-sub);
 }
 .rank-plain {
   font-family: var(--oj-font-mono);
@@ -501,7 +379,7 @@ onMounted(load)
 .ac-track {
   flex: 1;
   max-width: 120px;
-  height: 3px;
+  height: 2px;
   border-radius: 99px;
   background: var(--oj-gray-100);
   overflow: hidden;
@@ -510,6 +388,7 @@ onMounted(load)
   display: block;
   height: 100%;
   border-radius: 99px;
+  background: var(--oj-gray-400);
   transition: width 0.3s var(--oj-ease);
 }
 
@@ -543,32 +422,20 @@ onMounted(load)
   .leaderboard-page {
     padding: 28px 18px 52px;
   }
-  .honor-totals {
+  .honor-meta {
     width: 100%;
-    margin-top: 16px;
-    padding-top: 14px;
-    border-top: 1px solid var(--oj-border);
-    display: grid;
-    grid-template-columns: repeat(4, minmax(0, 1fr));
-    gap: 0;
+    padding-top: 10px;
   }
-  .total {
-    padding: 0 0 0 16px;
-    border-left: 1px solid var(--oj-border);
-    text-align: left;
-  }
-  .total:first-child {
-    padding-left: 0;
-    border-left: 0;
-  }
-  .podium {
-    grid-template-areas: 'first first';
+  .top-three {
     grid-template-columns: 1fr;
-    margin: 24px 0;
+    margin: 16px 0;
   }
-  .place-2,
-  .place-3 {
-    display: none;
+  .top-item {
+    border-right: 0;
+    border-bottom: 1px solid var(--oj-border);
+  }
+  .top-item:last-child {
+    border-bottom: 0;
   }
   .roster-head {
     flex-direction: column;
@@ -577,29 +444,5 @@ onMounted(load)
   .roster-sub {
     display: none;
   }
-}
-@media (max-width: 520px) {
-  .honor-totals {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-  .total {
-    padding: 0 0 10px 14px;
-  }
-  .total:nth-child(n + 3) {
-    padding-top: 10px;
-    border-top: 1px solid var(--oj-border);
-  }
-  .total dd {
-    font-size: 21px;
-  }
-}
-</style>
-
-<style>
-/* 前三名行：只做轻微强调，不刷底色 — 名次由徽章承担 */
-.el-table .top-row-1 td,
-.el-table .top-row-2 td,
-.el-table .top-row-3 td {
-  font-weight: 500;
 }
 </style>

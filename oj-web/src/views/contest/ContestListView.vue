@@ -8,16 +8,16 @@
       </div>
       <dl class="season" aria-label="赛季统计">
         <div class="season-item">
-          <dt>LIVE</dt>
+          <dt>进行中</dt>
           <dd>{{ runningCount }}</dd>
         </div>
         <div class="season-item">
-          <dt>UPCOMING</dt>
+          <dt>未开始</dt>
           <dd>{{ upcomingCount }}</dd>
         </div>
         <div class="season-note">
-          <span>ACM</span>
-          <span>PENALTY</span>
+          <span>ACM 赛制</span>
+          <span>按罚时排序</span>
         </div>
       </dl>
     </header>
@@ -27,9 +27,8 @@
       <router-link v-for="c in liveContests" :key="c.id" :to="`/contests/${c.id}`" class="live-poster">
         <div class="poster-left">
           <div class="poster-status">
-            <span class="live-dot" aria-hidden="true" />
-            <span>LIVE</span>
-            <span class="poster-no">CONTEST #{{ String(c.id).padStart(3, '0') }}</span>
+            <span class="poster-live">进行中</span>
+            <span class="poster-no">#{{ String(c.id).padStart(3, '0') }}</span>
           </div>
           <h2 class="poster-title">{{ c.title }}</h2>
           <p class="poster-desc">{{ c.description || '暂无说明' }}</p>
@@ -40,12 +39,12 @@
             <span class="dot" aria-hidden="true">·</span>
             <span>{{ c.problemCount }} 道题</span>
           </div>
-          <span class="poster-cta">进入竞赛 <span aria-hidden="true">→</span></span>
+          <span class="poster-cta">进入竞赛</span>
         </div>
         <div class="poster-right">
-          <span class="countdown-label">TIME REMAINING</span>
+          <span class="countdown-label">剩余时间</span>
           <span class="countdown-value serif-num">{{ countdownOf(c) }}</span>
-          <span class="countdown-note">秒级刷新 · 罚时以提交时间计</span>
+          <span class="countdown-note">秒级刷新 · 罚时按提交时间计算</span>
         </div>
       </router-link>
     </template>
@@ -97,9 +96,6 @@
           <template v-if="c.status === 0">{{ countdownOf(c) }} 后开始</template>
           <template v-else>已结束</template>
         </span>
-        <svg class="row-arrow" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-          <path d="M5 12 L19 12 M13 6 L19 12 L13 18" />
-        </svg>
       </router-link>
 
       <el-empty v-if="!filteredOthers.length" description="该分类下暂无竞赛" :image-size="64" />
@@ -182,9 +178,9 @@ onUnmounted(() => {
 
 <style scoped>
 .programme {
-  max-width: 1200px;
+  max-width: 1120px;
   margin: 0 auto;
-  padding: 44px 32px 64px;
+  padding: 36px 32px 64px;
 }
 
 .programme-head {
@@ -198,20 +194,18 @@ onUnmounted(() => {
   flex-shrink: 0;
 }
 .season-item {
-  padding: 0 22px;
+  padding: 0 20px;
   border-left: 1px solid var(--oj-border);
   text-align: right;
 }
 .season-item dt {
-  font-family: var(--oj-font-mono);
-  font-size: 8.5px;
-  letter-spacing: 0.1em;
+  font-size: 10.5px;
   color: var(--oj-text-weak);
 }
 .season-item dd {
-  margin: 5px 0 0;
+  margin: 4px 0 0;
   font-family: var(--oj-font-mono);
-  font-size: 24px;
+  font-size: 22px;
   font-weight: 600;
   line-height: 1;
 }
@@ -219,11 +213,9 @@ onUnmounted(() => {
   display: flex;
   flex-direction: column;
   justify-content: center;
-  padding-left: 18px;
+  padding-left: 16px;
   border-left: 1px solid var(--oj-border);
-  font-family: var(--oj-font-mono);
-  font-size: 8.5px;
-  letter-spacing: 0.12em;
+  font-size: 10.5px;
   line-height: 1.9;
   color: var(--oj-text-weak);
 }
@@ -235,15 +227,14 @@ onUnmounted(() => {
   background: var(--oj-code-bg);
   color: #fff;
   border: 1px solid #1f2937;
-  border-radius: 10px;
+  border-radius: 4px;
   margin-bottom: 16px;
   overflow: hidden;
-  box-shadow: 0 16px 34px -30px rgba(16, 24, 40, 0.65);
-  transition: border-color var(--oj-duration) var(--oj-ease), transform var(--oj-duration) var(--oj-ease);
+  box-shadow: none;
+  transition: border-color var(--oj-duration) var(--oj-ease);
 }
 .live-poster:hover {
   border-color: var(--oj-primary);
-  transform: translateY(-1px);
 }
 .poster-left {
   padding: 26px 28px 24px;
@@ -252,27 +243,17 @@ onUnmounted(() => {
 .poster-status {
   display: flex;
   align-items: center;
-  gap: 8px;
-  font-family: var(--oj-font-mono);
-  font-size: 9px;
-  letter-spacing: 0.14em;
+  gap: 10px;
+  font-size: 10.5px;
   color: #98a2b3;
 }
-.live-dot {
-  width: 5px;
-  height: 5px;
-  border-radius: 50%;
-  background: #22c55e;
-  box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.16);
-  animation: pulse 2s infinite;
-}
-@keyframes pulse {
-  0% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.28); }
-  70% { box-shadow: 0 0 0 7px rgba(34, 197, 94, 0); }
-  100% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0); }
+.poster-live {
+  color: #57d9a3;
+  font-weight: 600;
 }
 .poster-no {
   margin-left: auto;
+  font-family: var(--oj-font-mono);
   color: #667085;
 }
 .poster-title {
@@ -363,23 +344,21 @@ onUnmounted(() => {
   padding: 48px 24px;
   background: var(--oj-card);
   border: 1px solid var(--oj-border);
-  border-radius: 10px;
-  box-shadow: var(--oj-shadow-sm);
+  border-radius: 4px;
 }
 .schedule-card {
   margin-top: 18px;
   background: var(--oj-card);
   border: 1px solid var(--oj-border);
-  border-radius: 10px;
-  box-shadow: var(--oj-shadow-sm);
+  border-radius: 4px;
   overflow: hidden;
 }
 .schedule-head {
   display: flex;
-  align-items: flex-end;
+  align-items: center;
   justify-content: space-between;
   gap: 16px;
-  padding: 16px 18px 13px;
+  padding: 13px 16px;
   border-bottom: 1px solid var(--oj-border);
 }
 .schedule-title {
@@ -389,57 +368,50 @@ onUnmounted(() => {
 }
 .schedule-title h2 {
   margin: 0;
-  font-size: 18px;
-  font-weight: 750;
-  letter-spacing: -0.03em;
+  font-size: 16px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
 }
 .filters {
   display: flex;
-  gap: 3px;
-  padding: 3px;
-  background: var(--oj-gray-100);
-  border-radius: 7px;
+  gap: 16px;
 }
 .filter-btn {
-  padding: 5px 11px;
+  padding: 4px 0;
   border: 0;
-  border-radius: 5px;
+  border-bottom: 1px solid transparent;
   background: transparent;
   color: var(--oj-text-sub);
   font-family: inherit;
-  font-size: 11px;
+  font-size: 11.5px;
   cursor: pointer;
-  transition: all var(--oj-duration) var(--oj-ease);
+  transition: color var(--oj-duration) var(--oj-ease), border-color var(--oj-duration) var(--oj-ease);
 }
 .filter-btn:hover {
   color: var(--oj-text);
 }
 .filter-btn.active {
-  background: var(--oj-card);
-  color: var(--oj-primary);
+  border-bottom-color: var(--oj-text);
+  color: var(--oj-text);
   font-weight: 600;
-  box-shadow: 0 1px 3px rgba(16, 24, 40, 0.08);
 }
 
 .schedule-cols {
   display: grid;
-  grid-template-columns: 72px 84px minmax(0, 1fr) 72px 176px 22px;
+  grid-template-columns: 72px 76px minmax(0, 1fr) 60px 166px;
   gap: 18px;
   align-items: center;
-  padding: 8px 18px 7px;
+  padding: 8px 16px 7px;
   border-bottom: 1px solid var(--oj-border);
-  background: var(--oj-gray-50);
-  font-family: var(--oj-font-mono);
-  font-size: 8.5px;
-  letter-spacing: 0.08em;
+  font-size: 10px;
   color: var(--oj-text-weak);
 }
 .schedule-row {
   display: grid;
-  grid-template-columns: 72px 84px minmax(0, 1fr) 72px 176px 22px;
+  grid-template-columns: 72px 76px minmax(0, 1fr) 60px 166px;
   gap: 18px;
   align-items: center;
-  padding: 12px 18px;
+  padding: 11px 16px;
   border-bottom: 1px solid var(--oj-border);
   transition: background var(--oj-duration) var(--oj-ease);
 }
@@ -467,18 +439,14 @@ onUnmounted(() => {
   color: var(--oj-text-weak);
 }
 .row-status {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
   width: max-content;
-  padding: 3px 8px;
-  border-radius: 99px;
-  font-size: 10px;
-  letter-spacing: 0.01em;
+  font-size: 10.5px;
+  color: var(--oj-text-sub);
 }
-.st-0 { color: var(--oj-primary); background: #eef2ff; }
-.st-1 { color: var(--oj-success); background: #e7f7f1; }
-.st-2 { color: var(--oj-text-sub); background: var(--oj-gray-100); }
+.st-0 { color: var(--oj-primary); }
+.st-1 { color: var(--oj-success); }
+.st-2 { color: var(--oj-text-weak); }
+.st-2 { color: var(--oj-text-weak); }
 .row-main {
   min-width: 0;
 }
@@ -510,14 +478,6 @@ onUnmounted(() => {
   text-align: right;
   white-space: nowrap;
 }
-.row-arrow {
-  color: var(--oj-text-weak);
-  transition: color var(--oj-duration) var(--oj-ease), transform var(--oj-duration) var(--oj-ease);
-}
-.schedule-row:hover .row-arrow {
-  color: var(--oj-primary);
-  transform: translateX(2px);
-}
 
 @media (max-width: 980px) {
   .live-poster {
@@ -534,7 +494,7 @@ onUnmounted(() => {
     display: none;
   }
   .schedule-row {
-    grid-template-columns: 64px 80px minmax(0, 1fr) 22px;
+    grid-template-columns: 64px 76px minmax(0, 1fr);
     gap: 12px;
   }
   .row-count,
@@ -565,7 +525,7 @@ onUnmounted(() => {
     align-items: flex-start;
   }
   .schedule-row {
-    grid-template-columns: 56px minmax(0, 1fr) 22px;
+    grid-template-columns: 56px minmax(0, 1fr);
   }
   .row-status {
     display: none;

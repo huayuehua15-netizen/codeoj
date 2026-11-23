@@ -2,16 +2,9 @@
   <div class="result-page" v-loading="loading">
     <template v-if="detail">
       <!-- 判定概览：状态、提交信息、关键读数 -->
-      <header class="result-card" :class="verdictTone">
+      <header class="result-card">
         <div class="result-main">
-          <div class="result-kicker">
-            <span class="kicker">JUDGEMENT</span>
-            <span class="folio">SUBMISSION #{{ String(detail.id).padStart(5, '0') }}</span>
-          </div>
           <div class="result-title-row">
-            <span class="result-icon" :style="{ color: statusColor(detail.status), borderColor: statusColor(detail.status) }" aria-hidden="true">
-              {{ statusGlyph }}
-            </span>
             <h1 class="result-label" :style="{ color: statusColor(detail.status) }">{{ statusLabel(detail.status) }}</h1>
           </div>
           <p class="result-sub">
@@ -21,7 +14,6 @@
           </p>
           <router-link :to="`/problems/${detail.problemId}`" class="result-problem">
             {{ detail.problemTitle || `题目 ${detail.problemId}` }}
-            <span aria-hidden="true">→</span>
           </router-link>
         </div>
 
@@ -47,7 +39,7 @@
 
       <!-- 编译/运行错误信息 -->
       <div v-if="detail.errorInfo" class="error-banner" role="alert">
-        <p class="error-title">COMPILE / RUNTIME OUTPUT</p>
+        <p class="error-title">编译 / 运行输出</p>
         <pre class="error-text">{{ detail.errorInfo }}</pre>
       </div>
 
@@ -55,7 +47,6 @@
       <section v-if="caseTotal != null || executedCount > 0" class="case-card">
         <div class="card-head">
           <div>
-            <p class="kicker">TEST CASES</p>
             <h2 class="card-title">用例结果</h2>
             <p class="card-sub">
               通过 <b class="pass-num">{{ passCount }}</b>
@@ -65,11 +56,6 @@
               <span v-if="firstFailedCase" class="first-fail">· 首个未通过 #{{ firstFailedCase.caseIndex }} {{ firstFailedCase.statusDesc }}</span>
             </p>
           </div>
-          <div class="score-figure" aria-label="通过用例比例">
-            <span class="score-num">{{ passCount }}</span>
-            <span class="score-line">/</span>
-            <span class="score-den">{{ caseTotal ?? '—' }}</span>
-          </div>
         </div>
 
         <div class="case-bar" aria-hidden="true">
@@ -78,7 +64,7 @@
 
         <template v-if="executedCount">
           <div class="case-head" aria-hidden="true">
-            <span>CASE</span>
+            <span>用例</span>
             <span>状态</span>
             <span>耗时</span>
             <span>内存</span>
@@ -87,7 +73,6 @@
             <li v-for="row in detail.cases" :key="row.caseIndex" class="case-row">
               <span class="case-no mono">#{{ String(row.caseIndex).padStart(2, '0') }}</span>
               <span class="case-status" :style="{ color: statusColor(row.status) }">
-                <span class="status-dot" :style="{ background: statusColor(row.status) }" aria-hidden="true" />
                 {{ row.statusDesc }}
               </span>
               <span class="mono case-num" :class="{ dim: row.timeUsedMs == null }">{{ formatTimeUsed(row.timeUsedMs) }}</span>
@@ -101,7 +86,6 @@
       <section v-if="canViewCode" class="code-card">
         <div class="card-head code-head">
           <div>
-            <p class="kicker">SOURCE</p>
             <h2 class="card-title">提交代码</h2>
             <p class="card-sub">{{ languageLabel(detail.language) }} · {{ codeLines }} 行</p>
           </div>
@@ -114,12 +98,11 @@
 
       <!-- 他人代码不可见时给出明确说明 -->
       <section v-else class="code-hidden">
-        <span class="lock-badge" aria-hidden="true">PRIVATE</span>
         <span>出于公平性考虑，提交代码仅本人与管理员可见。</span>
       </section>
 
       <div class="foot-actions">
-        <router-link class="foot-link" to="/submissions">← 返回提交记录</router-link>
+        <router-link class="foot-link" to="/submissions">返回提交记录</router-link>
         <el-button type="primary" @click="$router.push(`/problems/${detail.problemId}`)">再做一次</el-button>
       </div>
     </template>
@@ -238,9 +221,9 @@ onMounted(load)
 
 <style scoped>
 .result-page {
-  max-width: 1160px;
+  max-width: 1120px;
   margin: 0 auto;
-  padding: 38px 32px 64px;
+  padding: 36px 32px 64px;
 }
 
 /* ---------- 判定概览 ---------- */
@@ -249,56 +232,21 @@ onMounted(load)
   grid-template-columns: minmax(0, 1fr) 360px;
   gap: 40px;
   align-items: center;
-  padding: 24px 26px;
+  padding: 22px 24px;
   background: var(--oj-card);
   border: 1px solid var(--oj-border);
-  border-radius: 10px;
-  box-shadow: var(--oj-shadow-sm);
-  position: relative;
-  overflow: hidden;
-}
-.result-card::before {
-  content: '';
-  position: absolute;
-  left: 0;
-  top: 0;
-  bottom: 0;
-  width: 3px;
-  background: var(--oj-gray-300);
-}
-.result-card.tone-ok::before { background: var(--oj-success); }
-.result-card.tone-warn::before { background: var(--oj-warning); }
-.result-card.tone-bad::before { background: var(--oj-danger); }
-.result-kicker {
-  display: flex;
-  align-items: baseline;
-  gap: 10px;
+  border-radius: 4px;
 }
 .result-title-row {
   display: flex;
   align-items: center;
-  gap: 14px;
-  margin-top: 12px;
-}
-.result-icon {
-  width: 42px;
-  height: 42px;
-  flex-shrink: 0;
-  border: 1px solid;
-  border-radius: 50%;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  font-family: var(--oj-font-mono);
-  font-size: 17px;
-  font-weight: 700;
 }
 .result-label {
   margin: 0;
   font-family: var(--oj-font-display);
-  font-size: 38px;
+  font-size: 32px;
   font-weight: 800;
-  line-height: 1.08;
+  line-height: 1.1;
   letter-spacing: -0.03em;
 }
 .result-sub {
@@ -364,15 +312,13 @@ onMounted(load)
   margin-top: 18px;
   padding: 14px 16px;
   border: 1px solid var(--oj-danger-border);
-  border-left: 3px solid var(--oj-danger);
-  border-radius: 7px;
+  border-radius: 4px;
   background: var(--oj-danger-soft);
 }
 .error-title {
   margin: 0 0 8px;
-  font-family: var(--oj-font-mono);
-  font-size: 8.5px;
-  letter-spacing: 0.1em;
+  font-size: 11px;
+  font-weight: 600;
   color: var(--oj-danger);
 }
 .error-text {
@@ -390,8 +336,7 @@ onMounted(load)
   margin-top: 18px;
   background: var(--oj-card);
   border: 1px solid var(--oj-border);
-  border-radius: 10px;
-  box-shadow: var(--oj-shadow-sm);
+  border-radius: 4px;
   overflow: hidden;
 }
 .card-head {
@@ -421,30 +366,6 @@ onMounted(load)
 .first-fail {
   color: var(--oj-danger);
 }
-.score-figure {
-  display: flex;
-  align-items: baseline;
-  gap: 5px;
-  flex-shrink: 0;
-}
-.score-num {
-  font-family: var(--oj-font-mono);
-  font-size: 34px;
-  line-height: 1;
-  font-weight: 600;
-  color: var(--oj-success);
-}
-.score-line {
-  font-size: 17px;
-  color: var(--oj-gray-300);
-}
-.score-den {
-  font-family: var(--oj-font-mono);
-  font-size: 18px;
-  line-height: 1;
-  color: var(--oj-text-sub);
-}
-
 .case-bar {
   height: 3px;
   background: var(--oj-gray-100);
@@ -471,9 +392,7 @@ onMounted(load)
   height: 32px;
   background: var(--oj-gray-50);
   border-bottom: 1px solid var(--oj-border);
-  font-family: var(--oj-font-mono);
-  font-size: 8.5px;
-  letter-spacing: 0.09em;
+  font-size: 10px;
   color: var(--oj-text-weak);
 }
 .case-head span:nth-child(3),
@@ -499,15 +418,8 @@ onMounted(load)
 .case-status {
   display: inline-flex;
   align-items: center;
-  gap: 7px;
   font-size: 11.5px;
   font-weight: 600;
-}
-.status-dot {
-  width: 5px;
-  height: 5px;
-  border-radius: 50%;
-  flex-shrink: 0;
 }
 .case-num {
   font-size: 10px;
@@ -523,8 +435,7 @@ onMounted(load)
   margin-top: 18px;
   background: var(--oj-card);
   border: 1px solid var(--oj-border);
-  border-radius: 10px;
-  box-shadow: var(--oj-shadow-sm);
+  border-radius: 4px;
   overflow: hidden;
 }
 .code-head {
@@ -554,24 +465,10 @@ onMounted(load)
   margin-top: 18px;
   padding: 15px 16px;
   border: 1px dashed var(--oj-border-strong);
-  border-radius: 8px;
+  border-radius: 4px;
   background: var(--oj-gray-50);
   color: var(--oj-text-sub);
   font-size: 12px;
-}
-.lock-badge {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  padding: 2px 7px;
-  border: 1px solid var(--oj-border-strong);
-  border-radius: 3px;
-  background: var(--oj-card);
-  font-family: var(--oj-font-mono);
-  font-size: 8px;
-  letter-spacing: 0.08em;
-  color: var(--oj-text-sub);
-  flex-shrink: 0;
 }
 
 .foot-actions {

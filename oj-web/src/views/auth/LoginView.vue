@@ -24,7 +24,7 @@
         登 录
       </el-button>
       <p class="auth-links">
-        还没有账号？<router-link to="/register">立即注册 →</router-link>
+        还没有账号？<router-link to="/register">立即注册</router-link>
       </p>
     </el-form>
   </AuthShell>

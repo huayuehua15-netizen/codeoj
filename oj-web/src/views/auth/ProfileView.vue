@@ -2,11 +2,6 @@
   <div class="dossier">
     <!-- 个人概览：身份、签名、摘要数据 -->
     <header class="dossier-head">
-      <div class="dossier-label-row">
-        <span class="kicker">PROFILE</span>
-        <span class="folio">ID #{{ String(info?.userId ?? userStore.userId ?? 0).padStart(4, '0') }}</span>
-      </div>
-
       <div class="dossier-id">
         <button
           class="avatar-box"
@@ -36,9 +31,7 @@
         <div class="id-main">
           <div class="name-row">
             <h1 class="name">{{ userStore.username }}</h1>
-            <span class="role-chip" :class="{ admin: userStore.isAdmin }">
-              {{ userStore.isAdmin ? 'ADMIN' : 'USER' }}
-            </span>
+            <span class="role-text">{{ userStore.isAdmin ? '教师' : '学生' }}</span>
           </div>
 
           <div v-if="!sigEditing" class="sig-row">
@@ -63,7 +56,7 @@
           </div>
 
           <div class="meta mono">
-            <span>UID {{ info?.userId ?? userStore.userId }}</span>
+            <span>ID {{ info?.userId ?? userStore.userId }}</span>
             <span class="dot" aria-hidden="true">·</span>
             <span>{{ formatDateTime(info?.createdAt) || '—' }} 注册</span>
             <span class="dot" aria-hidden="true">·</span>
@@ -97,7 +90,6 @@
         <!-- 热力图 -->
         <section class="panel">
           <div class="panel-head">
-            <span class="panel-kicker">ACTIVITY</span>
             <h2 class="panel-title">刷题热力图</h2>
             <p class="panel-meta">
               近 26 周共 <b>{{ grid?.totalInRange ?? 0 }}</b> 次提交 · 活跃 <b>{{ grid?.activeDays ?? 0 }}</b> 天
@@ -145,13 +137,11 @@
         <!-- 最近动态 -->
         <section class="panel">
           <div class="panel-head">
-            <span class="panel-kicker">RECENT</span>
             <h2 class="panel-title">最近动态</h2>
-            <router-link class="panel-link" to="/submissions">全部记录 →</router-link>
+            <router-link class="panel-link" to="/submissions">全部记录</router-link>
           </div>
           <ul v-if="recent.length" class="activity-list">
             <li v-for="item in recent" :key="item.id" class="activity-row">
-              <span class="status-dot" :style="{ background: statusColor(item.status) }" :title="statusLabel(item.status)" />
               <div class="activity-main">
                 <router-link class="act-problem" :to="`/submissions/${item.id}`">
                   {{ item.problemTitle || `#${item.problemId}` }}
@@ -170,7 +160,6 @@
         <!-- 收藏 -->
         <section class="panel">
           <div class="panel-head">
-            <span class="panel-kicker">BOOKMARKS</span>
             <h2 class="panel-title">我的收藏</h2>
             <p class="panel-meta">标记为稍后练习的题目</p>
           </div>
@@ -205,9 +194,8 @@
         <!-- 解题进度 -->
         <section class="panel panel-compact">
           <div class="panel-head">
-            <span class="panel-kicker">PROGRESS</span>
             <h2 class="panel-title">解题进度</h2>
-            <router-link class="panel-link" to="/statistics">统计 →</router-link>
+            <router-link class="panel-link" to="/statistics">统计</router-link>
           </div>
           <div class="diff-list">
             <div v-for="d in difficultyRows" :key="d.difficulty" class="diff-row">
@@ -225,7 +213,6 @@
         <!-- 语言分布 -->
         <section class="panel panel-compact">
           <div class="panel-head">
-            <span class="panel-kicker">LANGUAGES</span>
             <h2 class="panel-title">语言分布</h2>
           </div>
           <div v-if="langDist.length" class="lang-list">
@@ -244,17 +231,13 @@
         <section class="panel panel-compact panel-box settings-entry">
           <div class="panel-head">
             <div>
-              <span class="panel-kicker">SETTINGS</span>
               <h2 class="panel-title">账号设置</h2>
             </div>
           </div>
           <p class="settings-copy">
             邮箱、密码、头像与编辑器偏好集中管理。修改密码后当前登录状态会失效。
           </p>
-          <router-link class="settings-link" to="/settings">
-            打开账号设置
-            <span aria-hidden="true">→</span>
-          </router-link>
+          <router-link class="settings-link" to="/settings">打开账号设置</router-link>
         </section>
       </aside>
     </div>
@@ -419,9 +402,9 @@ async function onAvatarFile(e: Event) {
 
 <style scoped>
 .dossier {
-  max-width: 1200px;
+  max-width: 1120px;
   margin: 0 auto;
-  padding: 44px 32px 64px;
+  padding: 36px 32px 64px;
 }
 
 /* ---------- 个人概览 ---------- */
@@ -429,19 +412,12 @@ async function onAvatarFile(e: Event) {
   padding: 20px 22px 0;
   background: var(--oj-card);
   border: 1px solid var(--oj-border);
-  border-radius: 10px;
-  box-shadow: var(--oj-shadow-sm);
-}
-.dossier-label-row {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
+  border-radius: 4px;
 }
 .dossier-id {
   display: flex;
   align-items: flex-start;
   gap: 18px;
-  margin-top: 16px;
 }
 .avatar-box {
   position: relative;
@@ -505,24 +481,15 @@ async function onAvatarFile(e: Event) {
 }
 .name {
   margin: 0;
-  font-size: 30px;
+  font-size: 26px;
   font-weight: 750;
   line-height: 1.2;
-  letter-spacing: -0.04em;
+  letter-spacing: -0.035em;
   color: var(--oj-text);
 }
-.role-chip {
-  padding: 2px 6px;
-  border-radius: 4px;
-  background: var(--oj-gray-100);
-  font-family: var(--oj-font-mono);
-  font-size: 8px;
-  letter-spacing: 0.06em;
-  color: var(--oj-text-sub);
-}
-.role-chip.admin {
-  color: var(--oj-primary);
-  background: var(--oj-primary-soft);
+.role-text {
+  font-size: 11px;
+  color: var(--oj-text-weak);
 }
 
 .sig-row {
@@ -534,7 +501,6 @@ async function onAvatarFile(e: Event) {
 }
 .sig-text {
   margin: 0;
-  flex: 1;
   min-width: 0;
   font-size: 12px;
   line-height: 1.7;
@@ -581,15 +547,13 @@ async function onAvatarFile(e: Event) {
   border-right: 0;
 }
 .summary-cell dt {
-  font-family: var(--oj-font-mono);
-  font-size: 8px;
-  letter-spacing: 0.08em;
+  font-size: 9.5px;
   color: var(--oj-text-weak);
 }
 .summary-cell dd {
   margin: 5px 0 0;
   font-family: var(--oj-font-mono);
-  font-size: 28px;
+  font-size: 22px;
   font-weight: 600;
   line-height: 1;
   color: var(--oj-text);
@@ -624,8 +588,7 @@ async function onAvatarFile(e: Event) {
   margin-bottom: 16px;
   background: var(--oj-card);
   border: 1px solid var(--oj-border);
-  border-radius: 10px;
-  box-shadow: var(--oj-shadow-sm);
+  border-radius: 4px;
 }
 .main-col .panel:last-child {
   margin-bottom: 0;
@@ -646,12 +609,6 @@ async function onAvatarFile(e: Event) {
   padding-bottom: 9px;
   margin-bottom: 12px;
   border-bottom: 1px solid var(--oj-border);
-}
-.panel-kicker {
-  font-family: var(--oj-font-mono);
-  font-size: 8px;
-  letter-spacing: 0.08em;
-  color: var(--oj-text-weak);
 }
 .panel-title {
   margin: 0;
@@ -781,12 +738,6 @@ async function onAvatarFile(e: Event) {
 }
 .activity-list li:last-child .activity-row {
   border-bottom: 0;
-}
-.status-dot {
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  flex-shrink: 0;
 }
 .activity-main {
   flex: 1;
@@ -918,7 +869,6 @@ async function onAvatarFile(e: Event) {
 .settings-entry .settings-link {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
   color: var(--oj-primary);
   font-size: 11.5px;
   font-weight: 700;

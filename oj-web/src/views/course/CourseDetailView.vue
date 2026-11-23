@@ -1,9 +1,6 @@
 <template>
   <div class="course-detail-page">
     <router-link to="/courses" class="back-link">
-      <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-        <path d="M19 12H5M11 6l-6 6 6 6" />
-      </svg>
       班级作业
     </router-link>
 
@@ -11,10 +8,6 @@
       <template v-if="course">
         <header class="course-head">
           <div class="head-main">
-            <div class="head-kicker">
-              <span class="kicker">ASSIGNMENT</span>
-              <span class="course-no mono">#{{ String(course.id).padStart(3, '0') }}</span>
-            </div>
             <h1 class="course-title">{{ course.name }}</h1>
             <p v-if="course.description" class="course-desc">{{ course.description }}</p>
             <div class="head-meta">
@@ -43,19 +36,19 @@
           </div>
           <dl class="progress-stats">
             <div>
-              <dt>SOLVED</dt>
+              <dt>已解</dt>
               <dd>{{ course.solvedCount }}<small>/{{ course.problemCount }}</small></dd>
             </div>
             <div>
-              <dt>ON TIME</dt>
+              <dt>按时</dt>
               <dd>{{ course.onTimeSolvedCount }}<small>题</small></dd>
             </div>
             <div>
-              <dt>SUBMITS</dt>
+              <dt>提交</dt>
               <dd>{{ course.submitCount }}<small>次</small></dd>
             </div>
             <div>
-              <dt>LAST ACTIVE</dt>
+              <dt>最近提交</dt>
               <dd class="small">{{ course.lastSubmitAt ? relativeTime(course.lastSubmitAt) : '暂无' }}</dd>
             </div>
           </dl>
@@ -64,15 +57,11 @@
         <section class="problem-panel" aria-labelledby="problem-set-title">
           <header class="panel-head">
             <div>
-              <p class="kicker">PROBLEM SET</p>
               <h2 id="problem-set-title">作业题目</h2>
               <p class="panel-sub">按教师安排的顺序完成；截止后的通过会标记为迟交，但仍保留记录。</p>
             </div>
             <el-button type="primary" :disabled="!course.problems.length" @click="goNext">
               {{ nextLabel }}
-              <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                <path d="M5 12h14M13 6l6 6-6 6" />
-              </svg>
             </el-button>
           </header>
 
@@ -83,7 +72,7 @@
               class="problem-row"
               :class="`row-${problem.status}`"
             >
-              <span class="row-index mono">{{ String(index + 1).padStart(2, '0') }}</span>
+              <span class="row-index mono">{{ index + 1 }}</span>
               <div class="row-main">
                 <router-link :to="`/problems/${problem.problemId}?course=${course.id}`" class="row-title">
                   {{ problem.title }}
@@ -98,7 +87,6 @@
 
               <div class="row-status">
                 <span class="status-badge" :class="`badge-${problem.status}`">
-                  <i aria-hidden="true" />
                   {{ statusLabel(problem.status) }}
                 </span>
                 <span v-if="problem.status === 'ac' && problem.onTime === false" class="late-tag">迟交</span>
@@ -321,7 +309,7 @@ async function onLeave() {
 
 <style scoped>
 .course-detail-page {
-  max-width: 1180px;
+  max-width: 1120px;
   margin: 0 auto;
   padding: 34px 32px 64px;
 }
@@ -362,11 +350,11 @@ async function onLeave() {
   letter-spacing: 0.04em;
 }
 .course-title {
-  margin: 7px 0 0;
-  font-size: 30px;
-  font-weight: 780;
-  letter-spacing: -0.045em;
-  line-height: 1.2;
+  margin: 0;
+  font-size: 26px;
+  font-weight: 750;
+  letter-spacing: -0.035em;
+  line-height: 1.25;
   color: var(--oj-text);
 }
 .course-desc {
@@ -390,25 +378,21 @@ async function onLeave() {
   flex-shrink: 0;
   padding: 14px 16px;
   border: 1px solid var(--oj-border);
-  border-radius: var(--oj-radius);
+  border-radius: 4px;
   background: var(--oj-card);
 }
 .deadline-card.deadline-running {
   border-color: var(--oj-info-border);
-  background: var(--oj-primary-soft);
 }
 .deadline-card.deadline-urgent {
   border-color: var(--oj-warning-border);
-  background: var(--oj-warning-soft);
 }
 .deadline-card.deadline-ended {
   background: var(--oj-gray-50);
 }
 .deadline-label {
   margin: 0;
-  font-family: var(--oj-font-mono);
-  font-size: 9px;
-  letter-spacing: 0.1em;
+  font-size: 10px;
   color: var(--oj-text-sub);
 }
 .deadline-value {
@@ -431,11 +415,10 @@ async function onLeave() {
   justify-content: space-between;
   gap: 32px;
   margin-top: 20px;
-  padding: 20px 24px;
+  padding: 18px 20px;
   background: var(--oj-card);
   border: 1px solid var(--oj-border);
-  border-radius: var(--oj-radius);
-  box-shadow: var(--oj-shadow-sm);
+  border-radius: 4px;
 }
 .progress-main {
   flex: 1;
@@ -454,10 +437,9 @@ async function onLeave() {
 }
 .progress-track {
   overflow: hidden;
-  height: 6px;
+  height: 4px;
   margin-top: 9px;
   background: var(--oj-gray-100);
-  border-radius: 3px;
 }
 .progress-track span {
   display: block;
@@ -490,15 +472,13 @@ async function onLeave() {
   padding-right: 0;
 }
 .progress-stats dt {
-  font-family: var(--oj-font-mono);
-  font-size: 8px;
-  letter-spacing: 0.08em;
+  font-size: 9.5px;
   color: var(--oj-text-weak);
 }
 .progress-stats dd {
   margin: 5px 0 0;
   font-family: var(--oj-font-mono);
-  font-size: 21px;
+  font-size: 18px;
   line-height: 1;
   font-weight: 600;
   color: var(--oj-text);
@@ -521,8 +501,7 @@ async function onLeave() {
   margin-top: 24px;
   background: var(--oj-card);
   border: 1px solid var(--oj-border);
-  border-radius: var(--oj-radius);
-  box-shadow: var(--oj-shadow-sm);
+  border-radius: 4px;
 }
 .panel-head {
   display: flex;
@@ -533,8 +512,8 @@ async function onLeave() {
   border-bottom: 1px solid var(--oj-border);
 }
 .panel-head h2 {
-  margin: 4px 0 0;
-  font-size: 19px;
+  margin: 0;
+  font-size: 18px;
   font-weight: 750;
   letter-spacing: -0.03em;
 }
@@ -585,25 +564,22 @@ async function onLeave() {
 .row-tags {
   display: flex;
   flex-wrap: wrap;
-  gap: 5px;
+  gap: 8px;
   margin-top: 4px;
 }
 .difficulty,
 .tag {
-  padding: 1px 6px;
-  border-radius: 3px;
-  font-size: 9px;
+  padding: 0;
+  font-size: 9.5px;
   line-height: 1.7;
   color: var(--oj-text-sub);
-  background: var(--oj-gray-100);
+  background: none;
 }
-.diff-1 { color: var(--oj-success); background: var(--oj-success-soft); }
-.diff-2 { color: var(--oj-warning); background: var(--oj-warning-soft); }
-.diff-3 { color: var(--oj-danger); background: var(--oj-danger-soft); }
+.diff-1 { color: var(--oj-success); }
+.diff-2 { color: var(--oj-warning); }
+.diff-3 { color: var(--oj-danger); }
 .tag {
   color: var(--oj-text-weak);
-  background: transparent;
-  border: 1px solid var(--oj-border);
 }
 
 .row-status {
@@ -614,24 +590,13 @@ async function onLeave() {
 .status-badge {
   display: inline-flex;
   align-items: center;
-  gap: 4px;
   font-size: 10.5px;
   font-weight: 600;
 }
-.status-badge i {
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-}
 .badge-ac { color: var(--oj-success); }
-.badge-ac i { background: var(--oj-success); }
 .badge-attempted { color: var(--oj-warning); }
-.badge-attempted i { background: var(--oj-warning); }
 .badge-none { color: var(--oj-text-weak); }
-.badge-none i { background: var(--oj-gray-300); }
 .late-tag {
-  padding: 1px 5px;
-  border-radius: 3px;
   font-size: 9px;
   color: var(--oj-danger);
   background: var(--oj-danger-soft);

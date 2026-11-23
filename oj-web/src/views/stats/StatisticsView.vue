@@ -6,53 +6,19 @@
         <h1 class="page-head-title">学习统计</h1>
         <p class="page-head-sub">难度覆盖、判题状态与七日趋势。数据按全部历史提交统计。</p>
       </div>
-      <dl class="report-meta">
-        <div class="meta-row">
-          <dt>SCOPE</dt>
-          <dd>全部历史提交</dd>
-        </div>
-        <div class="meta-row">
-          <dt>PROBLEMS</dt>
-          <dd class="mono">{{ totalProblems }} 道</dd>
-        </div>
-        <div class="meta-row">
-          <dt>ATTEMPTED</dt>
-          <dd class="mono">{{ stat.attemptedCount }} 道</dd>
-        </div>
-      </dl>
     </header>
 
-    <!-- 摘要：四个读数 -->
-    <section class="summary" aria-label="数据摘要">
-      <div class="summary-item">
-        <span class="summary-label">AC RATE</span>
-        <span class="summary-value serif-num">{{ stat.acceptRate }}<small>%</small></span>
-        <span class="summary-note">通过 {{ stat.totalAccepted }} / 提交 {{ stat.totalSubmit }}</span>
-      </div>
-      <div class="summary-item">
-        <span class="summary-label">SOLVED</span>
-        <span class="summary-value serif-num">{{ stat.solvedCount }}</span>
-        <span class="summary-note">在所有在架题中</span>
-      </div>
-      <div class="summary-item">
-        <span class="summary-label">COVERAGE</span>
-        <span class="summary-value serif-num">{{ coverageRate }}<small>%</small></span>
-        <span class="summary-note">已解 / 全站题数</span>
-      </div>
-      <div class="summary-item">
-        <span class="summary-label">SUBMITS / SOLVE</span>
-        <span class="summary-value serif-num">{{ submitPerSolved }}</span>
-        <span class="summary-note">次提交 / 解决一题</span>
-      </div>
-    </section>
+    <p class="summary-line" aria-label="数据摘要">
+      <span><b>{{ stat.acceptRate }}%</b> 通过率</span>
+      <span><b>{{ stat.solvedCount }}</b> 已解</span>
+      <span><b>{{ coverageRate }}%</b> 覆盖率</span>
+      <span><b>{{ submitPerSolved }}</b> 次提交 / 题</span>
+    </p>
 
     <!-- 01 难度攻克 -->
     <section class="block">
       <div class="block-head">
-        <span class="block-no">01</span>
         <h2 class="block-title">难度覆盖</h2>
-        <span class="block-line" aria-hidden="true"></span>
-        <span class="block-en">DIFFICULTY</span>
       </div>
       <p class="block-hint">进度条表示该难度下已通过的题占该难度在架题总数的比例。</p>
 
@@ -85,10 +51,7 @@
     <div class="chart-grid">
       <section class="block">
         <div class="block-head">
-          <span class="block-no">02</span>
           <h2 class="block-title">判题状态分布</h2>
-          <span class="block-line" aria-hidden="true"></span>
-          <span class="block-en">VERDICTS</span>
         </div>
         <p class="block-hint">WA 多说明逻辑有问题，TLE 多说明复杂度不够。</p>
         <div v-show="stat.byStatus.length" ref="statusChart" class="chart"></div>
@@ -100,10 +63,7 @@
 
       <section class="block">
         <div class="block-head">
-          <span class="block-no">03</span>
           <h2 class="block-title">近 7 天提交趋势</h2>
-          <span class="block-line" aria-hidden="true"></span>
-          <span class="block-en">7 DAYS</span>
         </div>
         <p class="block-hint">柱状为提交数，折线为通过数。</p>
         <div ref="trendChart" class="chart"></div>
@@ -111,10 +71,7 @@
 
       <section class="block">
         <div class="block-head">
-          <span class="block-no">04</span>
           <h2 class="block-title">能力雷达</h2>
-          <span class="block-line" aria-hidden="true"></span>
-          <span class="block-en">RADAR</span>
         </div>
         <p class="block-hint">各难度解题率与总体通过率，面积越满说明覆盖越均衡。</p>
         <div ref="radarChart" class="chart"></div>
@@ -124,10 +81,7 @@
     <!-- 05 明细 -->
     <section class="block table-block">
       <div class="block-head">
-        <span class="block-no">05</span>
         <h2 class="block-title">难度明细</h2>
-        <span class="block-line" aria-hidden="true"></span>
-        <span class="block-en">DETAIL</span>
       </div>
       <el-table :data="stat.byDifficulty" v-loading="loading" row-key="difficulty" empty-text="暂无难度数据">
         <el-table-column prop="difficultyLabel" label="难度" width="100">
@@ -378,133 +332,65 @@ onUnmounted(() => {
 
 <style scoped>
 .report {
-  max-width: 1280px;
+  max-width: 1120px;
   margin: 0 auto;
-  padding: 44px 32px 64px;
+  padding: 36px 32px 64px;
 }
 
 .report-head {
-  display: flex;
-  align-items: flex-end;
-  justify-content: space-between;
-  gap: 32px;
-  padding-bottom: 16px;
+  padding-bottom: 13px;
   border-bottom: 1px solid var(--oj-border);
-  margin-bottom: 18px;
+  margin-bottom: 14px;
 }
 .report-title-block {
   min-width: 0;
 }
-.report-meta {
-  display: flex;
-  margin: 0;
-  padding: 0;
-  border-left: 1px solid var(--oj-border);
-  flex-shrink: 0;
-}
-.meta-row {
-  padding: 0 18px;
-  border-right: 1px solid var(--oj-border);
-}
-.meta-row:last-child {
-  border-right: 0;
-  padding-right: 0;
-}
-.meta-row dt {
-  font-family: var(--oj-font-mono);
-  font-size: 9px;
-  letter-spacing: 0.12em;
-  color: var(--oj-text-weak);
-}
-.meta-row dd {
-  margin: 5px 0 0;
-  font-size: 12px;
-  color: var(--oj-gray-800);
-  white-space: nowrap;
-}
 
-.summary {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  overflow: hidden;
-  background: var(--oj-card);
-  border: 1px solid var(--oj-border);
-  border-radius: 10px;
-  box-shadow: var(--oj-shadow-sm);
-}
-.summary-item {
+.summary-line {
   display: flex;
-  flex-direction: column;
-  gap: 4px;
-  padding: 18px 22px 16px;
-  border-right: 1px solid var(--oj-border);
+  flex-wrap: wrap;
+  gap: 4px 0;
+  margin: 0 0 8px;
+  font-size: 11px;
+  color: var(--oj-text-sub);
 }
-.summary-item:last-child {
-  border-right: 0;
+.summary-line span {
+  padding: 0 14px;
+  border-left: 1px solid var(--oj-border);
 }
-.summary-item + .summary-item {
+.summary-line span:first-child {
+  padding-left: 0;
   border-left: 0;
 }
-.summary-label {
+.summary-line b {
+  margin-right: 3px;
   font-family: var(--oj-font-mono);
-  font-size: 9px;
-  letter-spacing: 0.1em;
-  color: var(--oj-text-weak);
-}
-.summary-value {
-  font-size: 34px;
-  line-height: 1.05;
+  font-size: 13px;
+  font-weight: 600;
   color: var(--oj-text);
-}
-.summary-value small {
-  font-size: 14px;
-  color: var(--oj-text-sub);
-  margin-left: 2px;
-}
-.summary-note {
-  font-size: 10px;
-  color: var(--oj-text-weak);
 }
 
 .block {
-  margin-top: 18px;
-  padding: 18px 20px 20px;
-  background: var(--oj-card);
-  border: 1px solid var(--oj-border);
-  border-radius: 10px;
-  box-shadow: var(--oj-shadow-sm);
+  margin-top: 24px;
+  padding: 16px 0 0;
+  border-top: 1px solid var(--oj-border);
 }
 .block-head {
   display: flex;
   align-items: baseline;
   gap: 12px;
-  padding-bottom: 10px;
+  padding-bottom: 8px;
   border-bottom: 1px solid var(--oj-border);
-}
-.block-no {
-  font-family: var(--oj-font-mono);
-  font-size: 10px;
-  color: var(--oj-primary);
 }
 .block-title {
   margin: 0;
-  font-size: 18px;
-  font-weight: 750;
-  letter-spacing: -0.03em;
-}
-.block-line {
-  flex: 1;
-  border-top: 1px solid var(--oj-border);
-}
-.block-en {
-  font-family: var(--oj-font-mono);
-  font-size: 9px;
-  letter-spacing: 0.16em;
-  color: var(--oj-text-weak);
+  font-size: 16px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
 }
 .block-hint {
-  margin: 8px 0 20px;
-  font-size: 11.5px;
+  margin: 7px 0 14px;
+  font-size: 10.5px;
   color: var(--oj-text-weak);
 }
 
@@ -572,22 +458,21 @@ onUnmounted(() => {
 .chart-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-  gap: 18px;
+  gap: 18px 32px;
   margin-top: 0;
 }
 .chart-grid .block {
-  margin-top: 18px;
+  margin-top: 22px;
 }
 .chart {
   width: 100%;
   height: 300px;
 }
 .table-block {
-  padding: 0;
-  overflow: hidden;
+  padding: 16px 0 0;
 }
 .table-block .block-head {
-  padding: 16px 20px 12px;
+  padding: 0 0 8px;
 }
 
 .tbl-rate {
@@ -607,33 +492,6 @@ onUnmounted(() => {
 }
 
 @media (max-width: 1000px) {
-  .report-head {
-    flex-direction: column;
-    align-items: flex-start;
-  }
-  .report-meta {
-    border-left: 0;
-    border-top: 1px solid var(--oj-border);
-    padding-top: 12px;
-    width: 100%;
-    justify-content: space-between;
-  }
-  .meta-row {
-    padding: 0 12px 0 0;
-  }
-  .summary {
-    grid-template-columns: 1fr 1fr;
-  }
-  .summary-item:nth-child(2) {
-    border-right: 0;
-  }
-  .summary-item:nth-child(3) {
-    border-top: 1px solid var(--oj-border);
-  }
-  .summary-item:nth-child(4) {
-    border-top: 1px solid var(--oj-border);
-    border-right: 0;
-  }
   .diff-row {
     grid-template-columns: 70px 1fr;
     gap: 10px 16px;

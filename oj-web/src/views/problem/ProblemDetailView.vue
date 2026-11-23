@@ -12,11 +12,6 @@
     <!-- 左：题面 -->
     <article class="statement">
       <header class="prob-head">
-        <div class="prob-topline">
-          <span class="kicker">PROBLEM #{{ String(problem.id).padStart(4, '0') }}</span>
-          <span class="folio">STATEMENT</span>
-        </div>
-
         <div v-if="courseId" class="course-context">
           <span class="course-context-tag">班级作业</span>
           <span>本次提交会计入该班级作业进度</span>
@@ -25,6 +20,7 @@
 
         <div class="title-row">
           <h1 class="prob-title">{{ problem.title }}</h1>
+          <span class="prob-id">#{{ String(problem.id).padStart(4, '0') }}</span>
           <button
             v-if="userStore.isLoggedIn"
             class="fav-btn"
@@ -72,7 +68,6 @@
       <section class="statement-section">
         <div class="section-label">
           <h2>题目描述</h2>
-          <span>DESCRIPTION</span>
         </div>
         <div class="statement-body">
           <MarkdownPreview :content="statementContent" />
@@ -82,20 +77,19 @@
       <section v-if="problem.samples && problem.samples.length" class="statement-section">
         <div class="section-label">
           <h2>样例</h2>
-          <span>SAMPLES</span>
         </div>
         <div class="samples">
           <div v-for="(s, i) in problem.samples" :key="i" class="sample-set">
             <div class="sample-item">
               <div class="sample-head">
-                <span class="sample-title">INPUT {{ String(i + 1).padStart(2, '0') }}</span>
+                <span class="sample-title">输入 {{ String(i + 1).padStart(2, '0') }}</span>
                 <button class="copy-btn" type="button" @click="copyText(s.input)">复制</button>
               </div>
               <pre>{{ s.input }}</pre>
             </div>
             <div class="sample-item">
               <div class="sample-head">
-                <span class="sample-title">OUTPUT {{ String(i + 1).padStart(2, '0') }}</span>
+                <span class="sample-title">输出 {{ String(i + 1).padStart(2, '0') }}</span>
                 <button class="copy-btn" type="button" @click="copyText(s.output)">复制</button>
               </div>
               <pre>{{ s.output }}</pre>
@@ -109,10 +103,6 @@
     <aside class="workspace">
       <div class="editor-card">
         <div class="editor-toolbar">
-          <span class="editor-label">
-            <span class="editor-dot" aria-hidden="true"></span>
-            CODE
-          </span>
           <el-select v-model="language" class="lang-select" aria-label="编程语言" @change="onLanguageChange">
             <el-option v-for="lang in allowedLanguages" :key="lang.value" :label="lang.label" :value="lang.value" />
           </el-select>
@@ -136,7 +126,7 @@
         </div>
         <CodeEditor v-model="code" :language="language" />
         <div class="editor-foot">
-          <span>{{ language.toUpperCase() }} · SYNTAX HIGHLIGHT</span>
+          <span>{{ language.toUpperCase() }} · 语法高亮</span>
           <span v-if="draftSavedAt" class="draft-chip">草稿已保存 {{ draftSavedAt }}</span>
           <span v-else-if="draftRestored" class="draft-chip">已恢复草稿</span>
           <span>Ctrl / ⌘ + Enter 提交</span>
@@ -146,7 +136,7 @@
       <!-- 控制台（JS 题目：浏览器沙箱自测运行） -->
       <div v-if="language === 'js'" class="console-panel">
         <div class="console-head">
-          <span class="console-title">CONSOLE / 自测运行</span>
+          <span class="console-title">自测运行</span>
           <button class="console-run" type="button" :disabled="running" @click="runConsole">
             {{ running ? '运行中…' : '▶ 运行' }}
           </button>
@@ -171,7 +161,6 @@
       <section v-if="judgeState !== 'IDLE'" class="judge-card" aria-live="polite">
         <div class="judge-head">
           <span class="judge-title">判题状态</span>
-          <span class="folio">JUDGEMENT</span>
         </div>
 
         <el-steps
@@ -213,32 +202,27 @@
       <section v-if="judgeState === 'IDLE'" class="judge-card judge-idle">
         <div class="judge-head">
           <span class="judge-title">判题流程</span>
-          <span class="folio">JUDGEMENT</span>
         </div>
         <div class="idle-flow">
           <div class="idle-step">
-            <span class="idle-no">01</span>
             <div>
               <strong>提交入队</strong>
               <span>代码进入判题队列</span>
             </div>
           </div>
           <div class="idle-step">
-            <span class="idle-no">02</span>
             <div>
               <strong>编译构建</strong>
               <span>在沙箱内编译当前语言</span>
             </div>
           </div>
           <div class="idle-step">
-            <span class="idle-no">03</span>
             <div>
               <strong>逐用例运行</strong>
               <span>限制时间与内存并比对输出</span>
             </div>
           </div>
           <div class="idle-step">
-            <span class="idle-no">04</span>
             <div>
               <strong>实时判定</strong>
               <span>结果推送到本页并留存记录</span>
@@ -252,12 +236,11 @@
       <section v-if="userStore.isLoggedIn && mySubmissions.length" class="judge-card history-card">
         <div class="judge-head">
           <span class="judge-title">我的提交</span>
-          <span class="folio">HISTORY · {{ mySubmissions.length }}</span>
+          <span class="folio">共 {{ mySubmissions.length }} 次</span>
         </div>
         <ul class="history-list">
           <li v-for="s in mySubmissions" :key="s.id">
             <router-link :to="`/submissions/${s.id}`" class="history-item">
-              <span class="history-dot" :style="{ color: statusColor(s.status) }" aria-hidden="true">●</span>
               <span class="history-status">{{ statusLabel(s.status) }}</span>
               <span class="history-lang">{{ langLabel(s.language) }}</span>
               <span class="history-time">{{ relativeTime(s.createdAt) }}</span>
@@ -782,9 +765,8 @@ onMounted(() => window.addEventListener('keydown', onGlobalKeydown))
   min-width: 0;
   background: var(--oj-card);
   border: 1px solid var(--oj-border);
-  border-radius: 10px;
-  padding: 24px 26px 28px;
-  box-shadow: var(--oj-shadow-sm);
+  border-radius: 4px;
+  padding: 22px 24px 26px;
 }
 .prob-topline {
   display: flex;
@@ -798,22 +780,16 @@ onMounted(() => window.addEventListener('keydown', onGlobalKeydown))
   display: flex;
   align-items: center;
   gap: 8px;
-  margin-top: 12px;
-  padding: 7px 10px;
-  border-left: 3px solid var(--oj-primary);
-  border-radius: 4px;
-  background: var(--oj-primary-soft);
+  margin-bottom: 12px;
+  padding: 7px 0;
+  border-bottom: 1px solid var(--oj-border);
   font-size: 10.5px;
   color: var(--oj-text-sub);
 }
 .course-context-tag {
   flex-shrink: 0;
-  padding: 1px 6px;
-  border-radius: 3px;
-  background: var(--oj-card);
-  font-family: var(--oj-font-mono);
-  font-size: 8.5px;
-  letter-spacing: 0.04em;
+  font-size: 10px;
+  font-weight: 600;
   color: var(--oj-primary);
 }
 .course-context-link {
@@ -836,8 +812,8 @@ onMounted(() => window.addEventListener('keydown', onGlobalKeydown))
 .title-row {
   display: flex;
   align-items: flex-start;
-  gap: 16px;
-  margin-top: 16px;
+  gap: 12px;
+  margin-top: 0;
 }
 .prob-title {
   margin: 0;
@@ -848,6 +824,13 @@ onMounted(() => window.addEventListener('keydown', onGlobalKeydown))
   line-height: 1.35;
   letter-spacing: -0.04em;
   color: var(--oj-text);
+}
+.prob-id {
+  flex-shrink: 0;
+  padding-top: 7px;
+  font-family: var(--oj-font-mono);
+  font-size: 10px;
+  color: var(--oj-text-weak);
 }
 .fav-btn {
   display: inline-flex;
@@ -875,26 +858,26 @@ onMounted(() => window.addEventListener('keydown', onGlobalKeydown))
 .prob-meta {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
-  margin: 18px 0 0;
-  overflow: hidden;
-  border: 1px solid var(--oj-border);
-  border-radius: 7px;
-  background: var(--oj-gray-50);
+  margin: 14px 0 0;
+  padding: 10px 0;
+  border-top: 1px solid var(--oj-border);
+  border-bottom: 1px solid var(--oj-border);
 }
 .prob-meta .meta-item {
   display: flex;
   flex-direction: column;
-  gap: 4px;
-  padding: 9px 12px;
+  gap: 3px;
+  padding: 0 14px;
   border-right: 1px solid var(--oj-border);
+}
+.prob-meta .meta-item:first-child {
+  padding-left: 0;
 }
 .prob-meta .meta-item:last-child {
   border-right: 0;
 }
 .prob-meta dt {
-  font-family: var(--oj-font-mono);
-  font-size: 8px;
-  letter-spacing: 0.09em;
+  font-size: 9.5px;
   color: var(--oj-text-weak);
 }
 .prob-meta dd {
@@ -911,35 +894,27 @@ onMounted(() => window.addEventListener('keydown', onGlobalKeydown))
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 5px;
-  margin-top: 12px;
+  gap: 4px 10px;
+  margin-top: 10px;
 }
 .tag-caption {
-  margin-right: 2px;
-  font-family: var(--oj-font-mono);
-  font-size: 9px;
-  letter-spacing: 0.04em;
+  font-size: 9.5px;
   color: var(--oj-text-weak);
 }
 .tag {
-  padding: 1px 7px;
-  border: 1px solid var(--oj-border);
-  border-radius: 3px;
-  background: var(--oj-gray-50);
   font-family: var(--oj-font-mono);
-  font-size: 9px;
-  line-height: 18px;
+  font-size: 9.5px;
+  line-height: 1.5;
   color: var(--oj-text-sub);
 }
-.tag-lang {
-  color: var(--oj-primary);
-  border-color: var(--oj-info-border);
-  background: var(--oj-primary-soft);
+.tag + .tag::before {
+  content: '·';
+  margin-right: 6px;
+  color: var(--oj-gray-300);
 }
+.tag-lang,
 .tag-fn {
-  color: var(--oj-success);
-  border-color: var(--oj-success-soft);
-  background: var(--oj-success-soft);
+  color: var(--oj-text-sub);
 }
 
 .statement-section {
@@ -997,9 +972,7 @@ onMounted(() => window.addEventListener('keydown', onGlobalKeydown))
   background: var(--oj-card);
 }
 .sample-title {
-  font-family: var(--oj-font-mono);
-  font-size: 8.5px;
-  letter-spacing: 0.08em;
+  font-size: 9.5px;
   color: var(--oj-text-sub);
 }
 .copy-btn {
@@ -1037,10 +1010,9 @@ onMounted(() => window.addEventListener('keydown', onGlobalKeydown))
 }
 .editor-card {
   border: 1px solid var(--oj-code-border);
-  border-radius: 10px;
+  border-radius: 4px;
   overflow: hidden;
   background: var(--oj-code-bg);
-  box-shadow: var(--oj-shadow);
 }
 
 /* 编辑区随桌面高度伸展，避免右栏上半截是编辑器、下半截大片空白的“半张卡片”视觉 */
@@ -1054,22 +1026,6 @@ onMounted(() => window.addEventListener('keydown', onGlobalKeydown))
   padding: 10px 12px;
   background: var(--oj-code-bg);
   border-bottom: 1px solid var(--oj-code-border);
-}
-.editor-label {
-  display: inline-flex;
-  align-items: center;
-  gap: 7px;
-  font-family: var(--oj-font-mono);
-  font-size: 9px;
-  letter-spacing: 0.1em;
-  color: var(--oj-code-text-sub);
-  white-space: nowrap;
-}
-.editor-dot {
-  width: 5px;
-  height: 5px;
-  border-radius: 50%;
-  background: #57d9a3;
 }
 .editor-toolbar .lang-select {
   width: 118px;
@@ -1135,7 +1091,7 @@ onMounted(() => window.addEventListener('keydown', onGlobalKeydown))
   letter-spacing: 0.05em;
   color: var(--oj-code-comment);
 }
-/* 草稿标记：深色代码区上用成功绿（与 editor-dot 同源），表达"你的代码已保存" */
+/* 草稿标记：深色代码区上用成功绿，表达"你的代码已保存" */
 .editor-foot .draft-chip {
   color: #57d9a3;
 }
@@ -1213,8 +1169,7 @@ onMounted(() => window.addEventListener('keydown', onGlobalKeydown))
   padding: 16px 18px 14px;
   background: var(--oj-card);
   border: 1px solid var(--oj-border);
-  border-radius: 10px;
-  box-shadow: var(--oj-shadow-sm);
+  border-radius: 4px;
 }
 .judge-head {
   display: flex;
@@ -1275,17 +1230,8 @@ onMounted(() => window.addEventListener('keydown', onGlobalKeydown))
   gap: 0 18px;
 }
 .idle-step {
-  display: flex;
-  gap: 10px;
   padding: 10px 0;
   border-top: 1px solid var(--oj-border);
-}
-.idle-no {
-  padding-top: 1px;
-  font-family: var(--oj-font-mono);
-  font-size: 9px;
-  letter-spacing: 0.04em;
-  color: var(--oj-text-weak);
 }
 .idle-step strong {
   display: block;
@@ -1376,11 +1322,6 @@ onMounted(() => window.addEventListener('keydown', onGlobalKeydown))
 }
 .history-item:hover .history-status {
   color: var(--oj-primary);
-}
-.history-dot {
-  font-size: 8px;
-  line-height: 1;
-  flex-shrink: 0;
 }
 .history-status {
   font-weight: 650;

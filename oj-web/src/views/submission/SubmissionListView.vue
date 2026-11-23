@@ -6,24 +6,12 @@
         <h1 class="page-head-title">提交记录</h1>
         <p class="page-head-sub">每一次提交都有完整判题明细。按题目、状态或时间筛选，点开查看用例级结果。</p>
       </div>
-      <dl class="log-totals" aria-label="个人提交概览">
-        <div class="total-item">
-          <dt>SUBMITS</dt>
-          <dd>{{ summary.totalSubmit }}</dd>
-        </div>
-        <div class="total-item">
-          <dt>ACCEPTED</dt>
-          <dd>{{ summary.totalAccepted }}</dd>
-        </div>
-        <div class="total-item">
-          <dt>AC RATE</dt>
-          <dd>{{ summary.acceptRate }}<small>%</small></dd>
-        </div>
-        <div class="total-item">
-          <dt>SOLVED</dt>
-          <dd>{{ summary.solvedCount }}</dd>
-        </div>
-      </dl>
+      <p class="log-meta" aria-label="个人提交概览">
+        <span>提交 {{ summary.totalSubmit }}</span>
+        <span>通过 {{ summary.totalAccepted }}</span>
+        <span>通过率 {{ summary.acceptRate }}%</span>
+        <span>已解 {{ summary.solvedCount }} 题</span>
+      </p>
     </header>
 
     <!-- 筛选：一张横向的工具条 -->
@@ -111,7 +99,6 @@
         <el-table-column label="状态" width="128">
           <template #default="{ row }">
             <span class="status-cell" :style="{ color: statusColor(row.status) }">
-              <span class="status-dot" :style="{ background: statusColor(row.status) }" aria-hidden="true" />
               {{ statusLabel(row.status) }}
             </span>
           </template>
@@ -138,9 +125,7 @@
         <el-table-column label="" width="48" align="right">
           <template #default="{ row }">
             <router-link class="row-go" :to="`/submissions/${row.id}`" :aria-label="`查看提交 ${row.id} 详情`">
-              <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                <path d="M5 12 L19 12 M13 6 L19 12 L13 18" />
-              </svg>
+              明细
             </router-link>
           </template>
         </el-table-column>
@@ -280,46 +265,27 @@ onMounted(() => {
 
 <style scoped>
 .submission-page {
-  max-width: 1280px;
+  max-width: 1120px;
   margin: 0 auto;
-  padding: 44px 32px 64px;
+  padding: 36px 32px 64px;
 }
 
 .log-head {
   align-items: flex-end;
 }
-.log-totals {
+.log-meta {
   display: flex;
+  flex-wrap: wrap;
+  gap: 4px 0;
   margin: 0;
-  padding: 0;
-  flex-shrink: 0;
-}
-.total-item {
-  padding: 0 20px;
-  border-left: 1px solid var(--oj-border);
-  text-align: right;
-}
-.total-item:last-child {
-  padding-right: 0;
-}
-.total-item dt {
-  font-family: var(--oj-font-mono);
-  font-size: 8.5px;
-  letter-spacing: 0.1em;
+  padding-bottom: 2px;
+  font-size: 10.5px;
   color: var(--oj-text-weak);
 }
-.total-item dd {
-  margin: 5px 0 0;
-  font-family: var(--oj-font-mono);
-  font-size: 25px;
-  line-height: 1;
-  font-weight: 600;
-  letter-spacing: -0.04em;
-}
-.total-item dd small {
-  margin-left: 1px;
-  font-size: 11px;
-  color: var(--oj-text-sub);
+.log-meta span + span::before {
+  content: '·';
+  margin: 0 8px;
+  color: var(--oj-gray-300);
 }
 
 /* 筛选工具条 */
@@ -328,12 +294,10 @@ onMounted(() => {
   align-items: flex-end;
   flex-wrap: wrap;
   gap: 12px;
-  padding: 16px 18px;
-  margin-bottom: 18px;
-  background: var(--oj-card);
-  border: 1px solid var(--oj-border);
-  border-radius: 10px;
-  box-shadow: var(--oj-shadow-sm);
+  padding: 12px 0;
+  margin-bottom: 16px;
+  border-top: 1px solid var(--oj-border);
+  border-bottom: 1px solid var(--oj-border);
 }
 .query-field {
   display: flex;
@@ -341,9 +305,7 @@ onMounted(() => {
   gap: 5px;
 }
 .query-label {
-  font-family: var(--oj-font-mono);
-  font-size: 8.5px;
-  letter-spacing: 0.08em;
+  font-size: 10px;
   color: var(--oj-text-weak);
 }
 .query-pid {
@@ -360,29 +322,26 @@ onMounted(() => {
 }
 .query-presets {
   display: flex;
-  gap: 4px;
+  gap: 14px;
   padding-bottom: 1px;
 }
 .quick-btn {
-  padding: 6px 10px;
-  border: 1px solid var(--oj-border);
-  border-radius: 5px;
-  background: var(--oj-gray-50);
+  padding: 4px 0;
+  border: 0;
+  border-bottom: 1px solid transparent;
+  background: transparent;
   color: var(--oj-text-sub);
   font-family: inherit;
   font-size: 10.5px;
   cursor: pointer;
-  transition: color var(--oj-duration) var(--oj-ease), border-color var(--oj-duration) var(--oj-ease),
-    background var(--oj-duration) var(--oj-ease);
+  transition: color var(--oj-duration) var(--oj-ease), border-color var(--oj-duration) var(--oj-ease);
 }
 .quick-btn:hover {
-  border-color: var(--oj-border-strong);
   color: var(--oj-text);
 }
 .quick-btn.active {
-  background: var(--oj-primary-soft);
-  border-color: var(--oj-info-border);
-  color: var(--oj-primary);
+  border-bottom-color: var(--oj-text);
+  color: var(--oj-text);
   font-weight: 600;
 }
 .query-actions {
@@ -409,28 +368,25 @@ onMounted(() => {
 .table-card {
   background: var(--oj-card);
   border: 1px solid var(--oj-border);
-  border-radius: 10px;
-  box-shadow: var(--oj-shadow-sm);
+  border-radius: 4px;
   overflow: hidden;
 }
 .list-head {
   display: flex;
-  align-items: flex-end;
+  align-items: baseline;
   justify-content: space-between;
   gap: 16px;
-  padding: 16px 18px 13px;
+  padding: 13px 16px 12px;
   border-bottom: 1px solid var(--oj-border);
 }
 .list-title {
-  margin: 4px 0 0;
-  font-size: 19px;
-  font-weight: 750;
-  letter-spacing: -0.03em;
+  margin: 0;
+  font-size: 16px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
 }
 .list-meta {
-  font-family: var(--oj-font-mono);
-  font-size: 8.5px;
-  letter-spacing: 0.05em;
+  font-size: 10.5px;
   color: var(--oj-text-weak);
 }
 
@@ -462,17 +418,8 @@ onMounted(() => {
   color: var(--oj-text-sub);
 }
 .status-cell {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
   font-size: 11px;
   font-weight: 600;
-}
-.status-dot {
-  width: 5px;
-  height: 5px;
-  border-radius: 50%;
-  flex-shrink: 0;
 }
 .num {
   font-size: 10.5px;
@@ -488,12 +435,12 @@ onMounted(() => {
 }
 .row-go {
   display: inline-flex;
+  font-size: 10.5px;
   color: var(--oj-text-weak);
-  transition: color var(--oj-duration) var(--oj-ease), transform var(--oj-duration) var(--oj-ease);
+  transition: color var(--oj-duration) var(--oj-ease);
 }
 .row-go:hover {
   color: var(--oj-primary);
-  transform: translateX(2px);
 }
 .table-foot {
   display: flex;

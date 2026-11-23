@@ -14,10 +14,9 @@
       <div class="race-main">
         <div class="race-status-row">
           <span class="race-status" :class="`race-${contest.status}`">
-            <span v-if="contest.status === 1" class="pulse" aria-hidden="true" />
             {{ statusInfo(contest.status).label }}
           </span>
-          <span class="race-no">CONTEST #{{ String(contest.id).padStart(3, '0') }}</span>
+          <span class="race-no">竞赛 #{{ contest.id }}</span>
         </div>
         <h1 class="race-title">{{ contest.title }}</h1>
         <p class="race-desc">{{ contest.description || '暂无说明' }}</p>
@@ -30,7 +29,7 @@
       </div>
 
       <div v-if="contest.status !== 2" class="race-clock">
-        <span class="clock-label">{{ contest.status === 1 ? 'REMAINING' : 'START IN' }}</span>
+        <span class="clock-label">{{ contest.status === 1 ? '剩余时间' : '距开始' }}</span>
         <span class="clock-value" aria-live="off">{{ countdown }}</span>
         <span class="clock-note">以服务器时间为准</span>
       </div>
@@ -41,7 +40,6 @@
         <el-tabs v-model="activeTab" class="race-tabs">
           <el-tab-pane label="竞赛题目" name="problems">
             <div class="tab-head">
-              <span class="kicker">PROBLEMS</span>
               <h2>题目清单</h2>
               <span class="tab-count">{{ contest.problems.length }} 道</span>
             </div>
@@ -63,9 +61,6 @@
                 <span class="oj-diff" :class="`diff-${row.difficulty}`">
                   {{ DIFFICULTY_MAP[row.difficulty]?.label ?? '未知' }}
                 </span>
-                <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                  <path d="M5 12 L19 12 M13 6 L19 12 L13 18" />
-                </svg>
               </router-link>
             </div>
             <el-empty v-else description="本竞赛还没有配置题目" :image-size="64" />
@@ -82,13 +77,9 @@
 
           <el-tab-pane label="实时排名" name="ranking">
             <div class="tab-head">
-              <span class="kicker">STANDINGS</span>
               <h2>实时排名</h2>
               <span class="tab-count">ACM 赛制</span>
-              <span v-if="contest.status === 1" class="live-chip">
-                <i aria-hidden="true" />
-                每 15 秒自动刷新
-              </span>
+              <span v-if="contest.status === 1" class="live-note">每 15 秒自动刷新</span>
             </div>
 
             <p v-if="contest.status === 0" class="rank-hint">
@@ -104,7 +95,7 @@
             >
               <el-table-column label="名次" width="84">
                 <template #default="{ row }">
-                  <span class="rank-cell" :class="`rank-${row.rank}`">{{ String(row.rank).padStart(2, '0') }}</span>
+                  <span class="rank-cell" :class="`rank-${row.rank}`">{{ row.rank }}</span>
                 </template>
               </el-table-column>
               <el-table-column label="参赛者" min-width="160">
@@ -244,13 +235,13 @@ onUnmounted(() => {
 
 <style scoped>
 .empty-sheet {
-  border-radius: 10px;
+  border-radius: 4px;
 }
 
 .race {
-  max-width: 1200px;
+  max-width: 1120px;
   margin: 0 auto;
-  padding: 44px 32px 64px;
+  padding: 36px 32px 64px;
 }
 
 /* ---------- 竞赛概览 ---------- */
@@ -258,11 +249,10 @@ onUnmounted(() => {
   display: grid;
   grid-template-columns: minmax(0, 1fr) 300px;
   gap: 28px;
-  padding: 24px 26px;
+  padding: 22px 24px;
   background: var(--oj-card);
   border: 1px solid var(--oj-border);
-  border-radius: 10px;
-  box-shadow: var(--oj-shadow-sm);
+  border-radius: 4px;
 }
 .race-status-row {
   display: flex;
@@ -272,32 +262,14 @@ onUnmounted(() => {
 .race-status {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  padding: 3px 9px;
-  border-radius: 4px;
-  font-family: var(--oj-font-mono);
-  font-size: 9.5px;
-  letter-spacing: 0.04em;
+  font-size: 11px;
+  font-weight: 600;
 }
-.race-0 { color: var(--oj-primary); background: #eef2ff; }
-.race-1 { color: var(--oj-success); background: #e7f7f1; }
-.race-2 { color: var(--oj-text-sub); background: var(--oj-gray-100); }
-.pulse {
-  width: 5px;
-  height: 5px;
-  border-radius: 50%;
-  background: var(--oj-success);
-  box-shadow: 0 0 0 0 rgba(14, 159, 110, 0.3);
-  animation: pulse 1.8s infinite;
-}
-@keyframes pulse {
-  70% { box-shadow: 0 0 0 6px rgba(14, 159, 110, 0); }
-  100% { box-shadow: 0 0 0 0 rgba(14, 159, 110, 0); }
-}
+.race-0 { color: var(--oj-primary); }
+.race-1 { color: var(--oj-success); }
+.race-2 { color: var(--oj-text-sub); }
 .race-no {
-  font-family: var(--oj-font-mono);
-  font-size: 9px;
-  letter-spacing: 0.08em;
+  font-size: 10px;
   color: var(--oj-text-weak);
 }
 .race-title {
@@ -342,14 +314,12 @@ onUnmounted(() => {
   justify-content: center;
   padding: 16px 20px;
   background: var(--oj-code-bg);
-  border-radius: 8px;
+  border-radius: 4px;
   color: #f9fafb;
 }
 .clock-label {
-  font-family: var(--oj-font-mono);
-  font-size: 8.5px;
-  letter-spacing: 0.12em;
-  color: #667085;
+  font-size: 10px;
+  color: #98a2b3;
 }
 .clock-value {
   margin: 8px 0 6px;
@@ -360,9 +330,7 @@ onUnmounted(() => {
   letter-spacing: -0.03em;
 }
 .clock-note {
-  font-family: var(--oj-font-mono);
-  font-size: 8.5px;
-  letter-spacing: 0.03em;
+  font-size: 9.5px;
   color: #667085;
 }
 
@@ -388,9 +356,8 @@ onUnmounted(() => {
 .race-tabs :deep(.el-tabs__content) {
   background: var(--oj-card);
   border: 1px solid var(--oj-border);
-  border-radius: 10px;
+  border-radius: 4px;
   padding: 18px 20px 20px;
-  box-shadow: var(--oj-shadow-sm);
 }
 
 .tab-head {
@@ -414,31 +381,20 @@ onUnmounted(() => {
   letter-spacing: 0.06em;
   color: var(--oj-text-weak);
 }
-.live-chip {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
+.live-note {
   margin-left: 10px;
-  font-size: 9px;
+  font-size: 9.5px;
   color: var(--oj-success);
-}
-.live-chip i {
-  width: 5px;
-  height: 5px;
-  border-radius: 50%;
-  background: var(--oj-success);
 }
 
 .problem-head {
   display: grid;
-  grid-template-columns: 56px minmax(0, 1fr) 80px 22px;
+  grid-template-columns: 34px minmax(0, 1fr) 80px;
   gap: 14px;
   padding: 8px 6px 7px;
   border-bottom: 1px solid var(--oj-border);
   background: var(--oj-gray-50);
-  font-family: var(--oj-font-mono);
-  font-size: 8.5px;
-  letter-spacing: 0.08em;
+  font-size: 9.5px;
   color: var(--oj-text-weak);
 }
 .problem-list {
@@ -446,7 +402,7 @@ onUnmounted(() => {
 }
 .problem-row {
   display: grid;
-  grid-template-columns: 56px minmax(0, 1fr) 80px 22px;
+  grid-template-columns: 34px minmax(0, 1fr) 80px;
   gap: 14px;
   align-items: center;
   padding: 11px 6px;
@@ -462,15 +418,10 @@ onUnmounted(() => {
 .label-badge {
   display: inline-flex;
   align-items: center;
-  justify-content: center;
-  width: 25px;
-  height: 25px;
-  border-radius: 5px;
-  background: var(--oj-primary-soft);
   font-family: var(--oj-font-mono);
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 600;
-  color: var(--oj-primary);
+  color: var(--oj-text);
 }
 .problem-title {
   font-size: 13.5px;
@@ -484,18 +435,12 @@ onUnmounted(() => {
 .problem-row:hover .problem-title {
   color: var(--oj-primary);
 }
-.problem-row svg {
-  color: var(--oj-text-weak);
-}
-.problem-row:hover svg {
-  color: var(--oj-primary);
-}
 
 .live-alert {
   margin-top: 16px;
   background: var(--oj-primary-soft);
   border: 1px solid var(--oj-info-border);
-  border-radius: 7px;
+  border-radius: 4px;
   color: var(--oj-primary);
 }
 .live-alert :deep(.el-alert__title) {
@@ -512,20 +457,14 @@ onUnmounted(() => {
   font-size: 11px;
   color: var(--oj-text-sub);
 }
-.rank-cell.rank-1,
-.rank-cell.rank-2,
-.rank-cell.rank-3 {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 24px;
-  height: 24px;
-  border-radius: 50%;
+.rank-cell.rank-1 {
+  color: var(--oj-primary);
   font-weight: 600;
 }
-.rank-cell.rank-1 { color: #b45309; background: #fef3c7; }
-.rank-cell.rank-2 { color: #475467; background: #f1f3f7; }
-.rank-cell.rank-3 { color: #9a3412; background: #fff2e8; }
+.rank-cell.rank-2,
+.rank-cell.rank-3 {
+  color: var(--oj-text);
+}
 .detail-cell {
   font-size: 10.5px;
   color: var(--oj-text-sub);
@@ -550,7 +489,7 @@ onUnmounted(() => {
     gap: 10px;
   }
   .problem-row {
-    grid-template-columns: 44px minmax(0, 1fr) 70px 20px;
+    grid-template-columns: 26px minmax(0, 1fr) 70px;
     gap: 10px;
   }
 }

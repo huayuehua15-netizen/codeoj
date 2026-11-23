@@ -57,7 +57,6 @@
         >
           <div class="card-top">
             <span class="course-status" :class="`status-${deadlineInfo(course.deadline).key}`">
-              <i aria-hidden="true" />
               {{ deadlineInfo(course.deadline).label }}
             </span>
             <span class="course-id mono">#{{ String(course.id).padStart(3, '0') }}</span>
@@ -85,9 +84,6 @@
             <span class="deadline-text">{{ deadlineInfo(course.deadline).text }}</span>
             <router-link :to="`/courses/${course.id}`" class="card-link">
               {{ course.problemCount && course.solvedCount >= course.problemCount ? '回顾作业' : '进入作业' }}
-              <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                <path d="M5 12h14M13 6l6 6-6 6" />
-              </svg>
             </router-link>
           </div>
         </article>
@@ -190,9 +186,9 @@ onBeforeUnmount(() => window.clearInterval(clock))
 
 <style scoped>
 .course-page {
-  max-width: 1280px;
+  max-width: 1120px;
   margin: 0 auto;
-  padding: 44px 32px 64px;
+  padding: 36px 32px 64px;
 }
 
 .course-head {
@@ -205,19 +201,16 @@ onBeforeUnmount(() => window.clearInterval(clock))
   align-items: center;
   justify-content: space-between;
   gap: 28px;
-  margin-top: 22px;
-  padding: 22px 26px;
-  background: var(--oj-card);
-  border: 1px solid var(--oj-border);
-  border-left: 3px solid var(--oj-primary);
-  border-radius: var(--oj-radius);
-  box-shadow: var(--oj-shadow-sm);
+  margin-top: 16px;
+  padding: 16px 0;
+  border-top: 1px solid var(--oj-border);
+  border-bottom: 1px solid var(--oj-border);
 }
 .join-copy h2 {
-  margin: 5px 0 0;
-  font-size: 19px;
-  font-weight: 750;
-  letter-spacing: -0.03em;
+  margin: 0;
+  font-size: 17px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
   color: var(--oj-text);
 }
 .join-copy p {
@@ -254,16 +247,15 @@ onBeforeUnmount(() => window.clearInterval(clock))
   border-bottom: 1px solid var(--oj-border);
 }
 .section-head h2 {
-  margin: 4px 0 0;
-  font-size: 21px;
-  font-weight: 750;
-  letter-spacing: -0.03em;
+  margin: 0;
+  font-size: 18px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
   color: var(--oj-text);
 }
 .section-meta {
-  margin: 0 0 2px;
-  font-family: var(--oj-font-mono);
-  font-size: 10px;
+  margin: 0 0 1px;
+  font-size: 10.5px;
   color: var(--oj-text-weak);
 }
 
@@ -278,20 +270,17 @@ onBeforeUnmount(() => window.clearInterval(clock))
 .course-card {
   display: flex;
   flex-direction: column;
-  padding: 18px 18px 16px;
+  padding: 16px;
   background: var(--oj-card);
   border: 1px solid var(--oj-border);
-  border-radius: var(--oj-radius);
-  box-shadow: var(--oj-shadow-sm);
-  transition: border-color var(--oj-duration) var(--oj-ease), box-shadow var(--oj-duration) var(--oj-ease), transform var(--oj-duration) var(--oj-ease);
+  border-radius: 4px;
+  transition: border-color var(--oj-duration) var(--oj-ease);
 }
 .course-card:hover {
   border-color: var(--oj-border-strong);
-  box-shadow: var(--oj-shadow);
-  transform: translateY(-1px);
 }
 .course-card.is-ended {
-  background: linear-gradient(180deg, var(--oj-gray-50), var(--oj-card) 32%);
+  background: var(--oj-gray-50);
 }
 .card-top {
   display: flex;
@@ -299,35 +288,18 @@ onBeforeUnmount(() => window.clearInterval(clock))
   justify-content: space-between;
 }
 .course-status {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  padding: 2px 8px;
-  border-radius: var(--oj-radius-pill);
-  font-size: 10px;
-  font-weight: 650;
-  letter-spacing: 0.02em;
-}
-.course-status i {
-  width: 5px;
-  height: 5px;
-  border-radius: 50%;
+  font-size: 10.5px;
+  font-weight: 600;
 }
 .status-running {
   color: var(--oj-primary);
-  background: var(--oj-primary-soft);
 }
-.status-running i { background: var(--oj-primary); }
 .status-ended {
-  color: var(--oj-text-sub);
-  background: var(--oj-gray-100);
+  color: var(--oj-text-weak);
 }
-.status-ended i { background: var(--oj-gray-400); }
 .status-open {
   color: var(--oj-success);
-  background: var(--oj-success-soft);
 }
-.status-open i { background: var(--oj-success); }
 .course-id {
   font-size: 9px;
   color: var(--oj-text-weak);
@@ -335,10 +307,10 @@ onBeforeUnmount(() => window.clearInterval(clock))
 }
 
 .course-title {
-  margin: 13px 0 0;
-  font-size: 17px;
-  font-weight: 750;
-  letter-spacing: -0.025em;
+  margin: 10px 0 0;
+  font-size: 16px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
   line-height: 1.35;
 }
 .course-title a {
@@ -386,10 +358,9 @@ onBeforeUnmount(() => window.clearInterval(clock))
 }
 .progress-track {
   overflow: hidden;
-  height: 4px;
+  height: 2px;
   margin-top: 7px;
   background: var(--oj-gray-100);
-  border-radius: 2px;
 }
 .progress-track span {
   display: block;
@@ -420,17 +391,10 @@ onBeforeUnmount(() => window.clearInterval(clock))
 .card-link {
   display: inline-flex;
   align-items: center;
-  gap: 4px;
   flex-shrink: 0;
   font-size: 11px;
   font-weight: 650;
   color: var(--oj-primary);
-}
-.card-link:hover {
-  gap: 6px;
-}
-.card-link svg {
-  transition: transform var(--oj-duration) var(--oj-ease);
 }
 
 .empty-state {
@@ -439,7 +403,7 @@ onBeforeUnmount(() => window.clearInterval(clock))
   text-align: center;
   background: var(--oj-card);
   border: 1px dashed var(--oj-border-strong);
-  border-radius: var(--oj-radius);
+  border-radius: 4px;
 }
 .empty-mark {
   color: var(--oj-gray-300);

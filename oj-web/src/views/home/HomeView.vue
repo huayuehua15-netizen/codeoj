@@ -3,103 +3,62 @@
     <!-- 首屏：左侧主张，右侧判题终端。整页只有这一处深色 -->
     <section class="hero" aria-label="平台首页">
       <div class="hero-copy">
-        <div class="statusline">
-          <span class="status-dot" aria-hidden="true"></span>
-          SYSTEM ONLINE <span class="slash">/</span> JUDGE READY
-        </div>
-        <h1>提交。<span class="muted">编译。</span><span class="blue">判定。</span></h1>
+        <h1>提交。编译。<span class="blue">判定。</span></h1>
         <p class="lede">
           五种语言沙箱编译，测试点级结果、<b>耗时与内存</b>逐条返回。<br />
           从按下提交到看见判定，只差几秒。
         </p>
         <div class="hero-actions">
-          <router-link class="btn-primary" to="/problems">
-            浏览题库
-            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-              <path d="M5 12h14M13 6l6 6-6 6" />
-            </svg>
-          </router-link>
+          <router-link class="btn-primary" to="/problems">浏览题库</router-link>
           <router-link class="btn-secondary" to="/leaderboard">查看排行榜</router-link>
         </div>
-        <p class="hero-footnote">NO LOGIN REQUIRED TO READ · REAL-TIME VERDICT PUSH</p>
+        <p class="hero-footnote">支持 C / C++ / Java / Python3 / JavaScript · 判题结果实时推送</p>
       </div>
 
-      <div class="terminal" aria-label="判题流程示例">
-        <div class="term-head">
-          <span class="term-dots" aria-hidden="true"><i></i><i></i><i></i></span>
-          <span class="term-title">codeoj / submission</span>
-          <span class="term-lang">C++17</span>
+      <dl class="ledger" aria-label="平台数据">
+        <div class="ledger-row">
+          <dt>题库</dt>
+          <dd>{{ stats.totalProblems ?? '—' }}<small>题</small></dd>
         </div>
-        <div class="term-body">
-          <p><span class="prompt">$</span> codeoj submit <span class="arg">1001</span> --lang cpp</p>
-          <p class="dim">→ queued <span class="hash">#4821</span></p>
-          <p class="dim">→ compiling g++ -O2 -std=c++17</p>
-          <p class="ok">✓ compile <span class="time">0.42s</span></p>
-          <div class="term-rule"></div>
-          <p class="case"><span>case 01</span><span class="ok">✓ Accepted</span><span class="num">12ms · 2.1MB</span></p>
-          <p class="case"><span>case 02</span><span class="ok">✓ Accepted</span><span class="num">18ms · 2.4MB</span></p>
-          <p class="case"><span>case 03</span><span class="ok">✓ Accepted</span><span class="num">15ms · 2.2MB</span></p>
-          <p class="case"><span>case 04</span><span class="ok">✓ Accepted</span><span class="num">21ms · 2.6MB</span></p>
-          <p class="case"><span>case 05</span><span class="ok">✓ Accepted</span><span class="num">16ms · 2.3MB</span></p>
-          <div class="verdict">
-            <div class="verdict-left"><span class="check">✓</span><span class="verdict-word">Accepted</span></div>
-            <span class="perf">45ms · 6.7MB · 5/5</span>
-          </div>
+        <div class="ledger-row">
+          <dt>解题者</dt>
+          <dd>{{ stats.solvers ?? '—' }}<small>人</small></dd>
         </div>
-        <div class="term-foot"><span>judge example · C++17</span><span class="term-foot-note">STATEMENT → CODE → VERDICT</span></div>
-      </div>
+        <div class="ledger-row">
+          <dt>累计提交</dt>
+          <dd>{{ formatCount(stats.totalSubmit) }}<small>次</small></dd>
+        </div>
+        <div class="ledger-row">
+          <dt>单题最高 AC</dt>
+          <dd>{{ stats.maxAcCount ?? '—' }}<small>题</small></dd>
+        </div>
+      </dl>
     </section>
 
     <!-- 最新公告：一条就够，不占首屏 -->
     <router-link v-if="announcements[0]" class="notice" to="/announcements">
-      <span class="notice-tag">公告</span>
+      <span class="notice-label">公告</span>
       <span class="notice-title">{{ announcements[0].title }}</span>
-      <span class="notice-body">{{ announcements[0].content }}</span>
       <span class="notice-date">{{ formatDateTime(announcements[0].createdAt).slice(0, 10) }}</span>
-      <span class="notice-go" aria-hidden="true">→</span>
     </router-link>
-
-    <!-- 平台读数 -->
-    <section class="metrics" aria-label="平台数据">
-      <div class="metric">
-        <div class="metric-label">PROBLEMS</div>
-        <div class="metric-value">{{ stats.totalProblems ?? '—' }}<small>题</small></div>
-        <div class="metric-note">全站题库</div>
-      </div>
-      <div class="metric">
-        <div class="metric-label">SOLVERS</div>
-        <div class="metric-value">{{ stats.solvers ?? '—' }}<small>人</small></div>
-        <div class="metric-note">已参与用户</div>
-      </div>
-      <div class="metric">
-        <div class="metric-label">SUBMISSIONS</div>
-        <div class="metric-value">{{ formatCount(stats.totalSubmit) }}<small>次</small></div>
-        <div class="metric-note">累计提交</div>
-      </div>
-      <div class="metric">
-        <div class="metric-label">MAX AC</div>
-        <div class="metric-value">{{ stats.maxAcCount ?? '—' }}<small>题</small></div>
-        <div class="metric-note">单人最高解题</div>
-      </div>
-    </section>
 
     <div class="section-head">
       <div>
         <h2 class="section-title">开始做题</h2>
         <p class="section-sub">按难度和标签筛选，读题、写码、提交都在一个页面完成。</p>
       </div>
-      <router-link class="section-link" to="/problems">全部题目 →</router-link>
+      <router-link class="section-link" to="/problems">全部题目</router-link>
     </div>
 
     <section class="lower">
       <div class="card problems-card">
         <div class="card-head">
           <span class="card-title">题目列表</span>
-          <span class="card-meta">SORTED BY ID</span>
+          <span class="card-meta">按题号</span>
         </div>
         <template v-if="problems.length">
           <div class="prob-head" aria-hidden="true">
-            <span>ID</span><span>题目</span><span>难度</span><span>通过率</span><span></span>
+            <span>ID</span><span>题目</span><span>难度</span><span>通过率</span>
           </div>
           <router-link v-for="row in problems" :key="row.id" class="prob-row" :to="`/problems/${row.id}`">
             <span class="prob-id">#{{ row.id }}</span>
@@ -110,11 +69,7 @@
               </span>
             </span>
             <span class="diff" :class="`diff-${row.difficulty}`">{{ DIFFICULTY_MAP[row.difficulty]?.label || '未知' }}</span>
-            <span class="acc">
-              <span class="acc-bar" aria-hidden="true"><i :style="{ width: `${passRate(row)}%` }" /></span>
-              <span class="acc-num">{{ passRate(row) }}%</span>
-            </span>
-            <span class="prob-go" aria-hidden="true">→</span>
+            <span class="acc">{{ passRate(row) }}%</span>
           </router-link>
         </template>
         <el-empty v-else description="暂无题目" :image-size="64" />
@@ -123,7 +78,7 @@
       <div class="card rank-card">
         <div class="card-head">
           <span class="card-title">全站榜单</span>
-          <span class="card-meta">ALL TIME · TOP 5</span>
+          <span class="card-meta">总榜前五</span>
         </div>
         <template v-if="topFive.length">
           <ul class="rank-list">
@@ -135,7 +90,6 @@
               </span>
               <span class="rank-main">
                 <span class="rank-name">{{ row.username || `用户 ${row.userId}` }}</span>
-                <span class="rank-bar" aria-hidden="true"><i :style="{ width: `${Math.min(100, (row.acCount / Math.max(1, topFive[0]?.acCount || 1)) * 100)}%` }" /></span>
               </span>
               <span class="rank-ac">{{ row.acCount }}<small>AC</small></span>
             </li>
@@ -146,11 +100,7 @@
     </section>
 
     <section class="features" aria-label="平台能力">
-      <article v-for="(f, i) in FEATURES" :key="f.title" class="feature">
-        <div class="feature-top">
-          <span class="feature-icon" v-html="f.icon" />
-          <span class="feature-no">{{ String(i + 1).padStart(2, '0') }}</span>
-        </div>
+      <article v-for="f in FEATURES" :key="f.title" class="feature">
         <h3 class="feature-title">{{ f.title }}</h3>
         <p class="feature-desc">{{ f.desc }}</p>
       </article>
@@ -236,44 +186,25 @@ onMounted(async () => {
 
 <style scoped>
 .home {
-  max-width: 1280px;
+  max-width: 1120px;
   margin: 0 auto;
-  padding: 54px 32px 64px;
+  padding: 42px 32px 64px;
 }
 
 /* ---------- hero ---------- */
 .hero {
   display: grid;
-  grid-template-columns: minmax(0, 1.02fr) minmax(0, 0.98fr);
-  gap: 64px;
-  align-items: center;
-  padding-bottom: 38px;
-}
-.statusline {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-family: var(--oj-font-mono);
-  font-size: 9.5px;
-  letter-spacing: 0.11em;
-  color: var(--oj-text-sub);
-}
-.status-dot {
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background: var(--oj-success);
-  box-shadow: 0 0 0 3px rgba(14, 159, 110, 0.1);
-}
-.statusline .slash {
-  color: var(--oj-gray-300);
+  grid-template-columns: minmax(0, 1.35fr) minmax(250px, 0.65fr);
+  gap: 72px;
+  align-items: end;
+  padding-bottom: 28px;
 }
 .hero h1 {
-  margin: 17px 0 0;
-  font-size: clamp(42px, 4.7vw, 62px);
-  line-height: 1.08;
-  letter-spacing: -0.055em;
-  font-weight: 800;
+  margin: 0;
+  font-size: clamp(40px, 4.4vw, 54px);
+  line-height: 1.1;
+  letter-spacing: -0.05em;
+  font-weight: 760;
   color: var(--oj-text);
 }
 .hero h1 .muted {
@@ -283,9 +214,9 @@ onMounted(async () => {
   color: var(--oj-primary);
 }
 .lede {
-  margin: 21px 0 0;
+  margin: 18px 0 0;
   max-width: 30em;
-  font-size: 14.5px;
+  font-size: 14px;
   line-height: 1.85;
   color: var(--oj-text-sub);
 }
@@ -332,10 +263,46 @@ onMounted(async () => {
   color: var(--oj-text);
 }
 .hero-footnote {
-  margin: 15px 0 0;
+  margin: 14px 0 0;
+  font-size: 10.5px;
+  color: var(--oj-text-weak);
+}
+
+/* 右侧只放一组真实读数，不做四张卡 */
+.ledger {
+  width: 100%;
+  max-width: 320px;
+  justify-self: end;
+  margin: 0;
+  padding: 0;
+  border-top: 1px solid var(--oj-border);
+}
+.ledger-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 20px;
+  padding: 13px 0 12px;
+  border-bottom: 1px solid var(--oj-border);
+}
+.ledger-row dt {
+  font-size: 12px;
+  color: var(--oj-text-sub);
+}
+.ledger-row dd {
+  margin: 0;
   font-family: var(--oj-font-mono);
+  font-size: 22px;
+  line-height: 1;
+  font-weight: 600;
+  letter-spacing: -0.04em;
+  color: var(--oj-text);
+}
+.ledger-row dd small {
+  margin-left: 4px;
   font-size: 9px;
-  letter-spacing: 0.05em;
+  font-weight: 500;
+  letter-spacing: 0;
   color: var(--oj-text-weak);
 }
 
@@ -489,57 +456,44 @@ onMounted(async () => {
   color: #8ea6ff;
 }
 
-/* ---------- 公告条 ---------- */
+/* ---------- 公告 ---------- */
 .notice {
   display: flex;
-  align-items: center;
+  align-items: baseline;
   gap: 12px;
-  padding: 11px 16px;
-  margin-bottom: 14px;
-  background: var(--oj-card);
-  border: 1px solid var(--oj-border);
-  border-left: 3px solid var(--oj-primary);
-  border-radius: 6px;
-  box-shadow: var(--oj-shadow-sm);
-  font-size: 12px;
+  padding: 10px 0;
+  margin-bottom: 24px;
+  border-top: 1px solid var(--oj-border);
+  border-bottom: 1px solid var(--oj-border);
   color: var(--oj-text-sub);
+  transition: border-color var(--oj-duration) var(--oj-ease);
 }
 .notice:hover {
-  border-color: var(--oj-info-border);
-  border-left-color: var(--oj-primary);
+  border-color: var(--oj-border-strong);
 }
-.notice-tag {
-  flex-shrink: 0;
-  font-family: var(--oj-font-mono);
-  font-size: 9px;
-  letter-spacing: 0.08em;
+.notice:hover .notice-title {
   color: var(--oj-primary);
-  background: var(--oj-primary-soft);
-  padding: 2px 6px;
-  border-radius: 3px;
+}
+.notice-label {
+  flex-shrink: 0;
+  font-size: 10.5px;
+  color: var(--oj-text-weak);
 }
 .notice-title {
-  flex-shrink: 0;
-  font-weight: 650;
-  color: var(--oj-text);
-}
-.notice-body {
   flex: 1;
   min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  color: var(--oj-text-sub);
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--oj-text);
 }
 .notice-date {
   flex-shrink: 0;
   font-family: var(--oj-font-mono);
-  font-size: 9.5px;
+  font-size: 10px;
   color: var(--oj-text-weak);
-}
-.notice-go {
-  flex-shrink: 0;
-  color: var(--oj-primary);
 }
 
 /* ---------- 读数卡 ---------- */
@@ -627,13 +581,15 @@ onMounted(async () => {
 .rank-card {
   padding: 0;
   overflow: hidden;
+  border-radius: 4px;
+  box-shadow: none;
 }
 .card-head {
-  height: 48px;
+  height: 44px;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0 18px;
+  padding: 0 16px;
   border-bottom: 1px solid var(--oj-border);
 }
 .card-title {
@@ -642,18 +598,16 @@ onMounted(async () => {
   letter-spacing: -0.01em;
 }
 .card-meta {
-  font-family: var(--oj-font-mono);
-  font-size: 8.5px;
-  letter-spacing: 0.08em;
+  font-size: 10.5px;
   color: var(--oj-text-weak);
 }
 .prob-head,
 .prob-row {
   display: grid;
-  grid-template-columns: 48px minmax(0, 1fr) 72px 104px 22px;
+  grid-template-columns: 48px minmax(0, 1fr) 72px 104px;
   gap: 12px;
   align-items: center;
-  padding: 0 18px;
+  padding: 0 16px;
 }
 .prob-head {
   height: 32px;
@@ -699,63 +653,29 @@ onMounted(async () => {
 }
 .tag {
   font-family: var(--oj-font-mono);
-  font-size: 8px;
+  font-size: 8.5px;
   line-height: 1.5;
-  color: var(--oj-text-sub);
-  border: 1px solid var(--oj-border);
-  background: var(--oj-gray-50);
-  padding: 1px 5px;
-  border-radius: 3px;
+  color: var(--oj-text-weak);
+}
+.tag + .tag::before {
+  content: '·';
+  margin-right: 6px;
+  color: var(--oj-gray-300);
 }
 .diff {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
   font-size: 11.5px;
   font-weight: 600;
-}
-.diff::before {
-  content: '';
-  width: 5px;
-  height: 5px;
-  border-radius: 50%;
-  background: currentColor;
 }
 .diff-1 { color: var(--oj-success); }
 .diff-2 { color: var(--oj-warning); }
 .diff-3 { color: var(--oj-danger); }
 .acc {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-.acc-bar {
-  width: 44px;
-  height: 3px;
-  border-radius: 99px;
-  background: var(--oj-gray-100);
-  overflow: hidden;
-}
-.acc-bar i {
-  display: block;
-  height: 100%;
-  border-radius: 99px;
-  background: var(--oj-primary);
-}
-.acc-num {
-  width: 38px;
-  text-align: right;
   font-family: var(--oj-font-mono);
-  font-size: 9.5px;
-  color: var(--oj-text-sub);
-}
-.prob-go {
+  font-size: 10px;
   text-align: right;
-  font-size: 13px;
-  color: var(--oj-text-weak);
-}
-.prob-row:hover .prob-go {
-  color: var(--oj-primary);
+  color: var(--oj-text-sub);
 }
 
 .rank-list {
@@ -817,23 +737,6 @@ onMounted(async () => {
   text-overflow: ellipsis;
   color: var(--oj-text);
 }
-.rank-bar {
-  display: block;
-  height: 2px;
-  margin-top: 5px;
-  background: var(--oj-gray-100);
-  border-radius: 99px;
-  overflow: hidden;
-}
-.rank-bar i {
-  display: block;
-  height: 100%;
-  background: var(--oj-gray-300);
-  border-radius: 99px;
-}
-.rank-row:first-child .rank-bar i {
-  background: var(--oj-primary);
-}
 .rank-ac {
   text-align: right;
   font-family: var(--oj-font-mono);
@@ -850,63 +753,36 @@ onMounted(async () => {
 .features {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
-  margin-top: 22px;
-  overflow: hidden;
-  background: var(--oj-card);
-  border: 1px solid var(--oj-border);
-  border-radius: 10px;
-  box-shadow: var(--oj-shadow-sm);
+  margin-top: 30px;
+  border-top: 1px solid var(--oj-border);
 }
 .feature {
-  padding: 19px 20px 20px;
+  padding: 16px 22px 4px 0;
   border-right: 1px solid var(--oj-border);
 }
 .feature:last-child {
   border-right: 0;
 }
-.feature-top {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-}
-.feature-icon {
-  width: 30px;
-  height: 30px;
-  border: 1px solid var(--oj-border);
-  border-radius: 6px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  color: var(--oj-text-sub);
-}
-.feature-icon :deep(svg) {
-  width: 14px;
-  height: 14px;
-}
-.feature-no {
-  font-family: var(--oj-font-mono);
-  font-size: 8.5px;
-  color: var(--oj-text-weak);
-}
 .feature-title {
-  margin: 13px 0 5px;
+  margin: 0 0 6px;
   font-size: 12.5px;
   font-weight: 700;
   letter-spacing: -0.01em;
 }
 .feature-desc {
   font-size: 10.5px;
-  line-height: 1.7;
+  line-height: 1.75;
   color: var(--oj-text-sub);
 }
 
 @media (max-width: 1040px) {
   .hero {
     grid-template-columns: 1fr;
-    gap: 40px;
+    gap: 32px;
   }
-  .terminal {
-    max-width: 620px;
+  .ledger {
+    max-width: 100%;
+    justify-self: stretch;
   }
   .features {
     grid-template-columns: repeat(2, 1fr);
@@ -916,6 +792,8 @@ onMounted(async () => {
   }
   .feature:nth-child(n + 3) {
     border-top: 1px solid var(--oj-border);
+    margin-top: 14px;
+    padding-top: 14px;
   }
   .lower {
     grid-template-columns: 1fr;
@@ -926,18 +804,8 @@ onMounted(async () => {
     padding: 30px 18px 52px;
   }
   .hero h1 {
-    font-size: 40px;
+    font-size: 38px;
   }
-  .metrics {
-    grid-template-columns: 1fr 1fr;
-  }
-  .metric:nth-child(2) {
-    border-right: 0;
-  }
-  .metric:nth-child(n + 3) {
-    border-top: 1px solid var(--oj-border);
-  }
-  .notice-body,
   .notice-date {
     display: none;
   }
@@ -945,9 +813,9 @@ onMounted(async () => {
     display: none;
   }
   .prob-row {
-    grid-template-columns: 44px minmax(0, 1fr) 52px;
+    grid-template-columns: 42px minmax(0, 1fr);
     gap: 10px;
-    padding: 12px 16px;
+    padding: 11px 16px;
   }
   .diff,
   .acc {
@@ -962,9 +830,8 @@ onMounted(async () => {
   }
   .feature + .feature {
     border-top: 1px solid var(--oj-border);
-  }
-  .term-body {
-    font-size: 11px;
+    margin-top: 12px;
+    padding-top: 12px;
   }
 }
 </style>

@@ -10,23 +10,19 @@
 
     <div class="colophon-body">
       <aside class="toc" aria-label="页内目录">
-        <p class="toc-title">DOCS INDEX</p>
-        <a href="#guide" class="toc-link"><span>01</span>如何提交第一道题</a>
-        <a href="#status" class="toc-link"><span>02</span>判题状态对照</a>
-        <a href="#faq" class="toc-link"><span>03</span>常见问题</a>
-        <a href="#about" class="toc-link"><span>04</span>关于与致谢</a>
-        <p class="toc-note">CodeOJ<br />Spring Boot 3 · Vue 3</p>
+        <a href="#guide" class="toc-link">如何提交第一道题</a>
+        <a href="#status" class="toc-link">判题状态对照</a>
+        <a href="#faq" class="toc-link">常见问题</a>
+        <a href="#about" class="toc-link">关于与致谢</a>
       </aside>
 
       <main class="chapters">
         <section id="guide" class="chapter">
           <div class="chapter-head">
-            <span class="chapter-no">01</span>
             <h2>如何提交第一道题</h2>
           </div>
           <ol class="steps">
             <li v-for="(s, i) in STEPS" :key="i" class="step">
-              <span class="step-no serif-num">{{ String(i + 1).padStart(2, '0') }}</span>
               <div class="step-main">
                 <p class="step-title">{{ s.title }}</p>
                 <p class="step-desc">{{ s.desc }}</p>
@@ -37,22 +33,18 @@
 
         <section id="status" class="chapter">
           <div class="chapter-head">
-            <span class="chapter-no">02</span>
             <h2>判题状态对照表</h2>
             <span class="chapter-meta">9 种判题状态 · 与判题机一致</span>
           </div>
           <div class="status-table">
             <div class="status-head" aria-hidden="true">
-              <span>CODE</span>
+              <span>编码</span>
               <span>状态</span>
               <span>说明</span>
             </div>
             <div v-for="(s, code) in STATUS_MAP" :key="code" class="status-row">
               <span class="status-code mono">{{ code }}</span>
-              <span class="status-name">
-                <span class="status-dot" :style="{ background: statusColor(Number(code)) }" aria-hidden="true" />
-                {{ s.label }}
-              </span>
+              <span class="status-name" :style="{ color: statusColor(Number(code)) }">{{ s.label }}</span>
               <span class="status-desc">{{ STATUS_DESC[String(code)] }}</span>
             </div>
           </div>
@@ -60,7 +52,6 @@
 
         <section id="faq" class="chapter">
           <div class="chapter-head">
-            <span class="chapter-no">03</span>
             <h2>常见问题</h2>
           </div>
           <el-collapse class="faq">
@@ -72,7 +63,6 @@
 
         <section id="about" class="chapter">
           <div class="chapter-head">
-            <span class="chapter-no">04</span>
             <h2>关于 CodeOJ</h2>
           </div>
           <p class="about-p">
@@ -136,62 +126,41 @@ const STACK = [
 
 <style scoped>
 .colophon {
-  max-width: 1160px;
+  max-width: 1080px;
   margin: 0 auto;
-  padding: 44px 32px 64px;
+  padding: 36px 32px 64px;
 }
 
 .colophon-body {
   display: grid;
-  grid-template-columns: 200px minmax(0, 1fr);
-  gap: 22px;
+  grid-template-columns: 168px minmax(0, 1fr);
+  gap: 40px;
   align-items: start;
-  margin-top: 22px;
+  margin-top: 10px;
 }
 
-/* 文档导航 */
+/* 文档导航：只有文字，不做卡片 */
 .toc {
   position: sticky;
   top: 92px;
-  padding: 14px 12px 12px;
-  background: var(--oj-card);
-  border: 1px solid var(--oj-border);
-  border-radius: 10px;
-  box-shadow: var(--oj-shadow-sm);
-}
-.toc-title {
-  margin: 0 0 8px;
-  padding: 0 6px;
-  font-family: var(--oj-font-mono);
-  font-size: 8px;
-  letter-spacing: 0.1em;
-  color: var(--oj-text-weak);
-}
-.toc-link {
-  display: flex;
-  gap: 8px;
-  padding: 7px 6px;
-  border-radius: 5px;
-  font-size: 12px;
-  color: var(--oj-text-sub);
-  transition: all var(--oj-duration) var(--oj-ease);
-}
-.toc-link span {
-  font-family: var(--oj-font-mono);
-  font-size: 8.5px;
-  color: var(--oj-gray-400);
   padding-top: 2px;
 }
+.toc-link {
+  display: block;
+  padding: 5px 0;
+  font-size: 11.5px;
+  line-height: 1.6;
+  color: var(--oj-text-sub);
+  transition: color var(--oj-duration) var(--oj-ease);
+}
 .toc-link:hover {
-  background: var(--oj-primary-soft);
   color: var(--oj-primary);
 }
 .toc-note {
-  margin: 14px 0 0;
-  padding: 11px 6px 0;
+  margin: 16px 0 0;
+  padding: 12px 0 0;
   border-top: 1px solid var(--oj-border);
-  font-family: var(--oj-font-mono);
-  font-size: 8.5px;
+  font-size: 9.5px;
   line-height: 1.8;
   color: var(--oj-text-weak);
 }
@@ -200,50 +169,30 @@ const STACK = [
   min-width: 0;
 }
 .chapter {
-  padding: 18px 20px 20px;
-  margin-bottom: 12px;
-  background: var(--oj-card);
-  border: 1px solid var(--oj-border);
-  border-radius: 10px;
-  box-shadow: var(--oj-shadow-sm);
+  padding: 18px 0 24px;
+  border-top: 1px solid var(--oj-border);
 }
 .chapter:last-child {
-  margin-bottom: 0;
+  padding-bottom: 4px;
 }
 .chapter-head {
   display: flex;
-  align-items: center;
+  align-items: baseline;
   gap: 10px;
-  padding-bottom: 10px;
+  padding-bottom: 9px;
   margin-bottom: 12px;
   border-bottom: 1px solid var(--oj-border);
-}
-.chapter-no {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-width: 22px;
-  height: 18px;
-  padding: 0 5px;
-  border-radius: 4px;
-  background: var(--oj-primary-soft);
-  font-family: var(--oj-font-mono);
-  font-size: 8.5px;
-  font-weight: 600;
-  color: var(--oj-primary);
 }
 .chapter-head h2 {
   margin: 0;
   font-size: 17px;
-  font-weight: 750;
-  letter-spacing: -0.03em;
+  font-weight: 700;
+  letter-spacing: -0.02em;
   white-space: nowrap;
 }
 .chapter-meta {
   margin-left: auto;
-  font-family: var(--oj-font-mono);
-  font-size: 8.5px;
-  letter-spacing: 0.04em;
+  font-size: 10px;
   color: var(--oj-text-weak);
   white-space: nowrap;
 }
@@ -255,10 +204,7 @@ const STACK = [
   padding: 0;
 }
 .step {
-  display: grid;
-  grid-template-columns: 28px minmax(0, 1fr);
-  gap: 12px;
-  padding: 11px 0;
+  padding: 10px 0;
   border-top: 1px solid var(--oj-border);
 }
 .step:first-child {
@@ -267,19 +213,6 @@ const STACK = [
 }
 .step:last-child {
   padding-bottom: 2px;
-}
-.step-no {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 24px;
-  height: 24px;
-  border-radius: 5px;
-  background: var(--oj-gray-100);
-  font-family: var(--oj-font-mono);
-  font-size: 9.5px;
-  font-weight: 600;
-  color: var(--oj-text-sub);
 }
 .step-title {
   margin: 0;
@@ -296,28 +229,24 @@ const STACK = [
 
 /* 状态表 */
 .status-table {
-  border: 1px solid var(--oj-border);
-  border-radius: 7px;
-  overflow: hidden;
+  border-top: 1px solid var(--oj-border);
+  border-bottom: 1px solid var(--oj-border);
 }
 .status-head {
   display: grid;
-  grid-template-columns: 52px 118px minmax(0, 1fr);
+  grid-template-columns: 44px 110px minmax(0, 1fr);
   gap: 14px;
-  padding: 7px 10px;
+  padding: 7px 0;
   border-bottom: 1px solid var(--oj-border);
-  background: var(--oj-gray-50);
-  font-family: var(--oj-font-mono);
-  font-size: 8px;
-  letter-spacing: 0.08em;
+  font-size: 10px;
   color: var(--oj-text-weak);
 }
 .status-row {
   display: grid;
-  grid-template-columns: 52px 118px minmax(0, 1fr);
+  grid-template-columns: 44px 110px minmax(0, 1fr);
   gap: 14px;
   align-items: center;
-  padding: 7px 10px;
+  padding: 7px 0;
   border-bottom: 1px solid var(--oj-border);
 }
 .status-row:last-child {
@@ -328,18 +257,8 @@ const STACK = [
   color: var(--oj-text-weak);
 }
 .status-name {
-  display: inline-flex;
-  align-items: center;
-  gap: 7px;
   font-size: 11.5px;
   font-weight: 600;
-  color: var(--oj-text);
-}
-.status-dot {
-  width: 5px;
-  height: 5px;
-  border-radius: 50%;
-  flex-shrink: 0;
 }
 .status-desc {
   font-size: 11px;
@@ -400,38 +319,33 @@ const STACK = [
   color: var(--oj-text-sub);
 }
 .colophon-end {
-  margin: 18px 0 0;
+  margin: 20px 0 0;
   padding-top: 12px;
-  text-align: center;
   border-top: 1px solid var(--oj-border);
-  font-family: var(--oj-font-mono);
-  font-size: 8.5px;
-  letter-spacing: 0.06em;
+  font-size: 9.5px;
   color: var(--oj-text-weak);
 }
 
 @media (max-width: 800px) {
   .colophon {
-    padding: 30px 18px 52px;
+    padding: 28px 18px 52px;
   }
   .colophon-body {
     grid-template-columns: 1fr;
     gap: 14px;
-    margin-top: 18px;
+    margin-top: 8px;
   }
   .toc {
     position: static;
     display: flex;
     flex-wrap: wrap;
-    gap: 2px 6px;
-    padding: 10px;
-  }
-  .toc-title {
-    width: 100%;
-    margin-bottom: 2px;
+    gap: 2px 16px;
+    padding: 8px 0;
+    border-top: 1px solid var(--oj-border);
+    border-bottom: 1px solid var(--oj-border);
   }
   .toc-link {
-    padding: 5px 7px;
+    padding: 3px 0;
   }
   .toc-note {
     display: none;
@@ -445,10 +359,8 @@ const STACK = [
   }
   .status-head,
   .status-row {
-    grid-template-columns: 36px 100px minmax(0, 1fr);
+    grid-template-columns: 32px 96px minmax(0, 1fr);
     gap: 9px;
-    padding-left: 8px;
-    padding-right: 8px;
   }
 }
 </style>

@@ -33,7 +33,7 @@
         注 册
       </el-button>
       <p class="auth-links">
-        已有账号？<router-link to="/login">直接登录 →</router-link>
+        已有账号？<router-link to="/login">直接登录</router-link>
       </p>
     </el-form>
   </AuthShell>

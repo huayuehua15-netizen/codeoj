@@ -2,13 +2,11 @@
   <div class="errata">
     <header class="page-head errata-head">
       <div>
-        <p class="kicker">WRONG BOOK</p>
         <h1 class="page-head-title">错题本</h1>
-        <p class="page-head-sub">有提交记录但尚未 AC 的题目，AC 后自动移出。</p>
-      </div>
-      <div class="errata-count">
-        <span class="count-num">{{ String(items.length).padStart(2, '0') }}</span>
-        <span class="count-label">TO REVIEW</span>
+        <p class="page-head-sub">
+          有提交记录但尚未 AC 的题目，AC 后自动移出。
+          <span v-if="items.length" class="head-count">共 {{ items.length }} 道</span>
+        </p>
       </div>
     </header>
 
@@ -32,7 +30,6 @@
               {{ ({ 1: '简单', 2: '中等', 3: '困难' } as Record<number, string>)[row.difficulty] || '?' }}
             </span>
             <span class="row-status" :style="{ color: statusColor(row.lastStatus) }">
-              <span class="status-dot" :style="{ background: statusColor(row.lastStatus) }" aria-hidden="true" />
               {{ statusLabel(row.lastStatus) }}
             </span>
             <span class="row-attempts mono tabular">{{ row.attempts }} 次</span>
@@ -43,11 +40,6 @@
       </ul>
 
       <el-empty v-else-if="!loading" description="没有错题，去题库找新题目" />
-
-      <p class="errata-note">
-        <span class="note-mark">RULE</span>
-        有提交记录但从未通过的题目；一旦 AC 即移出错题本。
-      </p>
     </div>
   </div>
 </template>
@@ -73,52 +65,34 @@ onMounted(async () => {
 
 <style scoped>
 .errata {
-  max-width: 1160px;
+  max-width: 1120px;
   margin: 0 auto;
-  padding: 44px 32px 64px;
+  padding: 36px 32px 64px;
 }
 
 .errata-head {
   align-items: flex-end;
-  margin-bottom: 22px;
+  margin-bottom: 20px;
 }
-.errata-count {
-  display: flex;
-  align-items: baseline;
-  gap: 8px;
-  padding-bottom: 2px;
-}
-.count-num {
-  font-family: var(--oj-font-mono);
-  font-size: 26px;
-  font-weight: 600;
-  line-height: 1;
-}
-.count-label {
-  font-family: var(--oj-font-mono);
-  font-size: 8.5px;
-  letter-spacing: 0.08em;
+.head-count {
+  margin-left: 10px;
+  font-size: 10.5px;
   color: var(--oj-text-weak);
 }
 
 .errata-body {
-  min-height: 200px;
   background: var(--oj-card);
   border: 1px solid var(--oj-border);
-  border-radius: 10px;
-  box-shadow: var(--oj-shadow-sm);
+  border-radius: 4px;
   overflow: hidden;
 }
 .errata-cols {
   display: grid;
   grid-template-columns: 62px minmax(0, 1fr) 72px 108px 64px 132px 52px;
   gap: 14px;
-  padding: 9px 18px 8px;
+  padding: 8px 16px 7px;
   border-bottom: 1px solid var(--oj-border);
-  background: var(--oj-gray-50);
-  font-family: var(--oj-font-mono);
-  font-size: 8.5px;
-  letter-spacing: 0.08em;
+  font-size: 10px;
   color: var(--oj-text-weak);
 }
 .errata-list {
@@ -158,17 +132,8 @@ onMounted(async () => {
   color: var(--oj-primary);
 }
 .row-status {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
   font-size: 11.5px;
   font-weight: 600;
-}
-.status-dot {
-  width: 5px;
-  height: 5px;
-  border-radius: 50%;
-  flex-shrink: 0;
 }
 .row-attempts {
   font-size: 10.5px;
@@ -186,31 +151,9 @@ onMounted(async () => {
   white-space: nowrap;
 }
 
-.errata-note {
-  display: flex;
-  align-items: center;
-  gap: 7px;
-  margin: 0;
-  padding: 12px 18px;
-  border-top: 1px solid var(--oj-border);
-  background: var(--oj-gray-50);
-  font-size: 10.5px;
-  line-height: 1.7;
-  color: var(--oj-text-weak);
-}
-.note-mark {
-  padding: 1px 5px;
-  border-radius: 3px;
-  background: var(--oj-primary-soft);
-  font-family: var(--oj-font-mono);
-  font-size: 8px;
-  letter-spacing: 0.06em;
-  color: var(--oj-primary);
-}
-
 @media (max-width: 900px) {
   .errata {
-    padding: 30px 18px 52px;
+    padding: 28px 18px 52px;
   }
   .errata-cols {
     display: none;

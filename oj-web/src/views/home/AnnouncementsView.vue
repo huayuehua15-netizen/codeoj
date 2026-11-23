@@ -4,23 +4,22 @@
       <div>
         <p class="kicker">BULLETIN</p>
         <h1 class="page-head-title">公告</h1>
-        <p class="page-head-sub">课程通知、竞赛安排与平台更新。</p>
-      </div>
-      <div class="bulletin-count">
-        <span class="count-num">{{ String(announcements.length).padStart(2, '0') }}</span>
-        <span class="count-label">NOTICES</span>
+        <p class="page-head-sub">
+          课程通知、竞赛安排与平台更新。
+          <span v-if="announcements.length" class="head-count">共 {{ announcements.length }} 条</span>
+        </p>
       </div>
     </header>
 
     <div v-loading="loading" class="bulletin-body">
       <article v-for="a in announcements" :key="a.id" class="notice">
         <div class="notice-meta">
-          <span class="notice-date">{{ formatDateTime(a.createdAt) }}</span>
-          <span class="notice-tag">NOTICE</span>
-          <span class="notice-id">#{{ a.id }}</span>
+          <time class="notice-date">{{ formatDateTime(a.createdAt) }}</time>
         </div>
-        <h2 class="notice-title">{{ a.title }}</h2>
-        <p class="notice-body">{{ a.content }}</p>
+        <div class="notice-content">
+          <h2 class="notice-title">{{ a.title }}</h2>
+          <p class="notice-body">{{ a.content }}</p>
+        </div>
       </article>
 
       <div v-if="!loading && !announcements.length" class="notice-empty">
@@ -50,78 +49,47 @@ onMounted(async () => {
 
 <style scoped>
 .bulletin {
-  max-width: 1040px;
+  max-width: 1000px;
   margin: 0 auto;
-  padding: 44px 32px 64px;
+  padding: 36px 32px 64px;
 }
 
 .bulletin-head {
   align-items: flex-end;
-  margin-bottom: 22px;
+  margin-bottom: 20px;
 }
-.bulletin-count {
-  display: flex;
-  align-items: baseline;
-  gap: 8px;
-  padding-bottom: 2px;
-}
-.count-num {
-  font-family: var(--oj-font-mono);
-  font-size: 26px;
-  font-weight: 600;
-  line-height: 1;
-  color: var(--oj-text);
-}
-.count-label {
-  font-family: var(--oj-font-mono);
-  font-size: 8.5px;
-  letter-spacing: 0.1em;
+.head-count {
+  margin-left: 10px;
+  font-size: 10.5px;
   color: var(--oj-text-weak);
 }
 
 .bulletin-body {
   min-height: 160px;
+  border-top: 1px solid var(--oj-border);
 }
 .notice {
-  padding: 18px 20px 16px;
-  margin-bottom: 10px;
-  background: var(--oj-card);
-  border: 1px solid var(--oj-border);
-  border-radius: 10px;
-  box-shadow: var(--oj-shadow-sm);
-  transition: border-color var(--oj-duration) var(--oj-ease);
-}
-.notice:hover {
-  border-color: var(--oj-border-strong);
+  display: grid;
+  grid-template-columns: 112px minmax(0, 1fr);
+  gap: 24px;
+  padding: 18px 0 17px;
+  border-bottom: 1px solid var(--oj-border);
 }
 .notice-meta {
-  display: flex;
-  align-items: center;
-  gap: 8px;
+  padding-top: 2px;
 }
 .notice-date {
   font-family: var(--oj-font-mono);
-  font-size: 9.5px;
+  font-size: 10px;
+  line-height: 1.5;
   color: var(--oj-text-weak);
 }
-.notice-tag {
-  padding: 2px 6px;
-  border-radius: 4px;
-  background: var(--oj-primary-soft);
-  font-family: var(--oj-font-mono);
-  font-size: 8px;
-  letter-spacing: 0.08em;
-  color: var(--oj-primary);
-}
-.notice-id {
-  margin-left: auto;
-  font-family: var(--oj-font-mono);
-  font-size: 9px;
-  color: var(--oj-gray-300);
+.notice-content {
+  min-width: 0;
 }
 .notice-title {
-  margin: 9px 0 0;
-  font-size: 17px;
+  margin: 0;
+  font-size: 16px;
   font-weight: 700;
   line-height: 1.45;
   letter-spacing: -0.02em;
@@ -129,7 +97,7 @@ onMounted(async () => {
 }
 .notice-body {
   margin: 7px 0 0;
-  max-width: 52em;
+  max-width: 58em;
   font-size: 12px;
   line-height: 1.85;
   color: var(--oj-text-sub);
@@ -137,22 +105,21 @@ onMounted(async () => {
   word-break: break-word;
 }
 .notice-empty {
-  padding: 44px 20px;
-  background: var(--oj-card);
-  border: 1px solid var(--oj-border);
-  border-radius: 10px;
-  box-shadow: var(--oj-shadow-sm);
+  padding: 44px 0;
+  border-bottom: 1px solid var(--oj-border);
 }
 
 @media (max-width: 680px) {
   .bulletin {
-    padding: 30px 18px 52px;
+    padding: 28px 18px 52px;
   }
   .notice {
-    padding: 16px 16px 14px;
+    grid-template-columns: 1fr;
+    gap: 5px;
+    padding: 16px 0 15px;
   }
   .notice-title {
-    font-size: 16px;
+    font-size: 15px;
   }
 }
 </style>

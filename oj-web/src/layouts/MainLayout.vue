@@ -5,7 +5,6 @@
         <router-link to="/home" class="brand" aria-label="CodeOJ 首页">
           <span class="brand-mark" aria-hidden="true">&lt;/&gt;</span>
           <span class="brand-word">Code<span>OJ</span></span>
-          <span class="brand-sub" aria-hidden="true">ONLINE<br />JUDGE</span>
         </router-link>
 
         <nav aria-label="主导航" class="nav">
@@ -87,7 +86,7 @@
           <span class="foot-mark" aria-hidden="true">&lt;/&gt;</span>
           <div>
             <p class="foot-name">CodeOJ</p>
-            <p class="foot-meta">WRITE CODE. GET VERDICT.</p>
+            <p class="foot-meta">读题、写码、等待判定。</p>
           </div>
         </div>
         <nav class="foot-links" aria-label="页脚导航">
@@ -96,10 +95,7 @@
           <router-link to="/leaderboard">排行榜</router-link>
           <router-link v-if="userStore.isLoggedIn && !userStore.isAdmin" to="/courses">班级作业</router-link>
         </nav>
-        <p class="foot-colophon">
-          Spring Boot 3 · Vue 3 · Docker<br />
-          <span>ONLINE JUDGE / CODE PRACTICE</span>
-        </p>
+        <p class="foot-colophon">© 2026 CodeOJ</p>
       </div>
     </footer>
 
@@ -201,9 +197,8 @@ async function handleLogout() {
   position: sticky;
   top: 0;
   z-index: 30;
-  background: rgba(255, 255, 255, 0.92);
+  background: var(--oj-card);
   border-bottom: 1px solid var(--oj-border);
-  backdrop-filter: blur(12px);
 }
 .topbar-inner {
   max-width: 1280px;
@@ -453,10 +448,8 @@ async function handleLogout() {
   color: var(--oj-gray-800);
 }
 .foot-meta {
-  margin: 2px 0 0;
-  font-family: var(--oj-font-mono);
-  font-size: 8px;
-  letter-spacing: 0.1em;
+  margin: 3px 0 0;
+  font-size: 9.5px;
   color: var(--oj-text-weak);
 }
 .foot-links {
@@ -471,14 +464,8 @@ async function handleLogout() {
 .foot-colophon {
   margin-left: auto;
   text-align: right;
-  font-family: var(--oj-font-mono);
-  font-size: 9px;
-  line-height: 1.7;
-  letter-spacing: 0.04em;
+  font-size: 10px;
   color: var(--oj-text-weak);
-}
-.foot-colophon span {
-  color: var(--oj-gray-400);
 }
 
 @media (max-width: 1080px) {
