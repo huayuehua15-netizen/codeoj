@@ -140,16 +140,19 @@ CREATE TABLE IF NOT EXISTS `judge_case` (
 ) ENGINE = InnoDB COMMENT = '判题明细表';
 
 -- ---------------------------------------------------------------------
--- 课程实验（论文 3.3 / 4.4：course + course_problem 多对多）
+-- 课程班级（论文 3.3 / 4.4：course + course_problem 多对多 + course_member 成员）
 -- ---------------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS `course` (
   `id`          BIGINT       NOT NULL AUTO_INCREMENT COMMENT '课程 ID',
   `name`        VARCHAR(100) NOT NULL COMMENT '课程名称',
   `description` VARCHAR(500) DEFAULT NULL COMMENT '课程描述',
   `teacher_id`  BIGINT       DEFAULT NULL COMMENT '创建教师',
+  `join_code`   VARCHAR(12)  DEFAULT NULL COMMENT '学生加入班级的邀请码（NULL=未开放）',
+  `deadline`    DATETIME     DEFAULT NULL COMMENT '课程作业截止时间（NULL=不限）',
   `created_at`  DATETIME     DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
   `updated_at`  DATETIME     DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
-  PRIMARY KEY (`id`)
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_course_join_code` (`join_code`)
 ) ENGINE = InnoDB COMMENT = '课程表';
 
 CREATE TABLE IF NOT EXISTS `course_problem` (
@@ -160,6 +163,16 @@ CREATE TABLE IF NOT EXISTS `course_problem` (
   PRIMARY KEY (`id`),
   KEY `idx_course_problem_course` (`course_id`)
 ) ENGINE = InnoDB COMMENT = '课程题目关联表';
+
+CREATE TABLE IF NOT EXISTS `course_member` (
+  `id`        BIGINT   NOT NULL AUTO_INCREMENT COMMENT '主键',
+  `course_id` BIGINT   NOT NULL COMMENT '课程 ID',
+  `user_id`   BIGINT   NOT NULL COMMENT '学生 ID',
+  `joined_at` DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '加入时间',
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_course_member` (`course_id`, `user_id`),
+  KEY `idx_course_member_user` (`user_id`)
+) ENGINE = InnoDB COMMENT = '课程班级成员表';
 
 -- ---------------------------------------------------------------------
 -- 竞赛模式（论文 7.2 展望落地）：比赛 + 比赛题目集

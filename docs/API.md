@@ -1,6 +1,6 @@
 # CodeOJ 接口文档（前后端对接契约）
 
-> 版本：v1.13（2026-11-22）｜ 新增 JS 场景题（函数实现题）协议：题目新增 `entryFunction`，判题由平台调用器传参比对返回值（§2.3/§4.1）。前序 v1.12：`GET /api/submissions/me/status-map`。v1.11：A/B 双线收口
+> 版本：v1.14（2026-11-23）｜ 课程从"管理员题组"升级为"班级作业"：邀请码加入、截止时间、学生进度与教师学情矩阵（§6.2/§6.3）；修复时间口径、提交语言清单、竞赛明细格式等契约偏差。前序 v1.13：JS 场景题；v1.12：`GET /api/submissions/me/status-map`。
 > 适用：前端（oj-web）按此文档先行开发，后端按此文档补全实现。
 > 标注 ⚠️ 的接口：骨架已定契约，业务实现于第二阶段完成（前端可先按 mock 开发）。
 
@@ -14,7 +14,7 @@
 | 风格 | RESTful，前缀 `/api` |
 | 认证 | JWT，请求头 `Authorization: Bearer <token>`，24 小时有效 |
 | 内容类型 | `application/json; charset=utf-8` |
-| 时间格式 | `yyyy-MM-dd HH:mm:ss`，服务端统一 UTC 存储（论文 4.4），前端展示转本地时区 |
+| 时间格式 | `yyyy-MM-dd HH:mm:ss`；服务端与数据库统一 `Asia/Shanghai`，前端原样展示、不做时区换算 |
 
 ### 0.2 统一返回结构（论文 4.5）
 
@@ -320,7 +320,7 @@ Query 参数：
 
 | 字段 | 校验 |
 |---|---|
-| language | 必须为 `c` / `cpp` / `java` / `python3` 且在该题 languages 内 |
+| language | 必须为 `c` / `cpp` / `java` / `python3` / `js` 且在该题 languages 内 |
 | code | 非空，UTF-8 ≤ 65536 字节（64KB，论文 4.4） |
 
 链路语义（论文 5.3）：限流（6 次/分/用户）→ 幂等锁（同人同题 2s）→ 校验 → 事务写库 `status=0` → 事务后发 MQ 消息 → **立即返回排队中**。
@@ -343,7 +343,7 @@ Query 参数：
 > 与 judge "每条用例独立运行一次"的模型对齐，比对协议零变化；
 > `4.2` 详情返回的 `code` 已按标记剥离调用器，始终为学生原始代码。
 
-### 4.2 判题详情（用例级）`GET /api/submissions/{id}`（登录）⚠️ 实现中
+### 4.2 判题详情（用例级）`GET /api/submissions/{id}`（登录）
 
 权限：**仅本人与管理员**（他人访问返回 40300，论文 4.7 / 测试 F-13）。
 
@@ -502,18 +502,108 @@ Query 参数：`page`（默认 1，最小 1）、`size`（默认 20，限制在 
 
 `backlog` 为 RabbitMQ `oj.judge.queue` 积压量（Redis 缓存 30s，命中缓存时返回的是上一次探询结果）；`judgeInstances` 为在线判题实例数——oj-judge 每 20s 向 Redis 写心跳键（TTL 30s，掉线自动消失），`--scale oj-judge=4` 扩容后自动可见；`queriedAt` 为本次查询时刻（§0.1 格式），与 `backlog` 的缓存时间解耦，避免误读为"积压量的采集时间"。
 
-### 6.2 课程实验 `/api/admin/courses`（管理员）
+### 6.2 课程班级 `/api/admin/courses`（管理员）
 
 | 方法 | 路径 | 说明 |
 |---|---|---|
-| POST | `/api/admin/courses` | 创建课程 `{name, description, problemIds[]}`，返回 id |
-| PUT | `/api/admin/courses/{id}` | 更新课程（全量替换题目分组） |
-| DELETE | `/api/admin/courses/{id}` | 删除课程 |
-| GET | `/api/admin/courses` | 课程列表 |
+| POST | `/api/admin/courses` | 创建课程 `{name, description, problemIds[], joinCode?, deadline?}`，返回 id |
+| PUT | `/api/admin/courses/{id}` | 更新课程（全量替换题目分组；邀请码留空保留原码） |
+| DELETE | `/api/admin/courses/{id}` | 删除课程（同时清除班级成员关系，题目不受影响） |
+| GET | `/api/admin/courses` | 课程列表（含 `joinCode/deadline/memberCount/problemCount`） |
 | GET | `/api/admin/courses/{id}/problems` | 课程内题目（按 sortOrder） |
-| GET | `/api/admin/courses/{id}/completion` | 班级完成情况（每题提交人数/通过人数） |
+| GET | `/api/admin/courses/{id}/completion` | 班级完成情况（仅统计班级成员） |
+| GET | `/api/admin/courses/{id}/members` | 班级学情矩阵（学生 × 题目） |
+| DELETE | `/api/admin/courses/{id}/members/{userId}` | 将学生移出班级 |
+| POST | `/api/admin/courses/{id}/join-code` | 轮换邀请码，返回 `{joinCode}` |
 
 课程与竞赛的 `problemIds` 允许空题组，非空时必须是互不重复、存在的正整数题目编号，否则返回 `40000`。无效编辑不会替换原题组；不存在课程的题组查询返回 `40400`。
+
+**课程列表行（CourseVO）**：
+
+```json
+{
+  "id": 3,
+  "name": "数据结构与算法实验",
+  "description": "第 3 周作业",
+  "teacherId": 15,
+  "teacherName": "teacher_admin",
+  "joinCode": "OJ000003",
+  "deadline": "2026-12-01 23:59:59",
+  "memberCount": 18,
+  "problemCount": 6,
+  "createdAt": "2026-11-20 10:00:00",
+  "updatedAt": "2026-11-23 08:00:00"
+}
+```
+
+邀请码规则：4–12 位字母或数字，服务端统一转大写；留空时新建课程自动生成 8 位码（去掉 I/O/0/1），编辑课程保留原码；全站唯一，冲突返回 `40000`。
+
+**班级学情（`GET /{id}/members`）**：
+
+```json
+{
+  "course": { "id": 3, "name": "数据结构与算法实验", "joinCode": "OJ000003", "deadline": "2026-12-01 23:59:59" },
+  "problems": [
+    { "problemId": 2, "title": "两数之和", "difficulty": 1, "sortOrder": 1 }
+  ],
+  "members": [
+    {
+      "userId": 17,
+      "username": "张伟",
+      "avatar": null,
+      "joinedAt": "2026-11-23 16:47:12",
+      "solvedCount": 1,
+      "onTimeSolvedCount": 1,
+      "submitCount": 3,
+      "lastSubmitAt": "2026-11-23 17:02:00",
+      "statuses": [
+        { "problemId": 2, "status": "ac", "firstAcAt": "2026-11-23 16:50:00",
+          "attempts": 2, "lastAt": "2026-11-23 16:50:00", "onTime": true }
+      ]
+    }
+  ]
+}
+```
+
+`status` 为 `ac` / `attempted` / `none`；`statuses` 与 `problems` 一一对应，未提交的题也返回 `none`，前端可直接渲染矩阵。
+
+**完成情况（`GET /{id}/completion`）** 每题返回 `memberCount / submittedUsers / acceptedUsers / onTimeAcceptedUsers`，均按班级成员去重；课程无成员时为 0。
+
+### 6.3 学生课程 `/api/courses`（登录）
+
+| 方法 | 路径 | 说明 |
+|---|---|---|
+| GET | `/api/courses` | 我已加入的课程 + 我的完成度 |
+| POST | `/api/courses/join` | 凭邀请码加入 `{code}`；重复加入幂等；同一用户 10 次/分钟（防短码枚举） |
+| GET | `/api/courses/{id}` | 课程详情 + 每题个人状态；非班级成员返回 `40300`（管理员可预览） |
+| POST | `/api/courses/{id}/leave` | 退出课程 |
+
+**我的课程（StudentCourseVO）**：在 CourseVO 的展示字段上增加 `solvedCount / onTimeSolvedCount / submitCount / joinedAt / lastSubmitAt`。
+
+**进度口径（重要）**：
+
+- 只统计 **加入班级之后** 的提交（`submission.created_at >= course_member.joined_at`）；加入前的历史 AC 不计入作业完成度。
+- `solvedCount` 为历史 AC（含截止后迟交）；`onTimeSolvedCount` 只统计 **截止前首次 AC**；无截止时间时两者相等。
+- 截止后仍可提交与 AC，只是不计入"按时完成"；教师端会显示迟交题次。
+- 重新加入班级会刷新 `joined_at`，进度从新加入时间重新计算；退出不会删除提交记录。
+
+**课程详情（CourseDetailVO）**：
+
+```json
+{
+  "id": 3, "name": "数据结构与算法实验", "teacherName": "teacher_admin",
+  "deadline": "2026-12-01 23:59:59", "problemCount": 3, "memberCount": 1,
+  "solvedCount": 1, "onTimeSolvedCount": 1, "submitCount": 3,
+  "joinedAt": "2026-11-23 16:47:12", "lastSubmitAt": "2026-11-23 16:50:00",
+  "problems": [
+    { "problemId": 2, "title": "两数之和", "difficulty": 1, "tags": ["数组"],
+      "sortOrder": 1, "status": "ac", "firstAcAt": "2026-11-23 16:50:00",
+      "attempts": 2, "lastAt": "2026-11-23 16:50:00", "onTime": true }
+  ]
+}
+```
+
+> 前端从课程页跳转题目时携带 `?course={id}`，题目详情页展示"课程作业"提示，但不改变提交/判题协议。
 
 ---
 
@@ -618,7 +708,7 @@ new Client({
 | GET | `/api/contests/{id}/ranking` | 公开 | ACM 简化排名（解题数降序→罚时升序；罚时=首次AC分钟+错误×20） |
 | POST/PUT/DELETE | `/api/admin/contests[/{id}]` | 管理员 | 创建/编辑/删除（时间窗 + 题目集） |
 
-排名明细字段 `detail`：每题 `A ✅10min`（✅=AC，分钟=距开赛；`-2`=该题错误 2 次计罚时）。
+排名明细字段 `detail`：每题 `A AC 10min (-2)`（AC=通过，分钟=距开赛；`-2`=该题 AC 前错误 2 次，每次罚 20 分钟；未解题目错误统一追加 `未解题目错误 ×N`）。
 
 ## 8.2 用户管理 `/api/admin/users`（管理员）
 
@@ -666,3 +756,4 @@ new Client({
 | 2026-11-19 | v1.11 | 合并收口：A/B 双线版本号并行演进（均自 v1.7 起），本轮统一登记 | 成员 B |
 | 2026-11-21 | v1.12 | 新增 `4.4d` `GET /api/submissions/me/status-map`：题库行内"我的状态"（AC 过/尝试过的题目 ID 集合，一次聚合替代逐题查询） | 成员 B |
 | 2026-11-22 | v1.13 | 新增 JS 场景题（函数实现题）：题目增加可空 `entryFunction`（入口函数名）；非空时用例 input 须为 JSON 参数数组，oj-server 在判题入库前包装"用户代码 + 平台调用器"（stdin 读参数数组 → 调用入口函数 → stdout 输出返回值），judge 链路协议零变化；结果页展示按标记剥离调用器还原用户代码 | 成员 B（oj-common Problem 实体同步加可空字段，已知会 A） |
+| 2026-11-23 | v1.14 | **课程班级闭环**：课程新增 `joinCode/deadline` 与 `course_member` 表（迁移 `20261123_course_classroom.sql`）；管理端新增班级学情矩阵、成员移除、邀请码轮换；学生端新增我的课程/邀请码加入/课程详情/退出（§6.2/§6.3）；邀请码默认随机生成、加入接口按用户限流，避免短码枚举。同时修正 §0.1 时间口径（Asia/Shanghai，不做前端换算）、§4.1 补 `js` 语言、§4.2 移除"实现中"标记、§8.1 竞赛明细格式 | 成员 B |
