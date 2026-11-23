@@ -30,7 +30,7 @@
               <el-dropdown-menu>
                 <el-dropdown-item command="/admin/problems">题目管理</el-dropdown-item>
                 <el-dropdown-item command="/admin/contests">竞赛管理</el-dropdown-item>
-                <el-dropdown-item command="/admin/courses">课程实验</el-dropdown-item>
+                <el-dropdown-item command="/admin/courses">课程班级</el-dropdown-item>
                 <el-dropdown-item command="/admin/users">用户管理</el-dropdown-item>
                 <el-dropdown-item command="/admin/queue">队列监控</el-dropdown-item>
               </el-dropdown-menu>
@@ -97,7 +97,7 @@
         </nav>
         <p class="foot-colophon">
           Spring Boot 3 · Vue 3 · Docker<br />
-          <span>ONLINE JUDGE / v1.0</span>
+          <span>ONLINE JUDGE / CLASSROOM</span>
         </p>
       </div>
     </footer>
@@ -124,13 +124,14 @@ function openPalette() {
   palette.value?.openPalette()
 }
 
-const NAV_ROOTS = ['/home', '/problems', '/submissions', '/wrongbook', '/statistics', '/contests', '/leaderboard', '/announcements']
+const NAV_ROOTS = ['/home', '/problems', '/courses', '/submissions', '/wrongbook', '/statistics', '/contests', '/leaderboard', '/announcements']
 
 /** 主导航：不编号，不用目录感；只保留清楚的功能入口 */
 const navItems = computed(() => {
   const base = [
     { to: '/home', label: '首页' },
     { to: '/problems', label: '题库' },
+    { to: '/courses', label: '课程', auth: true, studentOnly: true },
     { to: '/submissions', label: '提交记录', auth: true },
     { to: '/wrongbook', label: '错题本', auth: true },
     { to: '/statistics', label: '统计', auth: true },
@@ -138,7 +139,8 @@ const navItems = computed(() => {
     { to: '/leaderboard', label: '排行榜' },
     { to: '/announcements', label: '公告' },
   ]
-  return base.filter((item) => !item.auth || userStore.isLoggedIn)
+  return base.filter((item) => (!item.auth || userStore.isLoggedIn)
+    && (!('studentOnly' in item && item.studentOnly) || !userStore.isAdmin))
 })
 
 const activeMenu = computed(() => {

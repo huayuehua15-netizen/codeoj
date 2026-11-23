@@ -40,7 +40,7 @@
       </el-table>
     </div>
 
-      <el-dialog v-model="dialogVisible" :title="editingId ? '编辑竞赛' : '创建竞赛'" width="620px">
+      <el-dialog v-model="dialogVisible" :title="editingId ? '编辑竞赛' : '创建竞赛'" width="min(620px, 94vw)">
         <el-form :model="form" label-width="90px">
           <el-form-item label="比赛名称"><el-input v-model="form.title" maxlength="200" /></el-form-item>
           <el-form-item label="说明"><el-input v-model="form.description" type="textarea" :rows="3" maxlength="500" /></el-form-item>

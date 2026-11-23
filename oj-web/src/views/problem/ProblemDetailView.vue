@@ -17,6 +17,12 @@
           <span class="folio">STATEMENT</span>
         </div>
 
+        <div v-if="courseId" class="course-context">
+          <span class="course-context-tag">课程作业</span>
+          <span>本次提交会计入该课程的完成进度</span>
+          <router-link :to="`/courses/${courseId}`" class="course-context-link">返回课程</router-link>
+        </div>
+
         <div class="title-row">
           <h1 class="prob-title">{{ problem.title }}</h1>
           <button
@@ -294,6 +300,12 @@ const router = useRouter()
 const userStore = useUserStore()
 const prefs = usePreferencesStore()
 
+/** 从课程页跳来时携带 ?course=<id>，用于提示"这次提交计入课程作业"。 */
+const courseId = computed(() => {
+  const value = route.query.course
+  return typeof value === 'string' && /^\d+$/.test(value) ? value : null
+})
+
 const problem = ref<Problem>()
 const loadError = ref(false)
 const language = ref(prefs.defaultLanguage)
@@ -337,12 +349,24 @@ watch(
     }, 600)
   },
 )
-onUnmounted(() => {
-  if (draftTimer) clearTimeout(draftTimer)
-  window.removeEventListener('keydown', onGlobalKeydown)
+/** 立即把当前编辑区落盘（取消防抖）。切换语言/卸载前必须调用：
+ *  否则旧语言在 600ms 防抖窗口内的代码会被新语言的模板覆盖，草稿静默丢失。 */
+function flushDraft() {
+  if (draftTimer) {
+    clearTimeout(draftTimer)
+    draftTimer = null
+  }
   const pid = draftProblemId()
-  // 卸载前同步落盘一次，防抖窗口内的最后几笔不丢
-  if (pid) saveDraft(pid, language.value, code.value)
+  if (!pid) return
+  saveDraft(pid, prevLanguage.value, code.value)
+  if (loadDraft(pid, prevLanguage.value)) {
+    draftSavedAt.value = new Date().toLocaleTimeString('zh-CN', { hour12: false })
+  }
+}
+
+onUnmounted(() => {
+  flushDraft()
+  window.removeEventListener('keydown', onGlobalKeydown)
 })
 
 /** Ctrl/⌘ + Enter 快捷提交：Monaco 未占用该组合键，事件会冒泡到 window——编辑器内外都生效 */
@@ -532,6 +556,7 @@ function onLanguageChange(lang: string) {
   const label = LANGUAGE_OPTIONS.find((l) => l.value === lang)?.label ?? lang
   const untouched = !code.value.trim() || Object.values(CODE_TEMPLATES).includes(code.value)
   if (untouched) {
+    flushDraft()
     applyLanguage(lang)
     return
   }
@@ -540,7 +565,10 @@ function onLanguageChange(lang: string) {
     '切换语言',
     { type: 'warning', confirmButtonText: '替换', cancelButtonText: '保留当前代码' },
   )
-    .then(() => applyLanguage(lang))
+    .then(() => {
+      flushDraft()
+      applyLanguage(lang)
+    })
     .catch(() => {
       // 用户取消：把下拉框拨回原来的语言（否则界面显示的语言与编辑区内容不符）
       language.value = prevLanguage.value
@@ -765,6 +793,45 @@ onMounted(() => window.addEventListener('keydown', onGlobalKeydown))
   gap: 12px;
   padding-bottom: 12px;
   border-bottom: 1px solid var(--oj-border);
+}
+.course-context {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 12px;
+  padding: 7px 10px;
+  border-left: 3px solid var(--oj-primary);
+  border-radius: 4px;
+  background: var(--oj-primary-soft);
+  font-size: 10.5px;
+  color: var(--oj-text-sub);
+}
+.course-context-tag {
+  flex-shrink: 0;
+  padding: 1px 6px;
+  border-radius: 3px;
+  background: var(--oj-card);
+  font-family: var(--oj-font-mono);
+  font-size: 8.5px;
+  letter-spacing: 0.04em;
+  color: var(--oj-primary);
+}
+.course-context-link {
+  margin-left: auto;
+  flex-shrink: 0;
+  font-weight: 650;
+  color: var(--oj-primary);
+}
+.course-context-link:hover {
+  text-decoration: underline;
+}
+@media (max-width: 768px) {
+  .course-context {
+    flex-wrap: wrap;
+  }
+  .course-context-link {
+    margin-left: 0;
+  }
 }
 .title-row {
   display: flex;

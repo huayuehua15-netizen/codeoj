@@ -55,7 +55,7 @@ const route = useRoute()
 const NAV = [
   { to: '/admin/problems', label: '题目管理', index: '01' },
   { to: '/admin/contests', label: '竞赛管理', index: '02' },
-  { to: '/admin/courses', label: '课程实验', index: '03' },
+  { to: '/admin/courses', label: '课程班级', index: '03' },
   { to: '/admin/users', label: '用户管理', index: '04' },
   { to: '/admin/queue', label: '队列监控', index: '05' },
 ]

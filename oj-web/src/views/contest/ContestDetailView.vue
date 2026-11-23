@@ -85,6 +85,10 @@
               <span class="kicker">STANDINGS</span>
               <h2>实时排名</h2>
               <span class="tab-count">ACM 赛制</span>
+              <span v-if="contest.status === 1" class="live-chip">
+                <i aria-hidden="true" />
+                每 15 秒自动刷新
+              </span>
             </div>
 
             <p v-if="contest.status === 0" class="rank-hint">
@@ -155,6 +159,24 @@ function statusInfo(status: number) {
 }
 
 let timer: number | undefined
+let rankTimer: number | undefined
+let rankRefreshing = false
+
+/** 拉取排名。silent 用于 15s 自动刷新：失败不弹提示，也不打断已展示的榜单。 */
+async function refreshRanking(silent = false) {
+  if (!contest.value || rankRefreshing) return
+  rankRefreshing = true
+  if (!silent) rankLoading.value = true
+  try {
+    ranking.value = await getContestRanking(String(route.params.id))
+  } catch {
+    // 静默刷新失败时保留上一版榜单；手动/首屏失败保留空态，由拦截器提示
+    if (!silent) ranking.value = []
+  } finally {
+    rankRefreshing = false
+    if (!silent) rankLoading.value = false
+  }
+}
 
 async function load() {
   const id = route.params.id
@@ -167,6 +189,7 @@ async function load() {
   loadError.value = false
   contest.value = undefined
   ranking.value = []
+  window.clearInterval(rankTimer)
   try {
     contest.value = await getContest(String(id))
   } catch {
@@ -191,7 +214,19 @@ async function load() {
   if (contest.value.status !== 2) {
     timer = window.setInterval(() => { nowTick.value++ }, 1000)
   }
+  // "实时排名"在比赛进行中每 15s 刷新；只在排名标签页可见时请求，避免用户
+  // 停留在题面时也持续打接口。比赛结束后停止。
+  if (contest.value.status === 1) {
+    rankTimer = window.setInterval(() => {
+      if (activeTab.value === 'ranking') void refreshRanking(true)
+    }, 15_000)
+  }
 }
+
+// 切换到排名页时立即补一次（离开期间榜单可能已经变化）
+watch(activeTab, (tab) => {
+  if (tab === 'ranking' && contest.value?.status === 1) void refreshRanking(true)
+})
 
 // P2-4：/contests/1 → /contests/2 复用同一组件时重新加载
 watch(() => route.params.id, load)
@@ -201,7 +236,10 @@ onMounted(async () => {
   await load()
 })
 
-onUnmounted(() => window.clearInterval(timer))
+onUnmounted(() => {
+  window.clearInterval(timer)
+  window.clearInterval(rankTimer)
+})
 </script>
 
 <style scoped>
@@ -375,6 +413,20 @@ onUnmounted(() => window.clearInterval(timer))
   font-size: 9px;
   letter-spacing: 0.06em;
   color: var(--oj-text-weak);
+}
+.live-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-left: 10px;
+  font-size: 9px;
+  color: var(--oj-success);
+}
+.live-chip i {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--oj-success);
 }
 
 .problem-head {

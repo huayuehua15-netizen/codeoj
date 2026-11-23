@@ -74,6 +74,7 @@ const active = ref(0)
 const pageItems: PaletteItem[] = [
   { key: 'p-home', label: '首页', to: '/home', hint: '落地页' },
   { key: 'p-problems', label: '题库', to: '/problems', hint: '全部题目' },
+  { key: 'p-courses', label: '我的课程', to: '/courses', hint: '班级作业' },
   { key: 'p-submissions', label: '提交记录', to: '/submissions', hint: '登录' },
   { key: 'p-wrongbook', label: '错题本', to: '/wrongbook', hint: '登录' },
   { key: 'p-statistics', label: '统计', to: '/statistics', hint: '登录' },

@@ -67,6 +67,18 @@ const router = createRouter({
           meta: { title: '个人统计', requiresAuth: true },
         },
         {
+          path: 'courses',
+          name: 'courses',
+          component: () => import('@/views/course/CourseListView.vue'),
+          meta: { title: '我的课程', requiresAuth: true },
+        },
+        {
+          path: 'courses/:id',
+          name: 'course-detail',
+          component: () => import('@/views/course/CourseDetailView.vue'),
+          meta: { title: '课程详情', requiresAuth: true },
+        },
+        {
           path: 'contests',
           name: 'contests',
           component: () => import('@/views/contest/ContestListView.vue'),
@@ -130,7 +142,7 @@ const router = createRouter({
           path: 'admin/courses',
           name: 'admin-courses',
           component: () => import('@/views/admin/CourseAdminView.vue'),
-          meta: { title: '课程实验', requiresAuth: true, requiresAdmin: true },
+          meta: { title: '课程班级', requiresAuth: true, requiresAdmin: true },
         },
         {
           path: 'admin/contests',

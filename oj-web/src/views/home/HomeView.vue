@@ -83,6 +83,35 @@
       </div>
     </section>
 
+    <!-- 已登录学生的班级入口：把“下一步做什么”放在首页，而不是藏进导航 -->
+    <section v-if="userStore.isLoggedIn && !userStore.isAdmin" class="classroom-strip" aria-label="我的课程">
+      <div class="classroom-main">
+        <p class="kicker">MY CLASSROOM</p>
+        <template v-if="nextCourse">
+          <div class="classroom-title-row">
+            <h2>{{ nextCourse.name }}</h2>
+            <span class="classroom-status" :class="{ late: nextCourseEnded }">{{ nextCourseStatus }}</span>
+          </div>
+          <p class="classroom-meta">
+            {{ nextCourse.solvedCount }} / {{ nextCourse.problemCount }} 题已完成
+            <span class="dot-sep" aria-hidden="true">·</span>
+            {{ nextCourseDeadlineText }}
+          </p>
+          <div class="classroom-track" role="progressbar" :aria-valuenow="coursePercent" aria-valuemin="0" aria-valuemax="100">
+            <span :style="{ width: coursePercent + '%' }" />
+          </div>
+        </template>
+        <template v-else>
+          <h2 class="classroom-empty-title">还没有加入班级</h2>
+          <p class="classroom-meta">向任课教师索取邀请码，作业、截止时间和完成进度都会集中在这里。</p>
+        </template>
+      </div>
+      <router-link to="/courses" class="classroom-link">
+        {{ nextCourse ? '查看我的课程' : '加入班级' }}
+        <span aria-hidden="true">→</span>
+      </router-link>
+    </section>
+
     <div class="section-head">
       <div>
         <h2 class="section-title">开始做题</h2>
@@ -122,8 +151,8 @@
 
       <div class="card rank-card">
         <div class="card-head">
-          <span class="card-title">本周榜单</span>
-          <span class="card-meta">TOP 5</span>
+          <span class="card-title">全站榜单</span>
+          <span class="card-meta">ALL TIME · TOP 5</span>
         </div>
         <template v-if="topFive.length">
           <ul class="rank-list">
@@ -160,12 +189,16 @@
 
 <script setup lang="ts">
 // 平台首页（落地页）：公开数据并行拉取，失败降级为空态。
-import { onMounted, reactive, ref } from 'vue'
+import { computed, onMounted, reactive, ref } from 'vue'
 import { getProblemOverview, pageProblems, type Problem } from '@/api/problem'
 import { getLeaderboard } from '@/api/leaderboard'
 import { listAnnouncements, type AnnouncementItem } from '@/api/announcement'
-import { formatDateTime } from '@/utils/datetime'
+import { listMyCourses, type StudentCourse } from '@/api/course'
+import { formatDateTime, parseServerTime } from '@/utils/datetime'
 import { DIFFICULTY_MAP } from '@/utils/status'
+import { useUserStore } from '@/stores/user'
+
+const userStore = useUserStore()
 
 const stats = reactive<{
   totalProblems?: number
@@ -177,6 +210,44 @@ const stats = reactive<{
 const announcements = ref<AnnouncementItem[]>([])
 const problems = ref<Problem[]>([])
 const topFive = ref<{ rank: number; userId: number; username?: string; avatar?: string | null; acCount: number }[]>([])
+const myCourses = ref<StudentCourse[]>([])
+
+/** 首页只露出一个最该处理的班级：优先“进行中且未做完”，否则第一门。 */
+const nextCourse = computed(() => {
+  const active = myCourses.value.find((c) => {
+    const d = parseServerTime(c.deadline)
+    return d && d.getTime() > Date.now() && c.solvedCount < c.problemCount
+  })
+  return active ?? myCourses.value[0] ?? null
+})
+
+const coursePercent = computed(() => {
+  const c = nextCourse.value
+  if (!c || !c.problemCount) return 0
+  return Math.min(100, Math.round((c.solvedCount * 100) / c.problemCount))
+})
+
+const nextCourseEnded = computed(() => {
+  const d = parseServerTime(nextCourse.value?.deadline)
+  return !!d && d.getTime() <= Date.now()
+})
+
+const nextCourseStatus = computed(() => {
+  if (!nextCourse.value?.deadline) return '长期开放'
+  return nextCourseEnded.value ? '已截止' : '进行中'
+})
+
+const nextCourseDeadlineText = computed(() =>
+  nextCourse.value?.deadline ? `${formatDateTime(nextCourse.value.deadline)} 截止` : '不设截止时间',
+)
+
+async function loadMyCourses() {
+  try {
+    myCourses.value = await listMyCourses()
+  } catch {
+    myCourses.value = []
+  }
+}
 
 /** 能力卡：内联 SVG 图标（stroke 继承 currentColor） */
 const FEATURES = [
@@ -231,6 +302,7 @@ onMounted(async () => {
   }
   if (anns.status === 'fulfilled') announcements.value = (anns.value || []).slice(0, 3)
   if (list.status === 'fulfilled') problems.value = (list.value.records || []).slice(0, 4)
+  if (userStore.isLoggedIn && !userStore.isAdmin) loadMyCourses()
 })
 </script>
 
@@ -588,6 +660,94 @@ onMounted(async () => {
   color: var(--oj-text-weak);
 }
 
+/* ---------- 我的班级条 ---------- */
+.classroom-strip {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  margin-top: 14px;
+  padding: 15px 20px;
+  background: var(--oj-primary-soft);
+  border: 1px solid var(--oj-info-border);
+  border-left: 3px solid var(--oj-primary);
+  border-radius: 8px;
+}
+.classroom-main {
+  min-width: 0;
+}
+.classroom-title-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 3px;
+}
+.classroom-title-row h2 {
+  overflow: hidden;
+  margin: 0;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 17px;
+  font-weight: 750;
+  letter-spacing: -0.03em;
+  color: var(--oj-text);
+}
+.classroom-status {
+  flex-shrink: 0;
+  padding: 1px 7px;
+  border-radius: 999px;
+  background: var(--oj-card);
+  font-size: 9px;
+  font-weight: 650;
+  color: var(--oj-primary);
+}
+.classroom-status.late {
+  color: var(--oj-text-sub);
+}
+.classroom-empty-title {
+  margin: 4px 0 0;
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--oj-text);
+}
+.classroom-meta {
+  margin: 5px 0 0;
+  font-size: 10.5px;
+  line-height: 1.6;
+  color: var(--oj-text-sub);
+}
+.dot-sep {
+  margin: 0 5px;
+  color: var(--oj-gray-300);
+}
+.classroom-track {
+  overflow: hidden;
+  width: min(360px, 100%);
+  height: 4px;
+  margin-top: 9px;
+  background: rgba(16, 24, 40, 0.08);
+  border-radius: 2px;
+}
+.classroom-track span {
+  display: block;
+  height: 100%;
+  background: var(--oj-primary);
+  border-radius: 2px;
+  transition: width 0.3s var(--oj-ease);
+}
+.classroom-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+  font-size: 11.5px;
+  font-weight: 650;
+  color: var(--oj-primary);
+}
+.classroom-link:hover {
+  gap: 8px;
+}
+
 /* ---------- section ---------- */
 .section-head {
   display: flex;
@@ -940,6 +1100,14 @@ onMounted(async () => {
   .notice-body,
   .notice-date {
     display: none;
+  }
+  .classroom-strip {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 10px;
+  }
+  .classroom-title-row h2 {
+    white-space: normal;
   }
   .prob-head {
     display: none;

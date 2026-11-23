@@ -59,7 +59,7 @@
     </div>
 
       <!-- 题目表单（含 Markdown 实时预览，论文 5.7） -->
-      <el-dialog v-model="dialogVisible" :title="editingId ? '编辑题目' : '新建题目'" width="860px">
+      <el-dialog v-model="dialogVisible" :title="editingId ? '编辑题目' : '新建题目'" width="min(860px, 96vw)">
         <el-form :model="form" label-width="90px">
           <el-form-item label="标题"><el-input v-model="form.title" /></el-form-item>
           <el-form-item label="难度">
@@ -133,7 +133,7 @@
       </el-dialog>
 
       <!-- 公告管理（教学场景：实验截止提醒） -->
-      <el-dialog v-model="noticeVisible" title="公告管理" width="560px">
+      <el-dialog v-model="noticeVisible" title="公告管理" width="min(560px, 94vw)">
         <div style="display: flex; gap: 8px; margin-bottom: 12px">
           <el-input v-model="noticeForm.title" placeholder="公告标题" style="width: 200px" />
           <el-input v-model="noticeForm.content" placeholder="公告内容（实验截止时间等）" />
