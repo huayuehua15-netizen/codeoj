@@ -27,7 +27,11 @@ jobs:
       - run: python3 -m unittest discover -s judge-tests/tests -v
       - run: python3 -m unittest discover -s tools/tests -v
       - run: bash -n judge-images/build.sh judge-images/runner.sh judge-tests/security-sandbox-test.sh judge-tests/security-e2e-test.sh
+      # compose 用 ${JWT_SECRET:?...} 强制要求生产密钥，CI 没有 .env（密钥不入库），
+      # 这里只注入一次性占位值用于语法校验，绝不用于运行服务。
       - run: docker compose -f deploy/docker-compose.yml config --quiet
+        env:
+          JWT_SECRET: ci-only-placeholder-not-for-production-use-0123456789
 
   frontend:
     runs-on: ubuntu-latest

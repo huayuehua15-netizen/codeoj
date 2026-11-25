@@ -1,8 +1,18 @@
 # CodeOJ —— 在线代码评测与编程练习平台
 
+[![CI](https://github.com/huayuehua15-netizen/codeoj/actions/workflows/ci.yml/badge.svg?branch=dev)](https://github.com/huayuehua15-netizen/codeoj/actions/workflows/ci.yml)
+[![Release](https://img.shields.io/github/v/release/huayuehua15-netizen/codeoj?display_name=tag)](https://github.com/huayuehua15-netizen/codeoj/releases)
+[![License](https://img.shields.io/badge/license-Educational-blue)](README.md)
+
 基于 **Spring Boot + Vue3 + Docker** 的在线代码评测与编程练习平台（毕业设计项目）。
 
 设计文档：《基于 Spring Boot + Vue3 + Docker 的在线代码评测与编程练习平台设计与实现》
+
+## 🚀 发布
+
+| 版本 | 日期 | 说明 |
+|---|---|---|
+| [v1.0.0](https://github.com/huayuehua15-netizen/codeoj/releases/tag/v1.0.0) | 2026-11-25 | 首个生产就绪版本；五语言真实判题、全站 v6 UI、CI 与部署实录 |
 
 ## 📚 协作文档（双人对接以此为准）
 
