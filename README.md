@@ -8,11 +8,51 @@
 
 设计文档：《基于 Spring Boot + Vue3 + Docker 的在线代码评测与编程练习平台设计与实现》
 
+**在线体验：<http://47.107.242.10>**
+
+## 🎬 界面演示
+
+![CodeOJ 功能演示](docs/screenshots/demo.gif)
+
+> 上述为真实生产环境录制的动图，非设计稿。五个语言真实判题、逐测试点回传耗时与内存。
+
+### 核心界面
+
+| 首页 | 题库 |
+|---|---|
+| ![首页](docs/screenshots/01-home.png) | ![题库](docs/screenshots/02-problems.png) |
+
+| 题目详情（题面 + 编辑器分屏） | 判题结果（逐测试点） |
+|---|---|
+| ![题目详情](docs/screenshots/03-problem-detail.png) | ![判题结果](docs/screenshots/11-submission-result.png) |
+
+| 学习统计（能力雷达） | 排行榜 |
+|---|---|
+| ![学习统计](docs/screenshots/13-statistics.png) | ![排行榜](docs/screenshots/05-leaderboard.png) |
+
+### 移动端
+
+<img src="docs/screenshots/09-home-mobile.png" width="300" alt="移动端首页">
+<img src="docs/screenshots/10-problems-mobile.png" width="300" alt="移动端题库">
+
+更多截图见 [docs/screenshots/](docs/screenshots/)。
+
 ## 🚀 发布
 
 | 版本 | 日期 | 说明 |
 |---|---|---|
 | [v1.0.0](https://github.com/huayuehua15-netizen/codeoj/releases/tag/v1.0.0) | 2026-11-25 | 首个生产就绪版本；五语言真实判题、全站 v6 UI、CI 与部署实录 |
+
+## 🔍 功能一览
+
+| 模块 | 能力 |
+|---|---|
+| 判题 | C / C++ / Java / Python3 / JavaScript 五语言真实编译运行；逐测试点返回状态、耗时、内存；一次性容器沙箱，禁网、限 CPU/内存/进程数 |
+| 题库 | 52 道教学题，难度 + 标签 + 关键词检索，通过率与提交量统计，收藏与错题沉淀 |
+| 提交 | 限流 + 幂等锁 + RabbitMQ 异步队列；判题结果经 WebSocket 实时推送到浏览器，无需刷新 |
+| 竞赛 | ACM 赛制排名，实时榜单 |
+| 统计 | 难度覆盖、判题状态分布、七日提交趋势、能力雷达图 |
+| 协作 | 双人 A/B 分工契约文档（API / CONTRACT / COLLABORATION）随代码维护 |
 
 ## 📚 协作文档（双人对接以此为准）
 
