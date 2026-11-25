@@ -2,7 +2,7 @@
 
 [![CI](https://github.com/huayuehua15-netizen/codeoj/actions/workflows/ci.yml/badge.svg?branch=dev)](https://github.com/huayuehua15-netizen/codeoj/actions/workflows/ci.yml)
 [![Release](https://img.shields.io/github/v/release/huayuehua15-netizen/codeoj?display_name=tag)](https://github.com/huayuehua15-netizen/codeoj/releases)
-[![License](https://img.shields.io/badge/license-Educational-blue)](README.md)
+[![License](https://img.shields.io/badge/license-Educational-blue)](LICENSE)
 
 基于 **Spring Boot + Vue3 + Docker** 的在线代码评测与编程练习平台（毕业设计项目）。
 
